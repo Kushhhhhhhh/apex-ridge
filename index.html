@@ -1388,6 +1388,214 @@ body.touch {
   width: 52%;
   height: 52%;
 }
+/* ---------- control layout: every key has a size and an opacity, the menu button bundles the rest, and the editor moves them ---------- */
+.tb {
+  transform: scale(calc(var(--tb-s, 1) * var(--s, 1)));
+  opacity: calc(var(--tb-o, 1) * var(--o, 1));
+}
+.tb.lc {
+  transform: translate(-50%, -50%) scale(calc(var(--tb-s, 1) * var(--s, 1)));
+}
+.tb.off,
+.lhide {
+  display: none !important;
+}
+#tHub {
+  right: calc(3vmin + env(safe-area-inset-right, 0px));
+}
+#tObj {
+  right: calc(80vmin + env(safe-area-inset-right, 0px));
+}
+#tSup {
+  right: calc(91vmin + env(safe-area-inset-right, 0px));
+}
+#tHub.open {
+  background: rgba(230, 169, 58, 0.62);
+  border-color: rgba(255, 224, 160, 0.9);
+}
+#hubPanel {
+  position: fixed;
+  display: none;
+  z-index: 7;
+  padding: 12px 16px 28px;
+  border-radius: 16px;
+  background: rgba(10, 14, 10, 0.84);
+  border: 2px solid rgba(236, 239, 220, 0.35);
+}
+#hubPanel.open {
+  display: block;
+}
+#hubGrid {
+  display: grid;
+  grid-template-columns: repeat(var(--hc, 4), minmax(66px, 1fr));
+  justify-items: center;
+  gap: 24px 10px;
+}
+#hubPanel .tb {
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  opacity: 1 !important;
+  width: 11vmin;
+  height: 11vmin;
+  margin: 0;
+}
+#hubPanel .tb::after,
+body.editing .tb::after {
+  content: attr(data-lbl);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 3px;
+  font: 600 12px var(--display);
+  letter-spacing: 0.04em;
+  color: var(--fg);
+  white-space: nowrap;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+}
+#tScopeRow {
+  transform: translateX(-50%) scale(calc(var(--tb-s, 1) * var(--s, 1)));
+  opacity: calc(var(--tb-o, 1) * var(--o, 1));
+}
+#tScopeRow.lc {
+  transform: translate(-50%, -50%) scale(calc(var(--tb-s, 1) * var(--s, 1)));
+}
+#tScopeRow .tb {
+  transform: none;
+  opacity: 1;
+}
+#joy {
+  transform: scale(calc(var(--tb-s, 1) * var(--s, 1)));
+  opacity: calc(0.75 * var(--tb-o, 1) * var(--o, 1));
+}
+#joy.on {
+  opacity: calc(var(--tb-o, 1) * var(--o, 1));
+}
+#joy.jc {
+  left: var(--jl);
+  top: var(--jt);
+  bottom: auto;
+}
+/* the editor: the real keys, over a dimmed world, each with its name; the control panel flips to whichever side is clear */
+#editor {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: none;
+  touch-action: none;
+  background: rgba(0, 0, 0, 0.3);
+  -webkit-user-select: none;
+  user-select: none;
+}
+body.editing #editor {
+  display: block;
+}
+body.editing #touch {
+  display: block;
+  z-index: 8;
+}
+body.editing .tb,
+body.editing #joy,
+body.editing #tScopeRow {
+  outline: 2px dashed rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+body.editing .tb.off,
+body.editing .tb.lhide,
+body.editing #tFire2 {
+  display: flex !important;
+}
+body.editing .tb.lhide {
+  opacity: 0.35 !important;
+}
+body.editing #tScopeRow {
+  display: flex;
+}
+body.editing #joy {
+  opacity: 0.9;
+}
+.edsel {
+  outline: 3px solid var(--amber) !important;
+  outline-offset: 3px !important;
+}
+#edPanel {
+  position: absolute;
+  left: 50%;
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  width: min(680px, 94vw);
+  padding: 8px 12px 9px;
+  border-radius: 14px;
+  background: rgba(10, 14, 10, 0.93);
+  border: 2px solid rgba(236, 239, 220, 0.4);
+  color: var(--fg);
+  font-family: var(--display);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#edPanel.bot {
+  top: auto;
+  bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+}
+.edrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 14px;
+}
+.edrow b {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.edrow label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.edrow input[type="range"] {
+  width: 86px;
+  accent-color: var(--amber);
+}
+.edrow button {
+  font: 700 14px var(--display);
+  letter-spacing: 0.03em;
+  min-height: 32px;
+  padding: 2px 9px;
+  border-radius: 8px;
+  border: 2px solid rgba(236, 239, 220, 0.5);
+  background: rgba(236, 239, 220, 0.08);
+  color: var(--fg);
+}
+.edrow button.on {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #1f2616;
+}
+#edDone {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #14200d;
+}
+#edWhere {
+  font: 700 14px var(--display);
+  min-height: 32px;
+  padding: 0 6px;
+  border-radius: 8px;
+  border: 2px solid rgba(236, 239, 220, 0.5);
+  background: rgba(236, 239, 220, 0.1);
+  color: var(--fg);
+}
+#edWhere option {
+  background: #12180f;
+  color: #ecefdc;
+}
+#edWhere:disabled {
+  opacity: 0.5;
+}
 /* scoped, the right thumb holds the aim: a second fire key sits under the left thumb */
 #tFire2 {
   display: none;
@@ -1499,7 +1707,10 @@ body.jeep #tWeap {
   right: calc(14vmin + env(safe-area-inset-right, 0px));
 }
 #tKit {
-  right: calc(25vmin + env(safe-area-inset-right, 0px));
+  /* out by the right thumb (it appears when you are hurt), not in the far corner */
+  top: auto;
+  right: calc(44vmin + env(safe-area-inset-right, 0px));
+  bottom: calc(24vmin + env(safe-area-inset-bottom, 0px));
 }
 #tTrack {
   right: calc(36vmin + env(safe-area-inset-right, 0px));
@@ -1695,6 +1906,15 @@ body.touch #promptTxt {
   cursor: pointer;
   z-index: 2;
 }
+.settings #layoutBtn {
+  display: none;
+}
+body.touch .settings #layoutBtn {
+  display: inline-block;
+}
+body.touch #dockIcons {
+  display: none; /* the two panels are opened from the menu button now (or placed on the screen from the layout editor) */
+}
 .settings #fsBtn {
   display: none;
   font-family: var(--type);
@@ -1808,7 +2028,7 @@ body.touch button#btn2 {
 }
 body.touch .mbtns {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 body.touch .mbtns button {
@@ -2332,31 +2552,47 @@ button#btn2:hover {
 <div id="touch">
   <div id="lookPad"></div>
   <div id="joy"><div id="joyKnob"></div></div>
-  <button class="tb" id="tFire" aria-label="Fire" title="Fire"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.5c2.6 2.4 3.6 5.2 3.6 8.3V16H8.4v-5.2c0-3.1 1-5.9 3.6-8.3z"/><path d="M7.5 18.6h9M9.5 21.4h5"/></svg></button>
-  <button class="tb" id="tFire2" aria-label="Fire" title="Fire"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.5c2.6 2.4 3.6 5.2 3.6 8.3V16H8.4v-5.2c0-3.1 1-5.9 3.6-8.3z"/><path d="M7.5 18.6h9M9.5 21.4h5"/></svg></button>
-  <button class="tb" id="tScope" aria-label="Scope" title="Scope"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/><circle class="fl" cx="12" cy="12" r="1.3"/></svg></button>
-  <button class="tb" id="tRun" aria-label="Sprint, or hold breath when scoped" title="Sprint / hold breath"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2.5L5.5 13.5H11l-1 8 8-11.5h-5.5z"/></svg></button>
-  <button class="tb" id="tReload" aria-label="Reload" title="Reload"><svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 3.5v4.5h-4.5"/></svg></button>
-  <button class="tb" id="tStance" data-st="0" aria-label="Stand, kneel, prone" title="Stand / kneel / prone">
+  <button class="tb" id="tFire" data-lbl="Fire" aria-label="Fire" title="Fire"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.5c2.6 2.4 3.6 5.2 3.6 8.3V16H8.4v-5.2c0-3.1 1-5.9 3.6-8.3z"/><path d="M7.5 18.6h9M9.5 21.4h5"/></svg></button>
+  <button class="tb" id="tFire2" data-lbl="Fire" aria-label="Fire" title="Fire"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2.5c2.6 2.4 3.6 5.2 3.6 8.3V16H8.4v-5.2c0-3.1 1-5.9 3.6-8.3z"/><path d="M7.5 18.6h9M9.5 21.4h5"/></svg></button>
+  <button class="tb" id="tScope" data-lbl="Scope" aria-label="Scope" title="Scope"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/><circle class="fl" cx="12" cy="12" r="1.3"/></svg></button>
+  <button class="tb" id="tRun" data-lbl="Sprint" aria-label="Sprint, or hold breath when scoped" title="Sprint / hold breath"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2.5L5.5 13.5H11l-1 8 8-11.5h-5.5z"/></svg></button>
+  <button class="tb" id="tReload" data-lbl="Reload" aria-label="Reload" title="Reload"><svg class="ic" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 3.5v4.5h-4.5"/></svg></button>
+  <button class="tb" id="tStance" data-lbl="Stance" data-st="0" aria-label="Stand, kneel, prone" title="Stand / kneel / prone">
     <svg class="ic st0" viewBox="0 0 24 24"><circle cx="12" cy="4.8" r="2.3"/><path d="M12 8v7M7.5 11l4.5-1.5 4.5 1.5M9.5 21.5L12 15l2.5 6.5"/></svg>
     <svg class="ic st1" viewBox="0 0 24 24"><circle cx="11" cy="6" r="2.3"/><path d="M11 9v6l5 1v5.5M11 15l-5 2v4.5M7 12.5l4-2.2 3.5 1.7"/></svg>
     <svg class="ic st2" viewBox="0 0 24 24"><circle cx="4.8" cy="13.5" r="2.2"/><path d="M8 14.5h12.5M13 14.5l-2-3.2M18 14.5l2.5 4M8 14.5l-1.5 3.5"/></svg>
     <svg class="ic stD" viewBox="0 0 24 24"><path d="M12 3.5v12M7 10.5l5 5 5-5"/><path d="M3 20c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0"/></svg>
     <svg class="ic stS" viewBox="0 0 24 24"><path d="M12 15.5v-12M7 8.5l5-5 5 5"/><path d="M3 20c2-1.6 4-1.6 6 0s4 1.6 6 0 4-1.6 6 0"/></svg>
   </button>
-  <button class="tb" id="tUse" aria-label="Use: repair, take, get in" title="Use"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11.5V5.2a1.6 1.6 0 0 1 3.2 0V11"/><path d="M12.2 10.5a1.6 1.6 0 0 1 3.2 0v1.3a1.6 1.6 0 0 1 3.2 0V16a6 6 0 0 1-6 6h-1.2a6 6 0 0 1-4.6-2.1l-2.4-3.9a1.7 1.7 0 0 1 2.5-2.3L9 15.6"/></svg></button>
-  <button class="tb" id="tJump" aria-label="Jump" title="Jump"><svg class="ic" viewBox="0 0 24 24"><path d="M12 18.5V5"/><path d="M6 11l6-6 6 6"/><path d="M6.5 21.5h11"/></svg></button>
-  <button class="tb" id="tBrake" aria-label="Handbrake" title="Handbrake"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.2v5.6M12 16.4h.01"/></svg></button>
-  <button class="tb sm" id="tMap" aria-label="Map" title="Map"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg></button>
-  <button class="tb sm" id="tBino" aria-label="Binoculars" title="Binoculars"><svg class="ic" viewBox="0 0 24 24"><circle cx="7" cy="15.5" r="4"/><circle cx="17" cy="15.5" r="4"/><path d="M7 11.5V5h3.2v6M17 11.5V5h-3.2v6M11 15h2"/></svg></button>
-  <button class="tb sm" id="tKit" aria-label="Medkit" title="Medkit"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="13" rx="2.5"/><path d="M9 7V5.6A1.1 1.1 0 0 1 10.1 4.5h3.8A1.1 1.1 0 0 1 15 5.6V7M12 10.5v6M9 13.5h6"/></svg></button>
-  <button class="tb sm" id="tTrack" aria-label="Track the next objective" title="Track objective"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10.5" r="2.3"/></svg></button>
-  <button class="tb sm" id="tGear" aria-label="Gear menu" title="Gear"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg></button>
-  <button class="tb sm" id="tWeap" aria-label="Change weapon" title="Weapon"><svg class="ic" viewBox="0 0 24 24"><path d="M2.5 13.5h13.5l2-2.5h3.5v3.2l-3 1.8h-4.2l-1 3.5h-3.3l-1.2-3.5H2.5z"/><path d="M8 11V9.5h5V11"/></svg></button>
-  <button class="tb sm" id="tPause" aria-label="Pause" title="Pause"><svg class="ic" viewBox="0 0 24 24"><rect class="fl" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="fl" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg></button>
-  <div id="gear"><button id="gFuel" type="button">REFUEL JEEP</button><button id="gFix" type="button">REPAIR JEEP</button><button id="gLights" type="button">HEADLIGHTS</button><button id="gSup" type="button">SUPPLIES</button><button id="gTherm" type="button">THERMAL</button><button id="gRead" type="button">READ GROUND</button><button id="gThrow" type="button">THROW</button><button id="gSel" type="button">FLARE / BAIT</button><button id="gAmmo" type="button">DARTS / LIVE</button><button id="gJournal" type="button">JOURNAL</button><button id="gPhoto" type="button">PHOTO</button><button id="gFs" type="button">FULL SCREEN</button><button id="gAssist" type="button">AIM ASSIST</button></div>
+  <button class="tb" id="tUse" data-lbl="Use" aria-label="Use: repair, take, get in" title="Use"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11.5V5.2a1.6 1.6 0 0 1 3.2 0V11"/><path d="M12.2 10.5a1.6 1.6 0 0 1 3.2 0v1.3a1.6 1.6 0 0 1 3.2 0V16a6 6 0 0 1-6 6h-1.2a6 6 0 0 1-4.6-2.1l-2.4-3.9a1.7 1.7 0 0 1 2.5-2.3L9 15.6"/></svg></button>
+  <button class="tb" id="tJump" data-lbl="Jump" aria-label="Jump" title="Jump"><svg class="ic" viewBox="0 0 24 24"><path d="M12 18.5V5"/><path d="M6 11l6-6 6 6"/><path d="M6.5 21.5h11"/></svg></button>
+  <button class="tb" id="tBrake" data-lbl="Brake" aria-label="Handbrake" title="Handbrake"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.2v5.6M12 16.4h.01"/></svg></button>
+  <button class="tb sm" id="tHub" data-lbl="Menu" aria-label="Controls menu" title="Menu"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg></button>
+  <button class="tb sm" id="tObj" data-lbl="Briefing" aria-label="Objectives" title="Objectives"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M9 4.5v-1h6v1M8.6 10h6.8M8.6 14h6.8M8.6 18h3.8"/></svg></button>
+  <button class="tb sm" id="tSup" data-lbl="Supplies" aria-label="Supplies" title="Supplies"><svg class="ic" viewBox="0 0 24 24"><path d="M7 9a5 5 0 0 1 10 0v11a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 20z"/><path d="M9.5 3.6V6M14.5 3.6V6M7 13.5h10M10.2 17h3.6"/></svg></button>
+  <button class="tb sm" id="tMap" data-lbl="Map" aria-label="Map" title="Map"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg></button>
+  <button class="tb sm" id="tBino" data-lbl="Binoculars" aria-label="Binoculars" title="Binoculars"><svg class="ic" viewBox="0 0 24 24"><circle cx="7" cy="15.5" r="4"/><circle cx="17" cy="15.5" r="4"/><path d="M7 11.5V5h3.2v6M17 11.5V5h-3.2v6M11 15h2"/></svg></button>
+  <button class="tb sm" id="tKit" data-lbl="Medkit" aria-label="Medkit" title="Medkit"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="13" rx="2.5"/><path d="M9 7V5.6A1.1 1.1 0 0 1 10.1 4.5h3.8A1.1 1.1 0 0 1 15 5.6V7M12 10.5v6M9 13.5h6"/></svg></button>
+  <button class="tb sm" id="tTrack" data-lbl="Objective" aria-label="Track the next objective" title="Track objective"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10.5" r="2.3"/></svg></button>
+  <button class="tb sm" id="tGear" data-lbl="Gear" aria-label="Gear menu" title="Gear"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg></button>
+  <button class="tb sm" id="tWeap" data-lbl="Weapon" aria-label="Change weapon" title="Weapon"><svg class="ic" viewBox="0 0 24 24"><path d="M2.5 13.5h13.5l2-2.5h3.5v3.2l-3 1.8h-4.2l-1 3.5h-3.3l-1.2-3.5H2.5z"/><path d="M8 11V9.5h5V11"/></svg></button>
+  <button class="tb sm" id="tPause" data-lbl="Pause" aria-label="Pause" title="Pause"><svg class="ic" viewBox="0 0 24 24"><rect class="fl" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="fl" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg></button>
+  <div id="hubPanel"><div id="hubGrid"></div></div>
+  <div id="gear"><button id="gFuel" type="button">REFUEL JEEP</button><button id="gFix" type="button">REPAIR JEEP</button><button id="gLights" type="button">HEADLIGHTS</button><button id="gSup" type="button">SUPPLIES</button><button id="gTherm" type="button">THERMAL</button><button id="gRead" type="button">READ GROUND</button><button id="gThrow" type="button">THROW</button><button id="gSel" type="button">FLARE / BAIT</button><button id="gAmmo" type="button">DARTS / LIVE</button><button id="gJournal" type="button">JOURNAL</button><button id="gPhoto" type="button">PHOTO</button><button id="gLayout" type="button">MOVE / SIZE KEYS</button><button id="gFs" type="button">FULL SCREEN</button><button id="gAssist" type="button">AIM ASSIST</button></div>
   <div id="tScopeRow"><button class="tb" id="tDm">DIAL -</button><button class="tb" id="tDp">DIAL +</button><button class="tb" id="tAuto">AUTO</button>
     <button class="tb" id="tZm">ZOOM -</button><button class="tb" id="tZp">ZOOM +</button><button class="tb" id="tCard">CARD</button></div>
+</div>
+<div id="editor">
+  <div id="edPanel">
+    <div class="edrow" id="edGlobal"><b>All keys</b>
+      <label>Size <input type="range" id="edSize" min="60" max="150" value="100"></label>
+      <label>Opacity <input type="range" id="edOp" min="25" max="100" value="100"></label>
+      <button id="edBundled" type="button">Bundled</button><button id="edAllOut" type="button">All out</button><button id="edReset" type="button">Reset</button><button id="edFlip" type="button" aria-label="Move this panel">&#8645;</button><button id="edDone" type="button">Done</button></div>
+    <div class="edrow" id="edSel"><b id="edName">Drag a button to move it. Tap one to adjust it.</b>
+      <label>Size <input type="range" id="edS" min="50" max="200" value="100" disabled></label>
+      <label>Opacity <input type="range" id="edO" min="15" max="100" value="100" disabled></label>
+      <select id="edWhere" disabled aria-label="Where this key lives"></select></div>
+  </div>
 </div>
 <pre id="touchDbg"></pre>
 <div id="rotate">Turn your phone sideways to play</div>
@@ -2379,10 +2615,10 @@ button#btn2:hover {
       <label title="Slows your aim over an animal, ranges for you in the scope, steadies the rifle and nudges a close shot onto the animal (on by default on a touch screen)"><input type="checkbox" id="assistOn"> Aim assist</label>
       <label title="Shows where the round will land in the scope, from the range you are reading and the wind"><input type="checkbox" id="ballAid" checked> Ballistic aid</label>
       <label><input type="checkbox" id="killcamOn" checked> Long-shot replay</label>
-      <label>World seed <input type="text" id="seedIn" maxlength="24" spellcheck="false" autocomplete="off"></label><button id="seedGo" type="button">Load</button><button id="seedNew" type="button">New random world</button><button id="fsBtn" type="button">Full screen</button>
+      <label>World seed <input type="text" id="seedIn" maxlength="24" spellcheck="false" autocomplete="off"></label><button id="layoutBtn" type="button">Customize controls</button><button id="seedGo" type="button">Load</button><button id="seedNew" type="button">New random world</button><button id="fsBtn" type="button">Full screen</button>
       <label>Graphics <select id="qSel"><option value="auto">Auto</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label><span id="qInfo"></span></div>
     <div class="macts"><button id="btn">Deploy</button><button id="btn2" style="display:none">New operation</button>
-      <div class="mbtns"><button id="mFs" type="button">Full screen</button><button id="mOpts" type="button">Settings</button><button id="mHelp" type="button">How to play</button></div></div>
+      <div class="mbtns"><button id="mFs" type="button">Full screen</button><button id="mCtl" type="button">Controls</button><button id="mOpts" type="button">Settings</button><button id="mHelp" type="button">How to play</button></div></div>
     <div class="fine" id="mFine">Needs a keyboard and mouse. Turn sound on.</div>
     <button id="mBack" type="button">Back</button>
   </div>
@@ -9110,12 +9346,15 @@ window.__bootInner = async function () {
     };
     const stickPlace = (f, x, y) => {
       // the base sits where the thumb landed, kept fully on screen and inside the left zone
-      const Rb = joy.offsetWidth / 2,
+      const sc = joyScale(), // (the stick can be made bigger or smaller in the layout editor: its reach is what you see)
+        Rb = joy.offsetWidth / 2,
+        Rv = Rb * sc,
         w = innerWidth,
         h = innerHeight;
-      f.ox = clamp(x, Rb + 6, Math.max(Rb + 6, w * STICK_ZONE));
-      f.oy = clamp(y, Rb + 6, h - Rb - 6);
-      f.R = Rb;
+      f.ox = clamp(x, Rv + 6, Math.max(Rv + 6, w * STICK_ZONE));
+      f.oy = clamp(y, Rv + 6, h - Rv - 6);
+      f.R = Rv;
+      f.sc = sc;
       joy.style.left = f.ox - Rb + 'px';
       joy.style.top = f.oy - Rb + 'px';
       joy.style.bottom = 'auto';
@@ -9129,7 +9368,7 @@ window.__bootInner = async function () {
         dx *= f.R / L;
         dy *= f.R / L;
       }
-      knob.style.transform = `translate(${dx}px,${dy}px)`;
+      knob.style.transform = `translate(${dx / (f.sc || 1)}px,${dy / (f.sc || 1)}px)`;
       let sx = dx / f.R,
         sz = -dy / f.R;
       const m = Math.hypot(sx, sz);
@@ -9154,6 +9393,7 @@ window.__bootInner = async function () {
       else if (f.kind === 'btn') {
         f.b.el.classList.remove('on');
         if (f.b.up) f.b.up();
+        if (!EDIT.on && f.b.el.closest('#hubPanel')) setHub(false); // a key taken from the menu closes it
       }
     };
     const releaseAll = () => {
@@ -9162,6 +9402,7 @@ window.__bootInner = async function () {
     };
     const begin = (id, x, y, target) => {
       if (fingers.has(id)) release(id);
+      if (HUB.open && !EDIT.on && !(target && target.closest && target.closest('#hubPanel, #tHub'))) setHub(false); // a tap anywhere else closes the menu
       const el = target && target.closest ? target.closest('.tb') : null;
       const b = el && BTN[el.id];
       if (b) {
@@ -9267,6 +9508,9 @@ window.__bootInner = async function () {
     TOUCH.releaseAll = releaseAll;
     btn('tFire', () => fire());
     btn('tFire2', () => fire());
+    btn('tHub', () => setHub(!HUB.open));
+    btn('tObj', () => toggleObjectives());
+    btn('tSup', () => toggleSupplies());
     btn('tWeap', () => cycleWeapon());
     btn('tScope', () => toggleOptic('scope'));
     btn(
@@ -9411,8 +9655,369 @@ window.__bootInner = async function () {
     if ($('tStance').dataset.st !== sv) $('tStance').dataset.st = sv;
     $('tScopeRow').classList.toggle('on', P.optOn && P.optKind === 'scope' && P.optAmt > 0.5);
     document.body.classList.toggle('scoped', P.optOn && P.optKind === 'scope' && P.optAmt > 0.5);
+    if (!EDIT.on) {
+      autoKeys();
+      if (HUB.open && game.state !== STATE.PLAY) setHub(false);
+    }
     $('tScope').classList.toggle('on', P.optOn && P.optKind === 'scope');
     $('tBino').classList.toggle('on', P.optOn && P.optKind === 'bino');
+  }
+  /* =====================================================================
+   CONTROL LAYOUT. Every on-screen key can be put where you like, made bigger or smaller, and made more or less see-through. The rest are
+   bundled so the screen is not a wall of icons:
+     - the MENU button opens a small labelled grid holding map, binoculars, objective, briefing, supplies, weapon, gear and pause;
+     - the hand (use), reload and medkit show only when there is something to use, a magazine to fill or a wound to treat;
+     - the second fire key shows while scoped, the handbrake in the jeep.
+   Where each key lives (on the screen / in the menu / only when needed / hidden), its place, size and opacity are saved on the device.
+   Places are fractions of the screen, so they follow it when the phone rotates or goes full screen. =====================================================================*/
+  const LBTN = {
+    tFire: { name: 'Fire', def: 'screen', opts: ['screen'] },
+    tFire2: { name: 'Fire, left thumb (scoped)', def: 'auto', opts: ['auto', 'hide'] },
+    tScope: { name: 'Scope', def: 'screen', opts: ['screen'] },
+    tRun: { name: 'Sprint / hold breath', def: 'screen', opts: ['screen'] },
+    tStance: { name: 'Stand / kneel / prone', def: 'screen', opts: ['screen', 'menu', 'hide'] },
+    tJump: { name: 'Jump', def: 'screen', opts: ['screen', 'menu', 'hide'] },
+    tReload: { name: 'Reload', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
+    tUse: { name: 'Use (the hand)', def: 'auto', opts: ['auto', 'screen', 'hide'] },
+    tKit: { name: 'Medkit', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
+    tBrake: { name: 'Handbrake (jeep)', def: 'auto', opts: ['auto'] },
+    tMap: { name: 'Map', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tBino: { name: 'Binoculars', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tTrack: { name: 'Next objective', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tWeap: { name: 'Change weapon', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tObj: { name: 'Briefing (objectives)', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tSup: { name: 'Supplies', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tGear: { name: 'Gear menu', def: 'menu', opts: ['menu', 'screen'] },
+    tPause: { name: 'Pause', def: 'menu', opts: ['menu', 'screen'] },
+    tHub: { name: 'Menu button', def: 'screen', opts: ['screen'] },
+    tScopeRow: { name: 'Scope: zoom and range card', def: 'auto', opts: ['auto'] },
+    joy: { name: 'Move stick', def: 'screen', opts: ['screen'] }
+  };
+  const WHERE_LBL = { screen: 'On screen', auto: 'When needed', menu: 'In menu', hide: 'Hidden' };
+  const HUB_ORDER = ['tMap', 'tBino', 'tTrack', 'tObj', 'tSup', 'tWeap', 'tKit', 'tReload', 'tStance', 'tJump', 'tGear', 'tPause'];
+  const CTL = { v: 1, size: 1, op: 1, b: {} };
+  const HUB = { open: false };
+  const EDIT = { on: false, sel: null, drag: null, from: 'start', flip: false };
+  const ctlEl = id => $(id);
+  const whereOf = id => {
+    const w = CTL.b[id] && CTL.b[id].w;
+    return LBTN[id].opts.includes(w) ? w : LBTN[id].def;
+  };
+  const joyScale = () => CTL.size * ((CTL.b.joy && CTL.b.joy.s) || 1);
+  function loadLayout() {
+    try {
+      const j = JSON.parse(localStorage.getItem('apexRidgeLayout') || 'null');
+      if (!j || j.v !== 1 || typeof j !== 'object') return;
+      CTL.size = clamp(+j.size || 1, 0.6, 1.5);
+      CTL.op = clamp(+j.op || 1, 0.25, 1);
+      for (const id in j.b || {}) {
+        if (!LBTN[id] || !j.b[id] || typeof j.b[id] !== 'object') continue;
+        const e = {},
+          b = j.b[id];
+        if (isFinite(b.x) && isFinite(b.y)) {
+          e.x = clamp(+b.x, 0, 1);
+          e.y = clamp(+b.y, 0, 1);
+        }
+        if (isFinite(b.s)) e.s = clamp(+b.s, 0.5, 2);
+        if (isFinite(b.o)) e.o = clamp(+b.o, 0.15, 1);
+        if (LBTN[id].opts.includes(b.w)) e.w = b.w;
+        CTL.b[id] = e;
+      }
+    } catch (e) {}
+  }
+  function saveLayout() {
+    try {
+      localStorage.setItem('apexRidgeLayout', JSON.stringify(CTL));
+    } catch (e) {}
+  }
+  const hubItems = () => HUB_ORDER.filter(id => whereOf(id) === 'menu');
+  function positionHub() {
+    const p = $('hubPanel');
+    if (!p.classList.contains('open')) return;
+    const h = $('tHub').getBoundingClientRect(),
+      pw = p.offsetWidth,
+      ph = p.offsetHeight,
+      W = innerWidth,
+      H = innerHeight,
+      m = 8;
+    const left = h.left + h.width / 2 > W / 2 ? h.right - pw : h.left, // it opens toward the middle of the screen
+      top = h.top + h.height / 2 > H / 2 ? h.top - ph - 6 : h.bottom + 6;
+    p.style.left = clamp(left, m, Math.max(m, W - pw - m)) + 'px';
+    p.style.top = clamp(top, m, Math.max(m, H - ph - m)) + 'px';
+  }
+  function setHub(on) {
+    const want = !!on && hubItems().length > 0;
+    HUB.open = want;
+    $('hubPanel').classList.toggle('open', want);
+    $('tHub').classList.toggle('open', want);
+    if (want) positionHub();
+  }
+  const _autoOff = {};
+  function autoSet(id, show) {
+    if (_autoOff[id] !== !show) {
+      _autoOff[id] = !show;
+      $(id).classList.toggle('off', !show);
+    }
+  }
+  // the keys set to "when needed": the hand with something to use, reload with a magazine to fill, the medkit when hurt
+  function autoKeys() {
+    if (whereOf('tUse') === 'auto') autoSet('tUse', !!P.act || P.inJeep);
+    if (whereOf('tReload') === 'auto') {
+      const need =
+        P.weapon === 'machete'
+          ? false
+          : P.weapon === 'deagle'
+            ? P.pRounds < 7 && P.pReserve > 0
+            : P.ammoMode !== 'tranq' && P.rounds < CONFIG.weapon.magazine && P.reserve > 0;
+      autoSet('tReload', need || P.reloading);
+    }
+    if (whereOf('tKit') === 'auto') autoSet('tKit', P.kits > 0 && P.hp < 88);
+  }
+  function joyRest(b) {
+    const joy = $('joy'),
+      custom = typeof b.x === 'number' && typeof b.y === 'number';
+    joy.classList.toggle('jc', custom);
+    if (custom) {
+      const Rb = joy.offsetWidth / 2;
+      joy.style.setProperty('--jl', b.x * innerWidth - Rb + 'px');
+      joy.style.setProperty('--jt', b.y * innerHeight - Rb + 'px');
+    }
+  }
+  function applyLayout() {
+    if (!TOUCH.on) return;
+    const root = $('touch'),
+      grid = $('hubGrid');
+    root.style.setProperty('--tb-s', CTL.size);
+    root.style.setProperty('--tb-o', CTL.op);
+    for (const id in LBTN) {
+      const el = ctlEl(id);
+      if (!el) continue;
+      const b = CTL.b[id] || {},
+        w = whereOf(id);
+      el.style.setProperty('--s', b.s || 1);
+      el.style.setProperty('--o', b.o || 1);
+      el.classList.toggle('lhide', w === 'hide');
+      if (w !== 'auto') {
+        el.classList.remove('off');
+        delete _autoOff[id];
+      }
+      if (id === 'joy') {
+        joyRest(b);
+        continue;
+      }
+      const custom = typeof b.x === 'number' && typeof b.y === 'number' && w !== 'menu';
+      el.classList.toggle('lc', custom);
+      if (custom) {
+        el.style.left = b.x * 100 + '%';
+        el.style.top = b.y * 100 + '%';
+        el.style.right = el.style.bottom = 'auto';
+      } else el.style.left = el.style.top = el.style.right = el.style.bottom = '';
+    }
+    // the menu: its keys move into the grid (in a fixed order), or back out onto the screen
+    let n = 0;
+    for (const id of HUB_ORDER) {
+      const el = $(id);
+      if (whereOf(id) === 'menu') {
+        grid.appendChild(el);
+        n++;
+      } else if (el.parentNode === grid) root.insertBefore(el, $('hubPanel'));
+    }
+    grid.style.setProperty('--hc', Math.min(4, Math.max(1, n)));
+    $('tHub').classList.toggle('lhide', n === 0); // nothing to bundle: no menu button
+    if (!n) setHub(false);
+    positionHub();
+    autoKeys();
+  }
+  loadLayout();
+  if (TOUCH.on) applyLayout();
+  addEventListener('resize', () => {
+    if (TOUCH.on) {
+      joyRest(CTL.b.joy || {});
+      positionHub();
+    }
+  });
+  // ---- the editor
+  const ent = id => CTL.b[id] || (CTL.b[id] = {});
+  const ctlOf = el => {
+    if (!el || !el.closest) return null;
+    if (el.closest('#tScopeRow')) return 'tScopeRow';
+    const b = el.closest('.tb');
+    return b && LBTN[b.id] ? b.id : null;
+  };
+  function hitControl(x, y) {
+    for (const el of document.elementsFromPoint(x, y)) {
+      const id = ctlOf(el);
+      if (id) return id;
+    }
+    const j = $('joy').getBoundingClientRect(),
+      r = j.width / 2;
+    if (Math.hypot(x - (j.left + r), y - (j.top + j.height / 2)) <= r) return 'joy';
+    return null;
+  }
+  function renderEdPanel() {
+    const id = EDIT.sel,
+      b = (id && CTL.b[id]) || {};
+    $('edName').textContent = id ? LBTN[id].name : 'Drag a button to move it. Tap one to adjust it.';
+    for (const k of ['edS', 'edO']) $(k).disabled = !id;
+    $('edS').value = Math.round((b.s || 1) * 100);
+    $('edO').value = Math.round((b.o || 1) * 100);
+    const wh = $('edWhere');
+    wh.textContent = '';
+    wh.disabled = !id || LBTN[id].opts.length === 1;
+    if (!id) {
+      const op = document.createElement('option');
+      op.textContent = 'Where it lives';
+      wh.appendChild(op);
+      return;
+    }
+    const o = LBTN[id].opts;
+    for (const w of o) {
+      const op = document.createElement('option');
+      op.value = w;
+      op.textContent = o.length === 1 ? (w === 'auto' ? 'Shows when needed' : 'Always on screen') : WHERE_LBL[w];
+      op.selected = whereOf(id) === w;
+      wh.appendChild(op);
+    }
+  }
+  function placeEdPanel() {
+    const id = EDIT.sel,
+      el = id ? ctlEl(id) : null;
+    let bottom = false;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      bottom = r.top + r.height / 2 < innerHeight * 0.5; // the panel goes to the half the selected key is not in
+    }
+    $('edPanel').classList.toggle('bot', EDIT.flip ? !bottom : bottom);
+  }
+  function selectCtl(id) {
+    document.querySelectorAll('.edsel').forEach(e => e.classList.remove('edsel'));
+    EDIT.sel = id;
+    if (id) ctlEl(id).classList.add('edsel');
+    renderEdPanel();
+    placeEdPanel();
+  }
+  function openEditor() {
+    if (!TOUCH.on) return;
+    if (game.state === STATE.PLAY) pause();
+    EDIT.from = game.state === STATE.MENU ? 'start' : 'pause';
+    $('menu').classList.add('hidden');
+    document.body.classList.add('editing');
+    EDIT.on = true;
+    EDIT.sel = null;
+    EDIT.flip = false;
+    $('edSize').value = Math.round(CTL.size * 100);
+    $('edOp').value = Math.round(CTL.op * 100);
+    $('gear').classList.remove('on');
+    applyLayout();
+    setHub(true); // its contents are shown, so they can be picked
+    renderEdPanel();
+    placeEdPanel();
+  }
+  function closeEditor() {
+    if (!EDIT.on) return;
+    EDIT.on = false;
+    EDIT.drag = null;
+    document.body.classList.remove('editing');
+    document.querySelectorAll('.edsel').forEach(e => e.classList.remove('edsel'));
+    setHub(false);
+    saveLayout();
+    applyLayout();
+    showMenu(EDIT.from === 'start' ? 'start' : 'pause');
+  }
+  {
+    const ed = $('editor');
+    ed.addEventListener('pointerdown', e => {
+      if (e.target.closest('#edPanel')) return;
+      e.preventDefault();
+      const id = hitControl(e.clientX, e.clientY);
+      if (id === 'tHub') setHub(!HUB.open); // the menu's grid covers keys beneath it: tapping its button opens and closes it
+      selectCtl(id);
+      if (!id) return;
+      const inHub = !!ctlEl(id).closest('#hubPanel');
+      if (inHub) return; // the menu's keys are picked, not dragged: "On screen" takes one out
+      const r = ctlEl(id).getBoundingClientRect();
+      EDIT.drag = { id, pid: e.pointerId, ox: e.clientX - (r.left + r.width / 2), oy: e.clientY - (r.top + r.height / 2), moved: 0, sx: e.clientX, sy: e.clientY, w: r.width, h: r.height };
+      try {
+        ed.setPointerCapture(e.pointerId);
+      } catch (_) {}
+    });
+    ed.addEventListener('pointermove', e => {
+      const d = EDIT.drag;
+      if (!d || d.pid !== e.pointerId) return;
+      e.preventDefault();
+      d.moved = Math.max(d.moved, Math.hypot(e.clientX - d.sx, e.clientY - d.sy));
+      if (d.moved < 6) return;
+      const W = innerWidth,
+        H = innerHeight,
+        hw = d.w / 2 / W,
+        hh = d.h / 2 / H;
+      const b = ent(d.id);
+      b.x = clamp((e.clientX - d.ox) / W, Math.min(0.5, hw + 0.004), Math.max(0.5, 1 - hw - 0.004));
+      b.y = clamp((e.clientY - d.oy) / H, Math.min(0.5, hh + 0.004), Math.max(0.5, 1 - hh - 0.004));
+      applyLayout();
+      placeEdPanel();
+    });
+    const up = e => {
+      const d = EDIT.drag;
+      if (!d || d.pid !== e.pointerId) return;
+      EDIT.drag = null;
+      saveLayout();
+    };
+    ed.addEventListener('pointerup', up);
+    ed.addEventListener('pointercancel', up);
+    const sl = (id, fn) =>
+      $(id).addEventListener('input', () => {
+        fn(+$(id).value / 100);
+        applyLayout();
+        positionHub();
+        saveLayout();
+      });
+    sl('edSize', v => (CTL.size = clamp(v, 0.6, 1.5)));
+    sl('edOp', v => (CTL.op = clamp(v, 0.25, 1)));
+    sl('edS', v => EDIT.sel && (ent(EDIT.sel).s = clamp(v, 0.5, 2)));
+    sl('edO', v => EDIT.sel && (ent(EDIT.sel).o = clamp(v, 0.15, 1)));
+    $('edBundled').addEventListener('click', () => {
+      for (const id in CTL.b) delete CTL.b[id].w;
+      applyLayout();
+      setHub(true);
+      saveLayout();
+      renderEdPanel();
+    });
+    $('edAllOut').addEventListener('click', () => {
+      for (const id in LBTN) if (LBTN[id].opts.includes('screen') && LBTN[id].def !== 'screen') ent(id).w = 'screen';
+      applyLayout();
+      saveLayout();
+      renderEdPanel();
+    });
+    $('edReset').addEventListener('click', () => {
+      CTL.size = 1;
+      CTL.op = 1;
+      CTL.b = {};
+      $('edSize').value = 100;
+      $('edOp').value = 100;
+      applyLayout();
+      setHub(true);
+      saveLayout();
+      renderEdPanel();
+      placeEdPanel();
+    });
+    $('edFlip').addEventListener('click', () => {
+      EDIT.flip = !EDIT.flip;
+      placeEdPanel();
+    });
+    $('edWhere').addEventListener('change', () => {
+      const id = EDIT.sel;
+      if (!id || !LBTN[id].opts.includes($('edWhere').value)) return;
+      ent(id).w = $('edWhere').value;
+      applyLayout();
+      setHub(true);
+      saveLayout();
+      renderEdPanel();
+      placeEdPanel();
+    });
+    $('edDone').addEventListener('click', () => closeEditor());
+    $('layoutBtn').addEventListener('click', () => openEditor());
+    $('mCtl').addEventListener('click', () => openEditor());
   }
   function toggleOptic(kind) {
     if (kind === 'scope' && P.weapon === 'machete') return;
@@ -11576,6 +12181,7 @@ window.__bootInner = async function () {
         });
     let gearTimer = 0;
     $('tGear').addEventListener('click', () => {
+      setHub(false);
       g.classList.toggle('on');
       clearTimeout(gearTimer);
       if (g.classList.contains('on')) gearTimer = setTimeout(() => g.classList.remove('on'), 7000); // never lingers over a prompt
@@ -11595,6 +12201,7 @@ window.__bootInner = async function () {
     on('gJournal', () => openJournal());
     on('gPhoto', () => enterPhoto());
     on('gFs', () => toggleFullscreen());
+    on('gLayout', () => openEditor());
     on('gAssist', () => {
       SET.assist = !SET.assist;
       saveSet();
@@ -15220,8 +15827,8 @@ window.__bootInner = async function () {
   <div>Steady the rifle (scoped)<b>Hold the lightning key</b></div><div>Aim assist: slows over animals, ranges for you, nudges shots<b>Settings</b></div>
   <div>Reload / jump<b>Circle arrow / up arrow</b></div><div>Stand, kneel, prone, dive<b>The little person</b></div>
   <div>Get in the jeep, repair, take eggs<b>The hand</b></div><div>Jeep: handbrake<b>The ! key</b></div>
-  <div>Binoculars, map, medkit, objective<b>Top row of icons</b></div><div>Weapon, pause<b>Rifle and ‖ icons</b></div>
-  <div>Jeep refuel / repair / headlights, supplies, thermal<b>Gear (cog) menu</b></div><div>Turret, zoom, range card (scoped)<b>Buttons that appear</b></div>
+  <div>Map, binoculars, objective, briefing, supplies, weapon, pause<b>The menu button (four squares)</b></div><div>Hand, reload, medkit<b>Appear when needed</b></div>
+  <div>Jeep refuel / repair / headlights, thermal, layout<b>Gear (cog) menu</b></div><div>Move, resize or fade any key<b>Controls (start sheet) or MOVE / SIZE KEYS (cog)</b></div><div>Turret, zoom, range card (scoped)<b>Buttons that appear</b></div>
 </div>`;
   const controlsHtml = () => (TOUCH.on ? CONTROLS_TOUCH : CONTROLS);
   const CONTROLS = `<div class="cols">
@@ -15396,7 +16003,7 @@ window.__bootInner = async function () {
       }
     }, 900);
     if (game.stats.shots === 0 && game.time < 1) {
-      setTimeout(() => toast(TOUCH.on ? 'Tap the clipboard for your objectives and the backpack for your supplies.' : 'O opens your objectives and I your supplies. M is the map, Q cycles the tracked objective.'), 1300);
+      setTimeout(() => toast(TOUCH.on ? 'The four-squares button holds the map, binoculars, objectives and supplies. Keys appear when you need them.' : 'O opens your objectives and I your supplies. M is the map, Q cycles the tracked objective.'), 1300);
       setTimeout(() => toast('Raise the binoculars with B and glass the reserve.'), 7500);
     }
   }
@@ -20218,6 +20825,262 @@ window.__bootInner = async function () {
         }
       ],
       [
+        'Mobile controls: the bundled menu, keys that appear when needed, and the layout editor',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            keys = A.keys,
+            CTL = A.CTL;
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            A.setStance(0);
+            A.dinos.forEach(d => {
+              if (!d.dead && !d.sp.fly) {
+                d.x = 9999;
+                d.z = 9999;
+                d.state = d.sp.pred ? 'patrol' : 'wander';
+              }
+            });
+            for (const k in keys) keys[k] = false;
+          };
+          const W = innerWidth,
+            H = innerHeight;
+          const rect = id => document.getElementById(id).getBoundingClientRect();
+          const shown = id => {
+            const e = document.getElementById(id);
+            return getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0;
+          };
+          const pe = (type, id, x, y, target) =>
+            target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 }));
+          const saved = localStorage.getItem('apexRidgeLayout');
+          const reset = () => {
+            CTL.size = 1;
+            CTL.op = 1;
+            for (const k in CTL.b) delete CTL.b[k];
+            A.applyLayout();
+          };
+          fresh();
+          document.body.classList.add('touch');
+          A.TOUCH.on = true;
+          A.TOUCH.releaseAll();
+          reset();
+          P.rounds = 5;
+          P.reserve = 30;
+          P.kits = 2;
+          P.act = null;
+          P.inJeep = false;
+          A.autoKeys();
+
+          // ---- the default screen is a few keys, not a wall of icons
+          const onScreen = [...document.querySelectorAll('#touch .tb')].filter(e => !e.closest('#hubPanel') && shown(e.id)).map(e => e.id);
+          ok(
+            onScreen.length === 6 && ['tFire', 'tScope', 'tRun', 'tStance', 'tJump', 'tHub'].every(id => onScreen.includes(id)),
+            'by default six keys are out on the screen (' + onScreen.join(', ') + '), not sixteen'
+          );
+          const inHub = [...document.querySelectorAll('#hubGrid .tb')].map(e => e.id);
+          ok(
+            inHub.join() === 'tMap,tBino,tTrack,tObj,tSup,tWeap,tGear,tPause',
+            'and the menu button holds the rest: ' + inHub.join(', ')
+          );
+          ok(!shown('tUse') && !shown('tReload') && !shown('tKit'), 'the hand, reload and medkit are not shown when there is nothing to use, no magazine to fill and no wound');
+
+          // ---- they appear when they are needed
+          P.act = { k: 'tower', hold: 1, label: 'Repair the tower', o: {} };
+          A.autoKeys();
+          const useShown = shown('tUse');
+          P.act = null;
+          A.autoKeys();
+          ok(useShown && !shown('tUse'), 'the hand appears next to something to use, and goes again');
+          P.rounds = 2;
+          A.autoKeys();
+          const rl = shown('tReload');
+          P.rounds = 5;
+          A.autoKeys();
+          ok(rl && !shown('tReload'), 'reload appears when the magazine is not full, and goes when it is');
+          P.hp = 40;
+          A.autoKeys();
+          const kitOn = shown('tKit');
+          P.kits = 0;
+          A.autoKeys();
+          const kitNone = shown('tKit');
+          P.kits = 2;
+          P.hp = 100;
+          A.autoKeys();
+          ok(kitOn && !kitNone && !shown('tKit'), 'the medkit appears when hurt and carrying one, not when healthy or with none');
+
+          // ---- the menu button
+          A.setHub(true);
+          const hp = document.getElementById('hubPanel'),
+            hr = hp.getBoundingClientRect();
+          ok(A.HUB.open && hp.classList.contains('open') && hr.left >= 0 && hr.top >= 0 && hr.right <= W + 0.5 && hr.bottom <= H + 0.5, 'the menu opens as a labelled grid kept fully on the screen');
+          ok(getComputedStyle(document.querySelector('#hubGrid .tb'), '::after').content.length > 2, 'each key in it carries its name');
+          pe('pointerdown', 61, W * 0.5, H * 0.55, document.getElementById('lookPad'));
+          pe('pointerup', 61, W * 0.5, H * 0.55, document.getElementById('lookPad'));
+          ok(!A.HUB.open, 'a touch anywhere else closes it');
+          A.setHub(true);
+          P.optOn = false;
+          const bino = document.getElementById('tBino'),
+            br = bino.getBoundingClientRect();
+          pe('pointerdown', 62, br.left + br.width / 2, br.top + br.height / 2, bino);
+          const binoUp = P.optOn && P.optKind === 'bino';
+          pe('pointerup', 62, br.left + br.width / 2, br.top + br.height / 2, bino);
+          ok(binoUp && !A.HUB.open, 'a key taken from it works, and the menu closes itself');
+          P.optOn = false;
+          A.TOUCH.releaseAll();
+
+          // ---- placing, sizing and fading a key
+          const base = rect('tJump'),
+            baseFire = rect('tFire');
+          CTL.b.tJump = { x: 0.3, y: 0.3, s: 1.5, o: 0.5 };
+          A.applyLayout();
+          const jr = rect('tJump');
+          ok(Math.abs(jr.left + jr.width / 2 - W * 0.3) < 2 && Math.abs(jr.top + jr.height / 2 - H * 0.3) < 2, 'a key can be put anywhere: its centre is at 30% / 30% of the screen');
+          ok(Math.abs(jr.width / base.width - 1.5) < 0.03, 'and made 50 per cent bigger (' + (jr.width / base.width).toFixed(2) + 'x)');
+          ok(Math.abs(+getComputedStyle(document.getElementById('tJump')).opacity - 0.5) < 0.01, 'and half see-through');
+          CTL.size = 0.8;
+          CTL.op = 0.6;
+          A.applyLayout();
+          ok(
+            Math.abs(rect('tFire').width / baseFire.width - 0.8) < 0.03 && Math.abs(+getComputedStyle(document.getElementById('tFire')).opacity - 0.6) < 0.01,
+            'every key can be made smaller and fainter at once'
+          );
+          ok(Math.abs(+getComputedStyle(document.getElementById('tJump')).opacity - 0.3) < 0.01, 'and the two combine (0.5 x 0.6)');
+          reset();
+          ok(Math.abs(rect('tJump').width - base.width) < 0.5 && Math.abs(rect('tJump').left - base.left) < 0.5, 'reset puts everything back');
+
+          // ---- where a key lives
+          CTL.b.tMap = { w: 'screen' };
+          CTL.b.tPause = { w: 'screen' };
+          A.applyLayout();
+          ok(document.getElementById('tMap').parentNode.id === 'touch' && shown('tMap') && !document.querySelector('#hubGrid #tMap'), 'a key from the menu can be put out on the screen');
+          CTL.b.tBino = { w: 'hide' };
+          A.applyLayout();
+          ok(!shown('tBino') && !document.querySelector('#hubGrid #tBino'), 'or hidden');
+          CTL.b.tFire = { w: 'menu' };
+          CTL.b.tHub = { w: 'hide' };
+          A.applyLayout();
+          ok(shown('tFire') && shown('tHub') && A.whereOf('tFire') === 'screen', 'but Fire and the menu button cannot be taken away');
+          for (const id of Object.keys(A.LBTN)) if (A.LBTN[id].opts.includes('screen')) CTL.b[id] = Object.assign(CTL.b[id] || {}, { w: 'screen' });
+          A.applyLayout();
+          ok(!shown('tHub'), 'with nothing left to bundle the menu button goes');
+          reset();
+
+          // ---- the stick follows its size
+          CTL.b.joy = { s: 1.5 };
+          A.applyLayout();
+          const joy = document.getElementById('joy'),
+            jb = joy.getBoundingClientRect(),
+            ox = W * 0.2,
+            oy = H * 0.7,
+            Rv = jb.width / 2;
+          A.TOUCH.releaseAll();
+          pe('pointerdown', 63, ox, oy, document.getElementById('lookPad'));
+          const placed = joy.getBoundingClientRect();
+          pe('pointermove', 63, placed.left + placed.width / 2 + Rv * 0.5, placed.top + placed.height / 2, document.getElementById('lookPad'));
+          const half = A.TOUCH.mx;
+          pe('pointermove', 63, placed.left + placed.width / 2 + Rv * 1.0, placed.top + placed.height / 2, document.getElementById('lookPad'));
+          const full = A.TOUCH.mx;
+          pe('pointerup', 63, ox, oy, document.getElementById('lookPad'));
+          ok(placed.width > 0 && Math.abs(placed.width / jb.width - 1) < 0.05 && half > 0.3 && half < 0.6 && full > 0.95, 'a bigger stick reaches as far as it looks: half way is ' + half.toFixed(2) + ', the rim is ' + full.toFixed(2));
+          reset();
+          A.TOUCH.releaseAll();
+
+          // ---- the editor
+          {
+            localStorage.removeItem('apexRidgeLayout');
+            const menu = document.getElementById('menu');
+            document.getElementById('gLayout').click();
+            ok(A.EDIT.on && document.body.classList.contains('editing') && menu.classList.contains('hidden') && A.game.state === 'paused', 'the cog menu opens the editor (the game pauses behind it)');
+            ok(getComputedStyle(document.getElementById('editor')).display === 'block' && A.HUB.open, 'the keys are shown over the world, with the menu open');
+            const ed = document.getElementById('editor'),
+              jr0 = rect('tJump'),
+              cx = jr0.left + jr0.width / 2,
+              cy = jr0.top + jr0.height / 2;
+            pe('pointerdown', 71, cx, cy, ed);
+            ok(A.EDIT.sel === 'tJump' && document.getElementById('tJump').classList.contains('edsel') && document.getElementById('edName').textContent === 'Jump', 'touching a key selects it');
+            pe('pointermove', 71, cx - 3, cy - 2, ed);
+            ok(CTL.b.tJump === undefined || CTL.b.tJump.x === undefined, 'a wobble is a tap, not a drag');
+            pe('pointermove', 71, cx - 180, cy - 120, ed);
+            pe('pointerup', 71, cx - 180, cy - 120, ed);
+            const jr1 = rect('tJump');
+            ok(Math.abs(jr1.left + jr1.width / 2 - (cx - 180)) < 3 && Math.abs(jr1.top + jr1.height / 2 - (cy - 120)) < 3, 'dragging moves it with the finger');
+            ok(JSON.parse(localStorage.getItem('apexRidgeLayout')).b.tJump.x > 0, 'and the new place is saved');
+            const sz = document.getElementById('edS');
+            sz.value = 160;
+            sz.dispatchEvent(new Event('input'));
+            ok(Math.abs(rect('tJump').width / jr0.width - 1.6) < 0.04 && CTL.b.tJump.s === 1.6, 'the size slider resizes the selected key');
+            const op = document.getElementById('edO');
+            op.value = 40;
+            op.dispatchEvent(new Event('input'));
+            ok(Math.abs(+getComputedStyle(document.getElementById('tJump')).opacity - 0.4) < 0.01, 'the opacity slider fades it');
+            const wh = document.getElementById('edWhere');
+            wh.value = 'menu';
+            wh.dispatchEvent(new Event('change'));
+            ok(A.whereOf('tJump') === 'menu' && !!document.querySelector('#hubGrid #tJump'), 'the drop-down puts it in the menu');
+            wh.value = 'screen';
+            wh.dispatchEvent(new Event('change'));
+            ok(A.whereOf('tJump') === 'screen' && !document.querySelector('#hubGrid #tJump'), 'and back on the screen');
+            const gs = document.getElementById('edSize');
+            gs.value = 70;
+            gs.dispatchEvent(new Event('input'));
+            ok(CTL.size === 0.7, 'the "all keys" slider sizes every key');
+            document.getElementById('edAllOut').click();
+            ok(
+              A.whereOf('tMap') === 'screen' && A.whereOf('tPause') === 'screen' && !document.querySelector('#hubGrid .tb') && document.getElementById('tHub').classList.contains('lhide'),
+              '"All out" puts every key on the screen (the old layout) and the menu button goes'
+            );
+            document.getElementById('edBundled').click();
+            ok(A.whereOf('tMap') === 'menu' && !!document.querySelector('#hubGrid #tMap') && !document.getElementById('tHub').classList.contains('lhide'), '"Bundled" tucks them back into the menu');
+            document.getElementById('edReset').click();
+            ok(CTL.size === 1 && CTL.op === 1 && Object.keys(CTL.b).length === 0 && Math.abs(rect('tJump').left - jr0.left) < 0.5, '"Reset" puts everything back as it was');
+            pe('pointerdown', 72, W * 0.5, H * 0.45, ed);
+            ok(A.EDIT.sel === null, 'touching empty ground deselects');
+            // dragging cannot lose a key off the edge
+            const fk = rect('tFire');
+            pe('pointerdown', 73, fk.left + fk.width / 2, fk.top + fk.height / 2, ed);
+            pe('pointermove', 73, W + 400, H + 400, ed);
+            pe('pointerup', 73, W + 400, H + 400, ed);
+            const fe = rect('tFire');
+            ok(fe.right <= W + 1 && fe.bottom <= H + 1 && fe.left >= -1 && fe.top >= -1, 'a key dragged off the screen stops at the edge');
+            document.getElementById('edDone').click();
+            ok(!A.EDIT.on && !document.body.classList.contains('editing') && !menu.classList.contains('hidden'), 'Done closes the editor and brings the pause sheet back');
+            ok(!A.HUB.open, 'with the menu closed');
+          }
+
+          // ---- the saved layout is read back, and survives rubbish
+          {
+            localStorage.setItem('apexRidgeLayout', JSON.stringify({ v: 1, size: 99, op: -5, b: { tFire: { x: 2, y: 'a', s: 50, o: 0, w: 'menu' }, tJump: { x: 0.2, y: 0.4, s: 1.3, o: 0.7, w: 'menu' }, bogus: { x: 0.1 } } }));
+            A.loadLayout();
+            ok(CTL.size === 1.5 && CTL.op === 0.25, 'sizes and opacity are held to a sensible range');
+            ok(CTL.b.tFire && CTL.b.tFire.x === undefined && CTL.b.tFire.s === 2 && CTL.b.tFire.o === 0.15 && CTL.b.tFire.w === undefined, 'an impossible position or placement is dropped, the rest clamped');
+            ok(CTL.b.tJump.w === 'menu' && CTL.b.tJump.x === 0.2 && !CTL.b.bogus, 'a good entry is kept, an unknown key is ignored');
+            localStorage.setItem('apexRidgeLayout', '{not json');
+            let threw = null;
+            try {
+              A.loadLayout();
+            } catch (e) {
+              threw = e;
+            }
+            ok(!threw, 'a damaged save does no harm');
+          }
+          if (saved === null) localStorage.removeItem('apexRidgeLayout');
+          else localStorage.setItem('apexRidgeLayout', saved);
+          reset();
+          A.TOUCH.on = false;
+          document.body.classList.remove('touch', 'scoped', 'editing');
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
         'Graphics: tiers, simplified distance shapes, terrain tiles, shadows and the frame-rate controller',
         function () {
           const P = A.P,
@@ -20988,6 +21851,17 @@ window.__bootInner = async function () {
     goFullscreen,
     toggleFullscreen,
     FS,
+    CTL,
+    loadLayout,
+    LBTN,
+    HUB,
+    EDIT,
+    whereOf,
+    applyLayout,
+    setHub,
+    openEditor,
+    closeEditor,
+    autoKeys,
     toast,
     blocked,
     coverAt,
