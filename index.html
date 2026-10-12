@@ -315,6 +315,16 @@ body.replay #dock {
   color: var(--amber);
   font-weight: 700;
 }
+#siTherm {
+  opacity: 0.7;
+}
+#siTherm.on {
+  color: var(--amber);
+  opacity: 1;
+}
+body.touch #siTherm {
+  display: none; /* the thermal key itself shows whether it is on */
+}
 #breath {
   position: absolute;
   left: 50%;
@@ -894,7 +904,7 @@ body.touch #ammoMode {
 #thermalLbl {
   position: fixed;
   top: calc(22px + env(safe-area-inset-top, 0px));
-  right: 26px;
+  right: 150px; /* left of the score box, not on it */
   z-index: 4;
   display: none;
   font:
@@ -907,6 +917,11 @@ body.touch #ammoMode {
 body.thermal #thermalTint,
 body.thermal #thermalLbl {
   display: block;
+}
+body.touch #thermalLbl {
+  right: 96px;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  font-size: 13px;
 }
 #tGear {
   right: calc(53vmin + env(safe-area-inset-right, 0px));
@@ -1712,6 +1727,22 @@ body.jeep #tWeap {
   right: calc(44vmin + env(safe-area-inset-right, 0px));
   bottom: calc(24vmin + env(safe-area-inset-bottom, 0px));
 }
+/* night: one light key (a torch on foot, the headlights in the jeep) and a thermal key that shows while a scope or binoculars are up */
+#tLight {
+  right: calc(51vmin + env(safe-area-inset-right, 0px));
+  bottom: calc(9vmin + env(safe-area-inset-bottom, 0px));
+  width: 11vmin;
+  height: 11vmin;
+}
+#tTherm {
+  left: calc(29vmin + env(safe-area-inset-left, 0px));
+  bottom: calc(37vmin + env(safe-area-inset-bottom, 0px));
+  width: 12vmin;
+  height: 12vmin;
+}
+body.jeep #tTherm {
+  display: none;
+}
 #tTrack {
   right: calc(36vmin + env(safe-area-inset-right, 0px));
 }
@@ -1723,6 +1754,131 @@ body.jeep #tWeap {
 }
 #tPause {
   right: calc(69vmin + env(safe-area-inset-right, 0px));
+}
+/* the weapon wheel: the key sits at the right edge of the view, a little above the middle, and shows what you are holding */
+#tWeap {
+  left: calc(80% - 6vmin);
+  right: auto;
+  top: calc(48% - 6vmin);
+  width: 12vmin;
+  height: 12vmin;
+}
+#tWeap svg {
+  display: none;
+}
+#tWeap[data-w="rifle"] .w-rifle,
+#tWeap[data-w="deagle"] .w-deagle,
+#tWeap[data-w="machete"] .w-machete {
+  display: block;
+}
+#wheel {
+  position: fixed;
+  z-index: 8;
+  display: none;
+  box-sizing: border-box;
+  width: var(--wd, 200px);
+  height: var(--wd, 200px);
+  border-radius: 50%;
+  background: rgba(10, 14, 10, 0.8);
+  border: 2px solid rgba(236, 239, 220, 0.45);
+  color: var(--fg);
+  touch-action: none;
+}
+#wheel.open {
+  display: block;
+}
+#wheel svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+#wheel .sec path {
+  fill: rgba(236, 239, 220, 0.05);
+  stroke: rgba(236, 239, 220, 0.4);
+  stroke-width: 1.4;
+}
+#wheel .sec.cur path {
+  fill: rgba(230, 169, 58, 0.26);
+}
+#wheel .sec.hot path {
+  fill: rgba(230, 169, 58, 0.66);
+}
+#wheel .ic path,
+#wheel .mid path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#wheel text {
+  fill: currentColor;
+  font: 700 11px var(--display);
+  letter-spacing: 0.05em;
+  text-anchor: middle;
+}
+#wheel .hub {
+  fill: rgba(10, 14, 10, 0.9);
+  stroke: rgba(236, 239, 220, 0.4);
+  stroke-width: 1.4;
+}
+#wheel .mid {
+  display: none;
+}
+#wheel[data-w="rifle"] .mid[data-w="rifle"],
+#wheel[data-w="deagle"] .mid[data-w="deagle"],
+#wheel[data-w="machete"] .mid[data-w="machete"] {
+  display: block;
+}
+/* on a PC, changing weapon (1 2 3, or the mouse wheel) shows where you are in the list for a moment */
+#wpnStrip {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+#wpnStrip.on {
+  opacity: 1;
+}
+#wpnStrip .wi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 84px;
+  padding: 7px 4px 6px;
+  border-radius: 10px;
+  border: 2px solid rgba(236, 239, 220, 0.3);
+  background: rgba(10, 14, 10, 0.62);
+  color: var(--fg);
+  font: 700 13px var(--display);
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+#wpnStrip .wi.cur {
+  opacity: 1;
+  border-color: var(--amber);
+  background: rgba(230, 169, 58, 0.28);
+}
+#wpnStrip svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+body.touch #wpnStrip {
+  display: none;
 }
 #touchDbg {
   position: fixed;
@@ -2500,6 +2656,7 @@ button#btn2:hover {
   <div id="spreadRing"></div>
   <div id="hitmark"></div>
   <div id="toast"></div>
+  <div id="wpnStrip"></div>
   <div id="journal" role="dialog" aria-label="Field journal"><div class="jwrap"><div class="jhead"><h2>Field journal</h2>
     <div class="jtabs"><button type="button" data-t="species" class="on">Species</button><button type="button" data-t="lore">Lore</button><button type="button" data-t="photos">Photos</button></div>
     <button type="button" id="jClose" aria-label="Close journal">✕</button></div><div id="jBody"></div></div></div>
@@ -2513,7 +2670,7 @@ button#btn2:hover {
   <div id="card"></div>
   <div id="prompt"><div id="promptTxt"></div><div id="promptBar"><div id="promptFill"></div></div><div id="promptSub"></div></div>
   <div id="job"><div id="jobTxt"></div><div id="jobBar"><div id="jobFill"></div></div></div>
-  <div id="scopeInfo"><span id="siZoom"></span><span id="siRange"></span><span id="siZero"></span><span id="siWind"></span></div>
+  <div id="scopeInfo"><span id="siZoom"></span><span id="siRange"></span><span id="siZero"></span><span id="siWind"></span><span id="siTherm"></span></div>
   <div id="breath"><div id="breathFill"></div></div>
   <div id="airBar"><div id="airFill"></div></div>
   <div id="bl">
@@ -2573,12 +2730,15 @@ button#btn2:hover {
   <button class="tb sm" id="tMap" data-lbl="Map" aria-label="Map" title="Map"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg></button>
   <button class="tb sm" id="tBino" data-lbl="Binoculars" aria-label="Binoculars" title="Binoculars"><svg class="ic" viewBox="0 0 24 24"><circle cx="7" cy="15.5" r="4"/><circle cx="17" cy="15.5" r="4"/><path d="M7 11.5V5h3.2v6M17 11.5V5h-3.2v6M11 15h2"/></svg></button>
   <button class="tb sm" id="tKit" data-lbl="Medkit" aria-label="Medkit" title="Medkit"><svg class="ic" viewBox="0 0 24 24"><rect x="3.5" y="7" width="17" height="13" rx="2.5"/><path d="M9 7V5.6A1.1 1.1 0 0 1 10.1 4.5h3.8A1.1 1.1 0 0 1 15 5.6V7M12 10.5v6M9 13.5h6"/></svg></button>
+  <button class="tb" id="tLight" data-lbl="Light" aria-label="Torch, or the jeep headlights" title="Light"><svg class="ic" viewBox="0 0 24 24"><path d="M7.5 3.5h9l-2 5h-5z"/><path d="M9.5 8.5h5v11a1.5 1.5 0 0 1-1.5 1.5h-2a1.5 1.5 0 0 1-1.5-1.5z"/><path d="M12 12v2.5"/><path d="M3.4 6l2.6 1.1M20.6 6l-2.6 1.1"/></svg></button>
+  <button class="tb" id="tTherm" data-lbl="Thermal" aria-label="Thermal sight" title="Thermal"><svg class="ic" viewBox="0 0 24 24"><path d="M9.5 4.6a2.5 2.5 0 0 1 5 0v8.1a4.2 4.2 0 1 1-5 0z"/><path d="M12 9v6.6"/><circle class="fl" cx="12" cy="17.3" r="1.7"/><path d="M18 6.4c1 .8 1 1.9 0 2.7M20.6 4.8c1.7 1.4 1.7 3.6 0 5"/></svg></button>
   <button class="tb sm" id="tTrack" data-lbl="Objective" aria-label="Track the next objective" title="Track objective"><svg class="ic" viewBox="0 0 24 24"><path d="M12 21.5s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10.5" r="2.3"/></svg></button>
   <button class="tb sm" id="tGear" data-lbl="Gear" aria-label="Gear menu" title="Gear"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg></button>
   <button class="tb sm" id="tWeap" data-lbl="Weapon" aria-label="Change weapon" title="Weapon"><svg class="ic" viewBox="0 0 24 24"><path d="M2.5 13.5h13.5l2-2.5h3.5v3.2l-3 1.8h-4.2l-1 3.5h-3.3l-1.2-3.5H2.5z"/><path d="M8 11V9.5h5V11"/></svg></button>
   <button class="tb sm" id="tPause" data-lbl="Pause" aria-label="Pause" title="Pause"><svg class="ic" viewBox="0 0 24 24"><rect class="fl" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="fl" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg></button>
   <div id="hubPanel"><div id="hubGrid"></div></div>
-  <div id="gear"><button id="gFuel" type="button">REFUEL JEEP</button><button id="gFix" type="button">REPAIR JEEP</button><button id="gLights" type="button">HEADLIGHTS</button><button id="gSup" type="button">SUPPLIES</button><button id="gTherm" type="button">THERMAL</button><button id="gRead" type="button">READ GROUND</button><button id="gThrow" type="button">THROW</button><button id="gSel" type="button">FLARE / BAIT</button><button id="gAmmo" type="button">DARTS / LIVE</button><button id="gJournal" type="button">JOURNAL</button><button id="gPhoto" type="button">PHOTO</button><button id="gLayout" type="button">MOVE / SIZE KEYS</button><button id="gFs" type="button">FULL SCREEN</button><button id="gAssist" type="button">AIM ASSIST</button></div>
+  <div id="wheel" aria-label="Weapon wheel"></div>
+  <div id="gear"><button id="gFuel" type="button">REFUEL JEEP</button><button id="gFix" type="button">REPAIR JEEP</button><button id="gLights" type="button">LIGHT</button><button id="gSup" type="button">SUPPLIES</button><button id="gTherm" type="button">THERMAL</button><button id="gRead" type="button">READ GROUND</button><button id="gThrow" type="button">THROW</button><button id="gSel" type="button">FLARE / BAIT</button><button id="gAmmo" type="button">DARTS / LIVE</button><button id="gJournal" type="button">JOURNAL</button><button id="gPhoto" type="button">PHOTO</button><button id="gLayout" type="button">MOVE / SIZE KEYS</button><button id="gFs" type="button">FULL SCREEN</button><button id="gAssist" type="button">AIM ASSIST</button></div>
   <div id="tScopeRow"><button class="tb" id="tDm">DIAL -</button><button class="tb" id="tDp">DIAL +</button><button class="tb" id="tAuto">AUTO</button>
     <button class="tb" id="tZm">ZOOM -</button><button class="tb" id="tZp">ZOOM +</button><button class="tb" id="tCard">CARD</button></div>
 </div>
@@ -8593,6 +8753,7 @@ window.__bootInner = async function () {
     Aud.click(0, w === 'machete' ? 0.6 : 1.1);
     updateAmmoHud();
     updateGunModel();
+    weaponShown();
   }
   function cycleWeapon() {
     setWeapon(WEAPON_ORDER[(WEAPON_ORDER.indexOf(P.weapon) + 1) % WEAPON_ORDER.length]);
@@ -8972,7 +9133,9 @@ window.__bootInner = async function () {
     [/stand beside it and press 5 to repair it/i, 'stand beside it and use REPAIR JEEP in the cog menu'],
     [/Press 4 to pour in a jerry can\./g, 'REFUEL JEEP in the cog menu pours in a jerry can.'],
     [/Raise the binoculars with B and glass the reserve\./, 'Tap the binoculars and glass the reserve.'],
-    [/Press M for the map\./, 'Tap the map icon for the map.']
+    [/Press M for the map\./, 'Tap the map icon for the map.'],
+    [/L switches them\./, 'The light key switches them.'],
+    [/L is your torch\./, 'The light key is your torch.']
   ];
   // on a touch screen a hint that names a keyboard key says what to touch instead
   const touchText = msg => {
@@ -9118,14 +9281,6 @@ window.__bootInner = async function () {
     }
   });
   addEventListener('contextmenu', e => e.preventDefault());
-  addEventListener(
-    'wheel',
-    e => {
-      if (game.state !== STATE.PLAY || P.optKind !== 'scope') return;
-      P.zoom = clamp(P.zoom + (e.deltaY < 0 ? 0.5 : -0.5), 3, 10);
-    },
-    { passive: true }
-  );
   addEventListener('keydown', e => {
     if (e.code === 'Tab') {
       e.preventDefault();
@@ -9188,7 +9343,7 @@ window.__bootInner = async function () {
         startJeepRepair();
         break;
       case 'KeyL':
-        cycleHeadlights();
+        toggleLight();
         break;
       case 'KeyI':
         toggleSupplies();
@@ -9290,6 +9445,136 @@ window.__bootInner = async function () {
     },
     { capture: true }
   );
+  /* =====================================================================
+   CHANGING WEAPON: 1 / 2 / 3, the mouse wheel on a PC, and a wheel on a touch screen.
+   The wheel key shows what you hold. Touch it and the wheel opens around it with the three weapons as sectors (rifle up left, pistol up
+   right, machete below): slide into one and let go, or lift and tap one. Touching anywhere else, or its middle, closes it.
+   ===================================================================== */
+  const WPN = {
+    rifle: { name: 'Rifle', key: '1', icon: '<path d="M2.5 13.5h13.5l2-2.5h3.5v3.2l-3 1.8h-4.2l-1 3.5h-3.3l-1.2-3.5H2.5z"/><path d="M8 11V9.5h5V11"/>' },
+    deagle: { name: 'Pistol', key: '2', icon: '<path d="M3 7.5h15.5v4H12.5l-1.3 6.2H7.4l1.3-6.2H3z"/><path d="M14.5 7.5V6h3v1.5"/>' },
+    machete: { name: 'Machete', key: '3', icon: '<path d="M20 4C15 4.5 10 8 7.5 13l3.5 3.5C16 14 19.5 9 20 4z"/><path d="M6.2 13.8l4 4M8.2 15.8L4 20"/>' }
+  };
+  const WHEEL_AT = { rifle: 300, deagle: 60, machete: 180 }; // where each sector is centred, in degrees clockwise from straight up
+  const WHEEL = { open: false, cx: 0, cy: 0, R: 100, hot: null, cur: null, timer: 0, last: 0, acc: 0, stripT: 0 };
+  (function buildWeaponUi() {
+    const icon = (cls, w) => `<svg class="ic ${cls}" viewBox="0 0 24 24">${WPN[w].icon}</svg>`;
+    $('tWeap').innerHTML = WEAPON_ORDER.map(w => icon('w-' + w, w)).join('');
+    const pt = (r, a) => [r * Math.sin((a * Math.PI) / 180), -r * Math.cos((a * Math.PI) / 180)];
+    const f = n => n.toFixed(1);
+    let h = '<svg viewBox="-100 -100 200 200" aria-hidden="true">';
+    for (const w of WEAPON_ORDER) {
+      const a = WHEEL_AT[w],
+        [x0, y0] = pt(97, a - 60),
+        [x1, y1] = pt(97, a + 60),
+        [x2, y2] = pt(30, a + 60),
+        [x3, y3] = pt(30, a - 60),
+        [ix, iy] = pt(63, a);
+      h +=
+        `<g class="sec" data-w="${w}"><path d="M${f(x0)} ${f(y0)}A97 97 0 0 1 ${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}A30 30 0 0 0 ${f(x3)} ${f(y3)}Z"/>` +
+        `<g class="ic" transform="translate(${f(ix - 15)} ${f(iy - 20)}) scale(1.25)">${WPN[w].icon}</g>` +
+        `<text x="${f(ix)}" y="${f(iy + 25)}">${WPN[w].name}</text></g>`;
+    }
+    h += '<circle class="hub" r="28"/>';
+    for (const w of WEAPON_ORDER) h += `<g class="mid" data-w="${w}" transform="translate(-12 -12)">${WPN[w].icon}</g>`;
+    $('wheel').innerHTML = h + '</svg>';
+    $('wpnStrip').innerHTML = WEAPON_ORDER.map(w => `<div class="wi" data-w="${w}">${icon('', w)}<span>${WPN[w].key}  ${WPN[w].name}</span></div>`).join('');
+  })();
+  // the key, the wheel and the strip all show the weapon in hand
+  function weaponSync() {
+    if (WHEEL.cur === P.weapon) return;
+    WHEEL.cur = P.weapon;
+    $('tWeap').dataset.w = P.weapon;
+    $('wheel').dataset.w = P.weapon;
+    document.querySelectorAll('#wheel .sec, #wpnStrip .wi').forEach(g => g.classList.toggle('cur', g.dataset.w === P.weapon));
+  }
+  function weaponShown() {
+    weaponSync();
+    if (TOUCH.on) return;
+    const st = $('wpnStrip');
+    st.classList.add('on');
+    clearTimeout(WHEEL.stripT);
+    WHEEL.stripT = setTimeout(() => st.classList.remove('on'), 1600);
+  }
+  function wheelOpen(cx, cy) {
+    const el = $('wheel'),
+      d = Math.round(Math.min(innerHeight * 0.64, innerWidth * 0.4, 230)),
+      R = d / 2,
+      m = 6;
+    el.style.setProperty('--wd', d + 'px');
+    WHEEL.R = R;
+    WHEEL.cx = clamp(cx, R + m, Math.max(R + m, innerWidth - R - m)); // (kept whole on the screen, wherever the key was put)
+    WHEEL.cy = clamp(cy, R + m, Math.max(R + m, innerHeight - R - m));
+    el.style.left = WHEEL.cx - R + 'px';
+    el.style.top = WHEEL.cy - R + 'px';
+    weaponSync();
+    WHEEL.open = true;
+    WHEEL.hot = null;
+    clearTimeout(WHEEL.timer);
+    el.querySelectorAll('.sec').forEach(g => g.classList.remove('hot'));
+    el.classList.add('open');
+  }
+  function wheelClose() {
+    clearTimeout(WHEEL.timer);
+    if (!WHEEL.open) return;
+    WHEEL.open = false;
+    WHEEL.hot = null;
+    $('wheel').classList.remove('open');
+  }
+  // which weapon a touch at (x, y) points at: the middle and the far outside are nothing
+  function wheelSector(x, y) {
+    const dx = x - WHEEL.cx,
+      dy = y - WHEEL.cy,
+      r = Math.hypot(dx, dy);
+    if (r < WHEEL.R * 0.3 || r > WHEEL.R * 1.4) return null;
+    const a = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
+    return a < 120 ? 'deagle' : a < 240 ? 'machete' : 'rifle';
+  }
+  function wheelHover(x, y) {
+    const w = WHEEL.open ? wheelSector(x, y) : null;
+    if (w === WHEEL.hot) return;
+    WHEEL.hot = w;
+    $('wheel')
+      .querySelectorAll('.sec')
+      .forEach(g => g.classList.toggle('hot', g.dataset.w === w));
+  }
+  function wheelPick(w) {
+    wheelClose();
+    setWeapon(w);
+  }
+  function wheelKeyDown() {
+    const r = $('tWeap').getBoundingClientRect();
+    wheelOpen(r.left + r.width / 2, r.top + r.height / 2);
+  }
+  function wheelKeyUp() {
+    if (WHEEL.hot) wheelPick(WHEEL.hot);
+    else if (WHEEL.open) WHEEL.timer = setTimeout(wheelClose, 5000); // a tap: it stays open for the second tap, but not for ever
+  }
+  // the mouse wheel: scoped it zooms; otherwise it steps through rifle, pistol, machete (down = the next one). One step per notch, however
+  // hard it is spun, and a finger on a trackpad has to travel a little before it counts.
+  addEventListener(
+    'wheel',
+    e => {
+      if (game.state !== STATE.PLAY) return;
+      if (P.optOn && P.optKind === 'scope') {
+        P.zoom = clamp(P.zoom + (e.deltaY < 0 ? 0.5 : -0.5), 3, 10);
+        return;
+      }
+      if (!P.alive || P.inJeep || P.swimming || P.optAmt > 0.3) return;
+      const dy = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 100 : e.deltaY;
+      if (!dy) return;
+      if (Math.sign(dy) !== Math.sign(WHEEL.acc)) WHEEL.acc = 0;
+      WHEEL.acc += dy;
+      const now = performance.now();
+      if (Math.abs(WHEEL.acc) < 40 || now - WHEEL.last < 110) return;
+      const step = WHEEL.acc > 0 ? 1 : -1;
+      WHEEL.acc = 0;
+      WHEEL.last = now;
+      const i = WEAPON_ORDER.indexOf(P.weapon);
+      setWeapon(WEAPON_ORDER[(i + step + WEAPON_ORDER.length) % WEAPON_ORDER.length]);
+    },
+    { passive: true }
+  );
   (function setupTouch() {
     /* One engine for every finger. Each finger that lands is given a job for as long as it stays down, whatever it slides over:
          - on a button: that button (held buttons stay held while the finger is on them)
@@ -9390,7 +9675,10 @@ window.__bootInner = async function () {
       if (!f) return;
       fingers.delete(id);
       if (f.kind === 'stick') stickReset();
-      else if (f.kind === 'btn') {
+      else if (f.kind === 'wheel') {
+        if (WHEEL.hot) wheelPick(WHEEL.hot);
+        else wheelClose();
+      } else if (f.kind === 'btn') {
         f.b.el.classList.remove('on');
         if (f.b.up) f.b.up();
         if (!EDIT.on && f.b.el.closest('#hubPanel')) setHub(false); // a key taken from the menu closes it
@@ -9403,11 +9691,22 @@ window.__bootInner = async function () {
     const begin = (id, x, y, target) => {
       if (fingers.has(id)) release(id);
       if (HUB.open && !EDIT.on && !(target && target.closest && target.closest('#hubPanel, #tHub'))) setHub(false); // a tap anywhere else closes the menu
+      if (WHEEL.open && !EDIT.on) {
+        if (target && target.closest && target.closest('#wheel')) {
+          // a finger on the wheel: the sector under it lights, and letting go picks it (the middle, or nothing, just closes it)
+          clearTimeout(WHEEL.timer);
+          fingers.set(id, { kind: 'wheel' });
+          wheelHover(x, y);
+          trace('wheel');
+          return;
+        }
+        wheelClose(); // a touch anywhere else closes it, and goes on to do what it was for
+      }
       const el = target && target.closest ? target.closest('.tb') : null;
       const b = el && BTN[el.id];
       if (b) {
         // the fire key is also a look pad: keep the thumb on it and slide to aim (a tap that wobbles a few pixels does not turn the view)
-        fingers.set(id, el.id === 'tFire' ? { kind: 'btn', b, look: true, x, y, moved: 0 } : { kind: 'btn', b });
+        fingers.set(id, el.id === 'tFire' ? { kind: 'btn', b, look: true, x, y, moved: 0 } : el.id === 'tWeap' ? { kind: 'btn', b, wheelKey: true } : { kind: 'btn', b });
         b.el.classList.add('on');
         if (game.state === STATE.PLAY || el.id === 'tMap') b.down();
         trace('button ' + el.id);
@@ -9427,6 +9726,7 @@ window.__bootInner = async function () {
       const f = fingers.get(id);
       if (!f) return;
       if (f.kind === 'stick') stickMove(f, x, y);
+      else if (f.kind === 'wheel' || (f.kind === 'btn' && f.wheelKey)) wheelHover(x, y);
       else if (f.kind === 'look' || (f.kind === 'btn' && f.look)) {
         const dx = x - f.x,
           dy = y - f.y;
@@ -9511,7 +9811,7 @@ window.__bootInner = async function () {
     btn('tHub', () => setHub(!HUB.open));
     btn('tObj', () => toggleObjectives());
     btn('tSup', () => toggleSupplies());
-    btn('tWeap', () => cycleWeapon());
+    btn('tWeap', () => wheelKeyDown(), () => wheelKeyUp());
     btn('tScope', () => toggleOptic('scope'));
     btn(
       'tRun',
@@ -9548,6 +9848,8 @@ window.__bootInner = async function () {
       }
     );
     btn('tKit', () => useKit());
+    btn('tLight', () => toggleLight());
+    btn('tTherm', () => toggleThermal());
     btn('tBino', () => toggleOptic('bino'));
     btn('tTrack', () => cycleTrack());
     btn('tPause', () => pause());
@@ -9661,6 +9963,10 @@ window.__bootInner = async function () {
     }
     $('tScope').classList.toggle('on', P.optOn && P.optKind === 'scope');
     $('tBino').classList.toggle('on', P.optOn && P.optKind === 'bino');
+    $('tLight').classList.toggle('on', P.inJeep ? LAMP.jeepOn : !!P.torch);
+    $('tTherm').classList.toggle('on', !!P.thermal);
+    weaponSync();
+    if (WHEEL.open && (game.state !== STATE.PLAY || P.inJeep || !P.alive)) wheelClose();
   }
   /* =====================================================================
    CONTROL LAYOUT. Every on-screen key can be put where you like, made bigger or smaller, and made more or less see-through. The rest are
@@ -9670,6 +9976,20 @@ window.__bootInner = async function () {
      - the second fire key shows while scoped, the handbrake in the jeep.
    Where each key lives (on the screen / in the menu / only when needed / hidden), its place, size and opacity are saved on the device.
    Places are fractions of the screen, so they follow it when the phone rotates or goes full screen. =====================================================================*/
+  // the lamp state is read by the layout code (at load) and written by the headlight code, so it lives up here
+  const LAMP = {
+    at: 'jeep', // where the one spot light is mounted: the jeep, or the camera (the torch)
+    torchK: 0, // 0..1, how far the torch has come up
+    dark: 0, // how dark it is (night, storm, cave), refreshed every frame
+    jeepOn: false, // the headlights are lit
+    autoOn: false, // what automatic headlights want
+    autoT: -99,
+    optUp: false, // an optic is raised (the night optic is armed once per raise)
+    thermOff: false, // thermal was switched off by hand tonight: it stays off until the light is back
+    thermTip: 0,
+    tipped: false,
+    SEEN: 0.45 // how much more visible the torch makes you in the dark
+  };
   const LBTN = {
     tFire: { name: 'Fire', def: 'screen', opts: ['screen'] },
     tFire2: { name: 'Fire, left thumb (scoped)', def: 'auto', opts: ['auto', 'hide'] },
@@ -9680,11 +10000,13 @@ window.__bootInner = async function () {
     tReload: { name: 'Reload', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
     tUse: { name: 'Use (the hand)', def: 'auto', opts: ['auto', 'screen', 'hide'] },
     tKit: { name: 'Medkit', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
+    tLight: { name: 'Light (torch, headlights)', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
+    tTherm: { name: 'Thermal sight (optic raised)', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
     tBrake: { name: 'Handbrake (jeep)', def: 'auto', opts: ['auto'] },
     tMap: { name: 'Map', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tBino: { name: 'Binoculars', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tTrack: { name: 'Next objective', def: 'menu', opts: ['menu', 'screen', 'hide'] },
-    tWeap: { name: 'Change weapon', def: 'menu', opts: ['menu', 'screen', 'hide'] },
+    tWeap: { name: 'Weapon wheel', def: 'screen', opts: ['screen', 'menu', 'hide'] },
     tObj: { name: 'Briefing (objectives)', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tSup: { name: 'Supplies', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tGear: { name: 'Gear menu', def: 'menu', opts: ['menu', 'screen'] },
@@ -9694,7 +10016,7 @@ window.__bootInner = async function () {
     joy: { name: 'Move stick', def: 'screen', opts: ['screen'] }
   };
   const WHERE_LBL = { screen: 'On screen', auto: 'When needed', menu: 'In menu', hide: 'Hidden' };
-  const HUB_ORDER = ['tMap', 'tBino', 'tTrack', 'tObj', 'tSup', 'tWeap', 'tKit', 'tReload', 'tStance', 'tJump', 'tGear', 'tPause'];
+  const HUB_ORDER = ['tMap', 'tBino', 'tTrack', 'tObj', 'tSup', 'tWeap', 'tKit', 'tLight', 'tTherm', 'tReload', 'tStance', 'tJump', 'tGear', 'tPause'];
   const CTL = { v: 1, size: 1, op: 1, b: {} };
   const HUB = { open: false };
   const EDIT = { on: false, sel: null, drag: null, from: 'start', flip: false };
@@ -9772,6 +10094,9 @@ window.__bootInner = async function () {
       autoSet('tReload', need || P.reloading);
     }
     if (whereOf('tKit') === 'auto') autoSet('tKit', P.kits > 0 && P.hp < 88);
+    // the light key appears when it is dark (or a lamp is lit), the thermal key whenever a scope or binoculars are up
+    if (whereOf('tLight') === 'auto') autoSet('tLight', LAMP.dark > 0.2 || !!P.torch || LAMP.jeepOn);
+    if (whereOf('tTherm') === 'auto') autoSet('tTherm', !!P.optOn && P.optAmt > 0.3 && !P.inJeep);
   }
   function joyRest(b) {
     const joy = $('joy'),
@@ -9900,6 +10225,7 @@ window.__bootInner = async function () {
     if (!TOUCH.on) return;
     if (game.state === STATE.PLAY) pause();
     EDIT.from = game.state === STATE.MENU ? 'start' : 'pause';
+    wheelClose();
     $('menu').classList.add('hidden');
     document.body.classList.add('editing');
     EDIT.on = true;
@@ -11028,9 +11354,9 @@ window.__bootInner = async function () {
     }
     // light: the sun, then the moon
     // twilight keeps a low, warm light from just below the horizon so dusk and dawn are never darker than the night
-    const twi = 0.5 * ENV.dusk * (1 - ENV.day) * smooth(-0.27, -0.08, el),
+    const twi = 0.7 * ENV.dusk * (1 - ENV.day) * smooth(-0.27, -0.08, el),
       sunI = (1.35 * ENV.day + twi) * (1 - 0.72 * oc),
-      moonI = 0.32 * ENV.night * (1 - 0.65 * ENV.cover),
+      moonI = 0.5 * ENV.night * (1 - 0.5 * ENV.cover),
       useMoon = el < 0 && moonI > sunI;
     lightDir.copy(sunDir);
     if (useMoon) lightDir.negate();
@@ -11038,9 +11364,9 @@ window.__bootInner = async function () {
     sun.intensity = Math.max(useMoon ? moonI : sunI, 0.0);
     if (useMoon) sun.color.setHex(0x9db6ff);
     else sun.color.setHex(0xffe1b0).lerp(_ec2.setHex(0xff9a55), ENV.dusk * 0.8);
-    hemi.intensity = 0.17 + 0.62 * ENV.day * (1 - 0.35 * oc) + 0.1 * ENV.night + 0.12 * ENV.dusk + ENV.flash * 1.3;
+    hemi.intensity = 0.17 + 0.62 * ENV.day * (1 - 0.35 * oc) + 0.22 * ENV.night + 0.2 * ENV.dusk + ENV.flash * 1.3;
     hemi.color
-      .setHex(0x1d2c58)
+      .setHex(0x2a3d74)
       .lerp(_ec2.setHex(0xc4d6e6), ENV.day)
       .lerp(_ec2.setHex(0x8e99a6), oc * 0.5 * ENV.day);
     hemi.groundColor.setHex(0x0b0f09).lerp(_ec2.setHex(0x3b4a2a), ENV.day);
@@ -11142,7 +11468,8 @@ window.__bootInner = async function () {
     STEALTH.hidden = hide;
     STEALTH.hiddenS += (hide - STEALTH.hiddenS) * Math.min(1, dt * 3);
     const weather = 1 - 0.38 * ENV.rain;
-    STEALTH.vis = P.inJeep ? 1.6 * weather : (P.prone ? 0.38 : P.crouch ? 0.55 : 1) * (1 - hide) * weather;
+    const lamp = 1 + LAMP.SEEN * LAMP.torchK * Math.max(ENV.night, ENV.storm * 0.6, P.inCave ? 1 : 0); // a lit torch carries in the dark
+    STEALTH.vis = (P.inJeep ? 1.6 * weather : (P.prone ? 0.38 : P.crouch ? 0.55 : 1) * (1 - hide) * weather) * lamp;
     STEALTH.visFly = (P.prone ? 0.5 : P.crouch ? 0.7 : 1) * (1 - hide * 0.45) * weather;
     STEALTH.noiseK = (SURF_NOISE[STEALTH.surface] || 1) * (1 - 0.25 * ENV.rain);
   }
@@ -11300,7 +11627,7 @@ window.__bootInner = async function () {
   function toggleThermal() {
     if (!P.alive) return;
     if (P.optAmt < 0.3 && !P.thermal) {
-      toast('Raise the scope (F) or binoculars (B), then switch thermal on.');
+      toast(TOUCH.on ? 'Raise the scope or binoculars first, then tap the thermal key.' : 'Raise the scope (F) or binoculars (B), then switch thermal on.');
       return;
     }
     if (!P.thermal && P.thermalCharge < 0.08) {
@@ -11308,13 +11635,25 @@ window.__bootInner = async function () {
       return;
     }
     P.thermal = !P.thermal;
+    LAMP.thermOff = !P.thermal && ENV.night > 0.5; // switched off by hand in the dark: the night optic leaves it off until daylight
     Aud.click(0, P.thermal ? 1.3 : 0.8);
     toast(P.thermal ? 'Thermal on.' : 'Thermal off.');
   }
   function updateThermal(dt) {
+    // the night optic: raise the scope or binoculars in the dark and the picture comes up as heat, since a plain scope shows nothing
+    const up = !!P.optOn && P.optAmt > 0.3 && (P.optKind === 'scope' || P.optKind === 'bino');
+    if (up && !LAMP.optUp) {
+      LAMP.optUp = true;
+      if (ENV.night > 0.55 && !LAMP.thermOff && !P.thermal && P.thermalCharge > 0.15 && P.alive && !P.inJeep) {
+        P.thermal = true;
+        if (LAMP.thermTip++ < 2) toast(TOUCH.on ? 'Night: thermal is on. The thermal key switches it off.' : 'Night: thermal is on. Y switches it off.');
+      }
+    } else if (!up && P.optAmt < 0.1) LAMP.optUp = false;
+    if (ENV.night < 0.3) LAMP.thermOff = false;
     const th = P.thermal && P.optAmt > 0.3;
     if (th) {
-      P.thermalCharge = Math.max(0, P.thermalCharge - dt / CONFIG.thermal.drainSeconds);
+      // the battery lasts about twice as long at night, when it is the only way to see
+      P.thermalCharge = Math.max(0, P.thermalCharge - dt / (CONFIG.thermal.drainSeconds * (1 + 0.8 * ENV.night)));
       if (P.thermalCharge <= 0) {
         P.thermal = false;
         toast('Thermal battery flat.');
@@ -11420,6 +11759,14 @@ window.__bootInner = async function () {
   function resetEnvState() {
     P.thermal = false;
     P.thermalCharge = 1;
+    P.torch = false;
+    LAMP.torchK = 0;
+    LAMP.thermOff = false;
+    LAMP.optUp = false;
+    LAMP.thermTip = 0;
+    LAMP.tipped = false;
+    LAMP.autoOn = false;
+    LAMP.autoT = -99;
     resetGadgets();
     if (JEEP.g) resetJeep();
     document.body.classList.remove('jeep');
@@ -11436,6 +11783,7 @@ window.__bootInner = async function () {
   }
   P.thermal = false;
   P.thermalCharge = 1;
+  P.torch = false;
 
   /* =====================================================================
    TRACKS: animals leave prints, wounded animals leave blood, rain washes both away. Hold V (or the GEAR menu) to read the ground.
@@ -12188,7 +12536,7 @@ window.__bootInner = async function () {
     });
     on('gFuel', () => refuelJeep(true));
     on('gFix', () => startJeepRepair());
-    on('gLights', () => cycleHeadlights());
+    on('gLights', () => toggleLight());
     on('gSup', () => toggleSupplies());
     on('gTherm', toggleThermal);
     on('gRead', () => {
@@ -12921,6 +13269,7 @@ window.__bootInner = async function () {
     JEEP.enterT = 0.9;
     JEEP.lookIdle = 0;
     JEEP.yawSeen = P.yaw;
+    P.torch = false; // the torch goes back in the cab
     P.optOn = false;
     P.reloading = false;
     setStance(0);
@@ -12957,6 +13306,7 @@ window.__bootInner = async function () {
     if (JEEP.cab) JEEP.cab.visible = true;
     Aud.setEngine(0, 0);
     updateGunModel();
+    if (LAMP.dark > 0.45 && !P.torch) toast('Dark out here. L is your torch.');
   }
   function jeepDrive(rdt) {
     const J = JEEP,
@@ -13285,7 +13635,46 @@ window.__bootInner = async function () {
       toast('Jeep repaired.');
     }
   }
-  /* ---------- headlights: on by themselves in the dark while you drive, L cycles automatic / on / off ---------- */
+  /* ---------- light at night ----------
+   One lamp does both jobs, so the shaders never change and a phone pays for no extra light: the jeep's spot light is the headlight while
+   you drive (and while the jeep you have just left is within 40 m), and the torch in your hand while you walk with it on. L, or the light
+   key, is the torch on foot and cycles automatic / on / off in the jeep. Automatic headlights come on when you drive in the dark, in a storm
+   or in a cave, and say so when they change. The torch has no battery, but it carries: animals see it. */
+  const TORCH_I = 6.5; // torch strength at full
+  const nearJeep = () => !!JEEP.g && !JEEP.dead && Math.hypot(P.x - JEEP.x, P.z - JEEP.z) < 40;
+  function lampMount(torch) {
+    const b = JEEP.beam;
+    if (!b || !JEEP.g || LAMP.at === (torch ? 'torch' : 'jeep')) return;
+    LAMP.at = torch ? 'torch' : 'jeep';
+    const to = torch ? cam : JEEP.g;
+    to.add(b);
+    to.add(b.target);
+    if (torch) {
+      // held a little to the right and low, in front of the gun, pointing where you look
+      b.position.set(0.12, -0.1, -0.55);
+      b.target.position.set(0, 0, -20);
+      b.color.setHex(0xfff4df);
+      b.angle = 0.55;
+      b.penumbra = 0.75;
+      b.distance = 110;
+      b.decay = 1.0;
+    } else {
+      b.position.set(0, 1.0, 1.75);
+      b.target.position.set(0, 0.7, 32);
+      b.color.setHex(0xfff0d2);
+      b.angle = 0.62;
+      b.penumbra = 0.6;
+      b.distance = 95;
+      b.decay = 1.15;
+    }
+  }
+  function toggleTorch() {
+    if (!P.alive || game.state !== STATE.PLAY || P.inJeep) return;
+    P.torch = !P.torch;
+    Aud.click(0, P.torch ? 1.35 : 0.85);
+    toast(P.torch ? (LAMP.dark < 0.2 ? 'Torch on. It only helps at night, in a storm and in caves.' : 'Torch on. Animals can see it too.') : 'Torch off.');
+  }
+  const toggleLight = () => (P.inJeep ? cycleHeadlights() : toggleTorch());
   function cycleHeadlights() {
     if (!JEEP.g) return;
     const next = { auto: 'on', on: 'off', off: 'auto' }[JEEP.lightsMode] || 'auto';
@@ -13293,31 +13682,46 @@ window.__bootInner = async function () {
     Aud.click(0, 1.2);
     toast(
       next === 'auto'
-        ? 'Headlights: automatic (they come on in the dark while you drive).'
+        ? 'Headlights: automatic (they come on in the dark, in a storm and in caves).'
         : next === 'on'
           ? 'Headlights on.'
           : 'Headlights off.'
     );
+    updateJeepHud();
   }
   function updateHeadlights(rdt) {
     const J = JEEP;
     if (!J.beam) return;
     const dark = Math.max(ENV.night, ENV.storm * 0.9, P.inCave ? 1 : 0);
-    const want = J.dead
-      ? 0
-      : J.lightsMode === 'on'
-        ? 1
-        : J.lightsMode === 'off'
-          ? 0
-          : P.inJeep && dark > 0.3
-            ? 1
-            : 0;
+    LAMP.dark = dark;
+    // the torch
+    const tWant = P.torch && P.alive && !P.inJeep && !P.under && game.state !== STATE.REPLAY ? 1 : 0;
+    LAMP.torchK += (tWant - LAMP.torchK) * Math.min(1, rdt * 9);
+    if (Math.abs(tWant - LAMP.torchK) < 0.01) LAMP.torchK = tWant;
+    // the headlights: driving in the dark brings them on, and they stay lit while you are out by the jeep. Walking up to a parked jeep never
+    // switches them on, and walking away from it (or daylight) puts them out. A margin between on and off keeps dusk from flickering them.
+    const was = LAMP.autoOn;
+    if (P.inJeep) LAMP.autoOn = dark > (was ? 0.2 : 0.3);
+    else if (was && (!nearJeep() || dark <= 0.2)) LAMP.autoOn = false;
+    const want = J.dead ? 0 : J.lightsMode === 'on' ? 1 : J.lightsMode === 'off' ? 0 : LAMP.autoOn ? 1 : 0;
+    if (J.lightsMode === 'auto' && P.inJeep && !J.dead && was !== LAMP.autoOn && game.time - LAMP.autoT > 8) {
+      LAMP.autoT = game.time;
+      toast(LAMP.autoOn ? 'Headlights on by themselves: it is dark. L switches them.' : 'Headlights off: it is bright enough.');
+    }
     J.lightK += (want - J.lightK) * Math.min(1, rdt * 7);
     if (Math.abs(want - J.lightK) < 0.01) J.lightK = want;
-    J.beam.intensity = HEAD_I * J.lightK;
+    // whoever holds the lamp
+    const torch = LAMP.torchK > 0.01;
+    lampMount(torch);
+    J.beam.intensity = torch ? TORCH_I * LAMP.torchK : HEAD_I * J.lightK;
+    LAMP.jeepOn = J.lightK > 0.5;
     for (const s of J.glows) {
       s.visible = J.lightK > 0.02;
       s.material.opacity = 0.9 * J.lightK;
+    }
+    if (!LAMP.tipped && dark > 0.55 && !P.inJeep && !P.torch && P.alive && game.state === STATE.PLAY) {
+      LAMP.tipped = true;
+      toast('It is dark. L is your torch.');
     }
   }
   function updateJeepHud() {
@@ -13328,7 +13732,8 @@ window.__bootInner = async function () {
     $('jHp').style.width = Math.round((J.hp / CONFIG.jeep.hp) * 100) + '%';
     setText($('jFuelLbl'), 'FUEL' + (cansLeft() > 0.05 ? '  +' + cansText() + ' CAN' : ''));
     $('jeepHud').classList.toggle('low', J.fuel < 0.15);
-    const keys4 = TOUCH.on ? 'GEAR: refuel · repair' : '4 refuel  ·  5 repair  ·  L lights  ·  Space brake';
+    const lt = { auto: 'AUTO', on: 'ON', off: 'OFF' }[J.lightsMode] || 'AUTO';
+    const keys4 = TOUCH.on ? 'GEAR: refuel · repair  ·  LIGHTS ' + lt : '4 refuel  ·  5 repair  ·  L lights ' + lt + '  ·  Space brake';
     setText(
       $('jHint'),
       J.fixing
@@ -13719,6 +14124,8 @@ window.__bootInner = async function () {
         setText($('siZero'), '');
       }
       setText($('siRange'), rangeVal ? rangeVal + ' m' : '--- m');
+      setText($('siTherm'), P.thermal ? 'THERMAL ' + Math.round(P.thermalCharge * 100) + '%' : 'Y  thermal');
+      $('siTherm').classList.toggle('on', !!P.thermal);
     }
     $('dot').style.opacity = P.optAmt > 0.15 ? 0 : 1;
     {
@@ -13739,7 +14146,7 @@ window.__bootInner = async function () {
         ? P.diving
           ? 'Diving'
           : 'Swimming  ·  C to dive'
-        : (P.wading ? 'Wading' : ['Standing', 'Kneeling', 'Prone'][P.stance]) + (P.rested ? '  ·  rested' : '')
+        : (P.wading ? 'Wading' : ['Standing', 'Kneeling', 'Prone'][P.stance]) + (P.rested ? '  ·  rested' : '') + (P.torch ? '  ·  torch on' : '')
     );
     if (cardOn && performance.now() - cardStamp > 600) {
       cardStamp = performance.now();
@@ -15827,28 +16234,30 @@ window.__bootInner = async function () {
   <div>Steady the rifle (scoped)<b>Hold the lightning key</b></div><div>Aim assist: slows over animals, ranges for you, nudges shots<b>Settings</b></div>
   <div>Reload / jump<b>Circle arrow / up arrow</b></div><div>Stand, kneel, prone, dive<b>The little person</b></div>
   <div>Get in the jeep, repair, take eggs<b>The hand</b></div><div>Jeep: handbrake<b>The ! key</b></div>
-  <div>Map, binoculars, objective, briefing, supplies, weapon, pause<b>The menu button (four squares)</b></div><div>Hand, reload, medkit<b>Appear when needed</b></div>
-  <div>Jeep refuel / repair / headlights, thermal, layout<b>Gear (cog) menu</b></div><div>Move, resize or fade any key<b>Controls (start sheet) or MOVE / SIZE KEYS (cog)</b></div><div>Turret, zoom, range card (scoped)<b>Buttons that appear</b></div>
+  <div>Map, binoculars, objective, briefing, supplies, pause<b>The menu button (four squares)</b></div><div>Hand, reload, medkit<b>Appear when needed</b></div>
+  <div>Change weapon: tap the key, then the weapon (or slide from the key and let go)<b>The weapon wheel, right side</b></div><div>Night: torch on foot, headlights in the jeep<b>The light key (it appears in the dark)</b></div><div>Thermal sight, scope or binoculars up<b>The thermal key; on by itself at night</b></div>
+  <div>Jeep refuel / repair<b>Gear (cog) menu</b></div><div>Move, resize or fade any key<b>Controls (start sheet) or MOVE / SIZE KEYS (cog)</b></div><div>Turret, zoom, range card (scoped)<b>Buttons that appear</b></div>
 </div>`;
   const controlsHtml = () => (TOUCH.on ? CONTROLS_TOUCH : CONTROLS);
   const CONTROLS = `<div class="cols">
   <div>Move / sprint<b>W A S D / Shift</b></div><div>Fire<b>Left click or Enter</b></div>
   <div>Jump (logs, rocks, stumps)<b>Space</b></div><div>Supplies / objectives panels<b>I / O</b></div>
   <div>Scope: tap or hold<b>Right click / F</b></div><div>Binoculars + rangefinder<b>B</b></div>
-  <div>Hold breath (scoped)<b>Shift</b></div><div>Zoom<b>Mouse wheel</b></div>
+  <div>Hold breath (scoped)<b>Shift</b></div><div>Zoom when scoped, otherwise change weapon<b>Mouse wheel</b></div>
   <div>Reload (one tap, full magazine)<b>R</b></div><div>Turret clicks 0.1 / 1.0 mil<b>[ ]  /  Shift + [ ]</b></div>
   <div>Dial to target / reset<b>T / Shift+T</b></div><div>Range card<b>Hold Tab</b></div>
   <div>Kneel / prone / dive in water<b>C / Z / C</b></div><div>Repair, take eggs, supplies<b>Hold or tap E</b></div>
   <div>Medkit<b>H</b></div><div>Map / change tracked objective<b>M / Q</b></div>
-  <div>Pause / mute<b>P / N</b></div><div>Thermal (optic raised)<b>Y</b></div>
+  <div>Pause / mute<b>P / N</b></div><div>Thermal (scope or binoculars up; comes on by itself at night)<b>Y</b></div>
   <div>Read the ground: tracks, blood<b>Hold V</b></div><div>Throw flare or bait / switch<b>G / X</b></div>
   <div>Tranquilizer darts / live rounds<b>U</b></div><div>Field journal<b>J</b></div>
-  <div>Photo mode<b>K</b></div><div>Rifle / pistol / machete<b>1 / 2 / 3</b></div>
-  <div>Jeep: get in / out, drive, brake<b>E / W A S D / S</b></div><div>Jeep: handbrake / headlights<b>Space / L</b></div>
+  <div>Photo mode<b>K</b></div><div>Rifle / pistol / machete<b>1 / 2 / 3, or the mouse wheel</b></div>
+  <div>Jeep: get in / out, drive, brake<b>E / W A S D / S</b></div><div>Torch on foot, headlights in the jeep<b>L</b></div>
   <div>Jeep: refuel (jerry can) / repair<b>4 / 5</b></div><div>Pistol sights<b>F or right click</b></div>
-  <div>Swing the machete<b>Fire</b></div>
+  <div>Swing the machete<b>Fire</b></div><div>Jeep: handbrake<b>Space</b></div>
 </div>`;
   function showMenu(kind) {
+    wheelClose();
     const m = $('menu'),
       b = $('mBody'),
       btn = $('btn'),
@@ -18100,7 +18509,7 @@ window.__bootInner = async function () {
             dusk = light(18.5),
             night = light(0);
           ok(
-            noon.sun > 1.0 && night.sun < 0.45,
+            noon.sun > 1.0 && night.sun < 0.6 && night.sun < noon.sun * 0.5 && night.sun > 0.35,
             'noon is bright (' + noon.sun.toFixed(2) + '), midnight is dim (' + night.sun.toFixed(2) + ')'
           );
           ok(
@@ -20882,12 +21291,12 @@ window.__bootInner = async function () {
           // ---- the default screen is a few keys, not a wall of icons
           const onScreen = [...document.querySelectorAll('#touch .tb')].filter(e => !e.closest('#hubPanel') && shown(e.id)).map(e => e.id);
           ok(
-            onScreen.length === 6 && ['tFire', 'tScope', 'tRun', 'tStance', 'tJump', 'tHub'].every(id => onScreen.includes(id)),
-            'by default six keys are out on the screen (' + onScreen.join(', ') + '), not sixteen'
+            onScreen.length === 7 && ['tFire', 'tScope', 'tRun', 'tStance', 'tJump', 'tHub', 'tWeap'].every(id => onScreen.includes(id)),
+            'by default seven keys are out on the screen (' + onScreen.join(', ') + '), not sixteen'
           );
           const inHub = [...document.querySelectorAll('#hubGrid .tb')].map(e => e.id);
           ok(
-            inHub.join() === 'tMap,tBino,tTrack,tObj,tSup,tWeap,tGear,tPause',
+            inHub.join() === 'tMap,tBino,tTrack,tObj,tSup,tGear,tPause',
             'and the menu button holds the rest: ' + inHub.join(', ')
           );
           ok(!shown('tUse') && !shown('tReload') && !shown('tKit'), 'the hand, reload and medkit are not shown when there is nothing to use, no magazine to fill and no wound');
@@ -21076,6 +21485,552 @@ window.__bootInner = async function () {
           reset();
           A.TOUCH.on = false;
           document.body.classList.remove('touch', 'scoped', 'editing');
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
+        'Night: a torch on foot, headlights that follow what you do, and a thermal sight that is there when it is dark',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            J = A.JEEP,
+            L = A.LAMP,
+            keys = A.keys,
+            CTL = A.CTL;
+          const sec = s => run(Math.round(s * 60));
+          const key = (code, down) => window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code, bubbles: true }));
+          const tap = code => {
+            key(code, true);
+            key(code, false);
+          };
+          const away = () =>
+            A.dinos.forEach(d => {
+              if (!d.dead && !d.sp.fly) {
+                d.x = 9999;
+                d.z = 9999;
+                d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+              }
+            });
+          const fresh = hour => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(hour);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            A.setStance(0);
+            away();
+            for (const k in keys) keys[k] = false;
+          };
+          // dry ground a given distance from the jeep
+          const awayFromJeep = d => {
+            for (let a = 0; a < 24; a++) {
+              const x = J.x + Math.cos(a) * d,
+                z = J.z + Math.sin(a) * d;
+              if (A.heightAt(x, z) > A.WATER + 1.5) return [x, z];
+            }
+            return [J.x + d, J.z];
+          };
+          const lights = () => {
+            let n = 0;
+            A.scene.traverse(o => {
+              if (o.isLight) n++;
+            });
+            return n;
+          };
+          const fwd = () => new T3.Vector3(0, 0, -1).applyQuaternion(A.cam.quaternion);
+
+          // ---- on foot in the dark
+          fresh(0);
+          {
+            const far = awayFromJeep(60);
+            P.x = far[0];
+            P.z = far[1];
+            sec(1);
+            ok(J.beam.intensity === 0 && L.at === 'jeep', 'at midnight on foot nothing is lit by itself, and the lamp is still on the jeep');
+            const n0 = lights();
+            tap('KeyL');
+            ok(P.torch, 'L turns the torch on');
+            sec(1);
+            ok(J.beam.intensity > 5 && L.at === 'torch' && J.beam.parent === A.cam, 'it lights up (' + J.beam.intensity.toFixed(1) + ') and is held by the camera');
+            ok(lights() === n0, 'with no extra light in the scene (' + n0 + '), so no shader changes and a phone pays nothing');
+            const wp = J.beam.getWorldPosition(new T3.Vector3()),
+              tp = J.beam.target.getWorldPosition(new T3.Vector3()),
+              dir = tp.sub(wp).normalize();
+            ok(dir.dot(fwd()) > 0.995, 'and it points where you look (' + dir.dot(fwd()).toFixed(3) + ')');
+            P.yaw += 1.2;
+            P.pitch = -0.3;
+            sec(1);
+            const wp2 = J.beam.getWorldPosition(new T3.Vector3()),
+              dir2 = J.beam.target.getWorldPosition(new T3.Vector3()).sub(wp2).normalize();
+            ok(dir2.dot(fwd()) > 0.995, 'turning the view turns it');
+            P.pitch = 0;
+            tap('KeyL');
+            sec(1);
+            ok(!P.torch && J.beam.intensity === 0 && L.at === 'jeep' && J.beam.parent === J.g, 'L again puts it out and gives the lamp back to the jeep');
+            tap('KeyL');
+            sec(1);
+            const lit = A.STEALTH.vis;
+            tap('KeyL');
+            sec(1);
+            const unlit = A.STEALTH.vis;
+            ok(lit > unlit * 1.3, 'a lit torch makes you easier to see in the dark (' + unlit.toFixed(2) + ' -> ' + lit.toFixed(2) + ')');
+            // the thermal pass leaves the lamp as it was
+            tap('KeyL');
+            sec(1);
+            const i0 = J.beam.intensity;
+            A.renderThermalFrame();
+            ok(J.beam.intensity === i0 && i0 > 5, 'drawing the thermal picture puts the torch back as it was');
+            tap('KeyL');
+            sec(1);
+          }
+          // ---- the jeep: lights come from driving, not from walking up to it
+          fresh(0);
+          {
+            const far = awayFromJeep(60);
+            P.x = far[0];
+            P.z = far[1];
+            sec(1);
+            const near = awayFromJeep(3);
+            P.x = near[0];
+            P.z = near[1];
+            sec(1);
+            ok(J.beam.intensity === 0 && !L.autoOn, 'walking up to the parked jeep in the dark does not switch its lights on');
+            P.torch = true;
+            document.getElementById('toast').textContent = '';
+            A.enterJeep();
+            ok(!P.torch, 'the torch goes back in the cab when you get in');
+            sec(1);
+            ok(J.beam.intensity > 3 && L.autoOn && J.lightsMode === 'auto', 'driving in the dark brings the headlights on (' + J.beam.intensity.toFixed(1) + ')');
+            ok(/Headlights on by themselves/.test(document.getElementById('toast').textContent), 'and the screen says why');
+            tap('KeyL');
+            ok(J.lightsMode === 'on' && !P.torch, 'L in the jeep is the headlights, not the torch');
+            tap('KeyL');
+            tap('KeyL');
+            ok(J.lightsMode === 'auto', 'it cycles on, off, automatic');
+            A.leaveJeep();
+            sec(1);
+            ok(J.beam.intensity > 3, 'they stay lit while you are out beside the jeep');
+            ok(/torch/i.test(document.getElementById('toast').textContent), 'and a hint says L is the torch');
+            const far2 = awayFromJeep(60);
+            P.x = far2[0];
+            P.z = far2[1];
+            sec(1);
+            ok(J.beam.intensity === 0, 'walk 60 m away and they go out');
+            const near2 = awayFromJeep(3);
+            P.x = near2[0];
+            P.z = near2[1];
+            sec(1);
+            ok(J.beam.intensity === 0, 'and coming back does not light them again');
+            // a torch in hand takes the lamp from a lit jeep
+            A.enterJeep();
+            sec(1);
+            A.leaveJeep();
+            tap('KeyL');
+            sec(1);
+            ok(L.at === 'torch' && J.beam.intensity > 5 && J.glows.every(g => g.visible), 'with the jeep lit, the torch takes the lamp (the lenses stay lit)');
+            tap('KeyL');
+            sec(1);
+            ok(L.at === 'jeep' && J.beam.intensity > 3, 'and gives it back');
+            // daylight puts parked lights out
+            A.setTimeOfDay(12);
+            sec(1);
+            ok(J.beam.intensity === 0, 'by day they go out');
+          }
+          // ---- thermal: there when it is dark
+          fresh(0);
+          {
+            P.optOn = true;
+            P.optKind = 'scope';
+            P.thermal = false;
+            P.thermalCharge = 1;
+            sec(1);
+            ok(P.thermal && P.optAmt > 0.9, 'raise the scope at night and the thermal picture is on by itself');
+            tap('KeyY');
+            ok(!P.thermal && L.thermOff, 'Y switches it off');
+            P.optOn = false;
+            P.optAmt = 0;
+            sec(1);
+            P.optOn = true;
+            sec(1);
+            ok(!P.thermal, 'a hand-made choice holds: it stays off the next time you raise it tonight');
+            P.optOn = false;
+            P.optAmt = 0;
+            sec(1);
+            A.setTimeOfDay(12);
+            sec(1);
+            P.optOn = true;
+            sec(1);
+            ok(!P.thermal && !L.thermOff, 'by day nothing comes on by itself, and the choice is forgotten');
+            P.optOn = false;
+            P.optAmt = 0;
+            sec(1);
+            A.setTimeOfDay(0);
+            sec(1);
+            P.optOn = true;
+            P.optKind = 'bino';
+            sec(1);
+            ok(P.thermal, 'binoculars get it too');
+            P.optOn = false;
+            P.optAmt = 0;
+            sec(1);
+            P.thermalCharge = 0.05;
+            P.optOn = true;
+            P.optKind = 'scope';
+            sec(1);
+            ok(!P.thermal, 'a flat battery does not switch it on');
+            P.optOn = false;
+            P.optAmt = 0;
+            P.thermalCharge = 1;
+            P.thermal = false;
+            sec(1);
+            // the battery lasts longer at night
+            P.thermalCharge = 1;
+            P.optOn = true;
+            P.optKind = 'scope';
+            sec(1);
+            const n0 = P.thermalCharge;
+            sec(10);
+            const nightDrain = n0 - P.thermalCharge;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.thermal = false;
+            sec(1);
+            A.setTimeOfDay(12);
+            P.thermalCharge = 1;
+            P.optOn = true;
+            sec(1);
+            tap('KeyY');
+            const d0 = P.thermalCharge;
+            sec(10);
+            const dayDrain = d0 - P.thermalCharge;
+            ok(nightDrain > 0.02 && dayDrain > nightDrain * 1.4, 'the battery lasts longer in the dark (night ' + (nightDrain * 100).toFixed(1) + '% vs day ' + (dayDrain * 100).toFixed(1) + '% in 10 s)');
+            P.optOn = false;
+            P.optAmt = 0;
+            P.thermal = false;
+          }
+          // ---- the night is dark but not black
+          {
+            fresh(0);
+            sec(1);
+            ok(A.hemi.intensity > 0.3 && A.sun.intensity > 0.4, 'a clear midnight has some moonlight to see shapes by (sky ' + A.hemi.intensity.toFixed(2) + ', moon ' + A.sun.intensity.toFixed(2) + ')');
+            A.setWeather('overcast', true);
+            E.cover = 1;
+            sec(1);
+            ok(A.sun.intensity > 0.2, 'and an overcast one is not pitch black (' + A.sun.intensity.toFixed(2) + ')');
+            A.setWeather('clear', true);
+          }
+          // ---- the keys on a touch screen
+          {
+            fresh(12);
+            const saved = localStorage.getItem('apexRidgeLayout');
+            const shown = id => {
+              const e = document.getElementById(id);
+              return getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0;
+            };
+            document.body.classList.add('touch');
+            A.TOUCH.on = true;
+            for (const k in CTL.b) delete CTL.b[k];
+            CTL.size = 1;
+            CTL.op = 1;
+            A.applyLayout();
+            sec(1);
+            A.autoKeys();
+            ok(!shown('tLight') && !shown('tTherm'), 'by day, on foot, with nothing raised: no light key and no thermal key');
+            A.setTimeOfDay(0);
+            sec(1);
+            A.autoKeys();
+            ok(shown('tLight'), 'at night the light key appears');
+            const pe = (type, id, x, y, target) =>
+              target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 }));
+            A.TOUCH.releaseAll();
+            P.torch = false;
+            const lk = document.getElementById('tLight'),
+              lr = lk.getBoundingClientRect();
+            pe('pointerdown', 91, lr.left + lr.width / 2, lr.top + lr.height / 2, lk);
+            pe('pointerup', 91, lr.left + lr.width / 2, lr.top + lr.height / 2, lk);
+            sec(1);
+            A.autoKeys();
+            A.touchLabels();
+            ok(P.torch && L.at === 'torch' && lk.classList.contains('on'), 'the light key is the torch, and lights up while it is on');
+            P.optOn = true;
+            P.optKind = 'scope';
+            sec(1);
+            A.autoKeys();
+            A.touchLabels();
+            ok(shown('tTherm'), 'the thermal key shows while the scope is up');
+            ok(P.thermal && document.getElementById('tTherm').classList.contains('on'), 'with the thermal picture already on at night, and the key lit');
+            P.optOn = false;
+            P.optAmt = 0;
+            sec(1);
+            A.autoKeys();
+            ok(!shown('tTherm'), 'and goes when it is lowered');
+            // the layout editor knows both
+            ok(A.LBTN.tLight && A.LBTN.tTherm && A.LBTN.tLight.opts.includes('menu') && A.LBTN.tTherm.opts.includes('hide'), 'both can be moved, bundled in the menu or hidden');
+            CTL.b.tLight = { w: 'menu' };
+            A.applyLayout();
+            ok(!!document.querySelector('#hubGrid #tLight'), 'put in the menu, the light key goes into the grid');
+            for (const k in CTL.b) delete CTL.b[k];
+            A.applyLayout();
+            // in the jeep it is the headlights key
+            P.torch = false;
+            A.enterJeep();
+            sec(1);
+            A.autoKeys();
+            ok(shown('tLight') && !shown('tTherm'), 'in the jeep: the light key stays, the thermal key goes');
+            const m0 = J.lightsMode;
+            A.toggleLight();
+            ok(J.lightsMode !== m0, 'and it cycles the headlights');
+            J.lightsMode = 'auto';
+            A.leaveJeep();
+            if (saved === null) localStorage.removeItem('apexRidgeLayout');
+            else localStorage.setItem('apexRidgeLayout', saved);
+            A.TOUCH.on = false;
+            document.body.classList.remove('touch', 'scoped');
+            A.applyLayout();
+          }
+          fresh(12);
+          P.invuln = 0;
+        }
+      ],
+      [
+        'Weapons: the mouse wheel on a PC, and the weapon wheel on a touch screen',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            keys = A.keys,
+            CTL = A.CTL,
+            W = A.WHEEL;
+          const sec = s => run(Math.round(s * 60));
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.optKind = 'scope';
+            A.setStance(0);
+            A.setWeapon('rifle');
+            A.dinos.forEach(d => {
+              if (!d.dead && !d.sp.fly) {
+                d.x = 9999;
+                d.z = 9999;
+                d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+              }
+            });
+            for (const k in keys) keys[k] = false;
+          };
+          const roll = dy => {
+            W.last = 0; // (a step may follow another at once in a test; by hand they are always more than a tenth of a second apart)
+            window.dispatchEvent(new WheelEvent('wheel', { deltaY: dy, deltaMode: 0 }));
+          };
+          // ---- the mouse wheel
+          fresh();
+          {
+            W.acc = 0;
+            roll(100);
+            ok(P.weapon === 'deagle', 'scrolling down goes to the next weapon: the pistol');
+            roll(100);
+            ok(P.weapon === 'machete', 'and the machete');
+            roll(100);
+            ok(P.weapon === 'rifle', 'and round to the rifle again');
+            roll(-100);
+            ok(P.weapon === 'machete', 'scrolling up goes back');
+            ok(/Machete/.test(document.querySelector('#wpnStrip .cur').textContent), 'the strip on the screen shows where you are in the list');
+            ok(document.getElementById('wpnStrip').classList.contains('on'), 'for a moment after each change');
+            A.setWeapon('rifle');
+            // one step per notch, however hard it is spun
+            W.acc = 0;
+            W.last = 0;
+            window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
+            window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
+            window.dispatchEvent(new WheelEvent('wheel', { deltaY: 100 }));
+            ok(P.weapon === 'deagle', 'a fast flick moves one weapon, not all the way round (' + P.weapon + ')');
+            // a trackpad has to travel a little
+            A.setWeapon('rifle');
+            W.acc = 0;
+            for (let i = 0; i < 3; i++) roll(12);
+            ok(P.weapon === 'rifle', 'a small touch of the pad changes nothing');
+            for (let i = 0; i < 3; i++) roll(12);
+            ok(P.weapon !== 'rifle', 'but a real swipe does');
+            A.setWeapon('rifle');
+            // scoped, it zooms and leaves the weapon alone
+            P.optOn = true;
+            P.optKind = 'scope';
+            P.optAmt = 1;
+            P.zoom = 5;
+            W.acc = 0;
+            roll(-100);
+            ok(P.zoom === 5.5 && P.weapon === 'rifle', 'with the scope up it zooms (' + P.zoom + 'x) and keeps the rifle');
+            // lowered, a scope that was used last must not swallow the wheel
+            P.optOn = false;
+            P.optAmt = 0;
+            W.acc = 0;
+            roll(100);
+            ok(P.weapon === 'deagle' && P.zoom === 5.5, 'with the scope down the wheel changes weapon again');
+            // binoculars up: nothing to change
+            A.setWeapon('rifle');
+            P.optOn = true;
+            P.optKind = 'bino';
+            P.optAmt = 1;
+            W.acc = 0;
+            roll(100);
+            ok(P.weapon === 'rifle', 'binoculars up: the wheel does nothing');
+            P.optOn = false;
+            P.optAmt = 0;
+            // 1, 2 and 3 still work and show the strip too
+            window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3', bubbles: true }));
+            window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit3', bubbles: true }));
+            ok(P.weapon === 'machete' && /Machete/.test(document.querySelector('#wpnStrip .cur').textContent), '3 still selects the machete');
+            A.setWeapon('rifle');
+            // not in the jeep, not when dead, not in a menu
+            A.enterJeep();
+            sec(0.5);
+            W.acc = 0;
+            roll(100);
+            ok(P.weapon === 'rifle', 'in the jeep it changes nothing');
+            A.leaveJeep();
+            P.alive = false;
+            W.acc = 0;
+            roll(100);
+            ok(P.weapon === 'rifle', 'nor when you are dead');
+            P.alive = true;
+          }
+          // ---- the touch wheel
+          fresh();
+          {
+            const saved = localStorage.getItem('apexRidgeLayout');
+            const H = innerHeight,
+              Wd = innerWidth;
+            const shown = id => {
+              const e = document.getElementById(id);
+              return getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().width > 0;
+            };
+            const pe = (type, id, x, y, target) =>
+              target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 }));
+            document.body.classList.add('touch');
+            A.TOUCH.on = true;
+            A.TOUCH.releaseAll();
+            for (const k in CTL.b) delete CTL.b[k];
+            CTL.size = 1;
+            CTL.op = 1;
+            A.applyLayout();
+            A.touchLabels();
+            const key = document.getElementById('tWeap'),
+              wheel = document.getElementById('wheel');
+            const kr = () => key.getBoundingClientRect();
+            const mid = r => [r.left + r.width / 2, r.top + r.height / 2];
+            // where a sector's middle is, for a finger
+            const at = w => {
+              const a = (A.WPN && { rifle: 300, deagle: 60, machete: 180 }[w]) * (Math.PI / 180);
+              return [W.cx + Math.sin(a) * W.R * 0.66, W.cy - Math.cos(a) * W.R * 0.66];
+            };
+            ok(shown('tWeap') && !document.querySelector('#hubGrid #tWeap'), 'the weapon key is out on the screen by default, not in the menu');
+            ok(key.dataset.w === 'rifle', 'and shows the rifle in hand');
+            const k0 = kr();
+            ok(k0.left + k0.width / 2 > Wd * 0.7 && k0.left + k0.width / 2 < Wd * 0.9 && k0.top > H * 0.25 && k0.bottom < H * 0.75, 'on the right, about half way up');
+            // press, slide into the pistol sector, let go
+            let [x, y] = mid(k0);
+            pe('pointerdown', 81, x, y, key);
+            ok(W.open && getComputedStyle(wheel).display === 'block', 'touching the key opens the wheel');
+            const wr = wheel.getBoundingClientRect();
+            ok(wr.left >= 0 && wr.top >= 0 && wr.right <= Wd + 0.5 && wr.bottom <= H + 0.5, 'whole on the screen (' + Math.round(wr.width) + ' px)');
+            ok(Math.abs(wr.left + wr.width / 2 - W.cx) < 1.5 && Math.abs(wr.top + wr.height / 2 - W.cy) < 1.5, 'centred on the key');
+            let [px, py] = at('deagle');
+            pe('pointermove', 81, px, py, key);
+            ok(W.hot === 'deagle' && wheel.querySelector('.sec.hot').dataset.w === 'deagle', 'sliding into a sector lights it');
+            pe('pointerup', 81, px, py, key);
+            ok(P.weapon === 'deagle' && !W.open, 'letting go picks it, and the wheel closes');
+            A.touchLabels();
+            ok(key.dataset.w === 'deagle', 'the key shows the pistol now');
+            // tap the key, then tap a sector
+            [x, y] = mid(kr());
+            pe('pointerdown', 82, x, y, key);
+            pe('pointerup', 82, x, y, key);
+            ok(W.open && P.weapon === 'deagle', 'a plain tap leaves the wheel open');
+            let [mx, my] = at('machete');
+            pe('pointerdown', 83, mx, my, wheel);
+            pe('pointerup', 83, mx, my, wheel);
+            ok(P.weapon === 'machete' && !W.open, 'a second tap on the machete sector picks it');
+            // every sector
+            for (const w of ['rifle', 'deagle', 'machete']) {
+              A.setWeapon(w === 'rifle' ? 'deagle' : 'rifle');
+              [x, y] = mid(kr());
+              pe('pointerdown', 84, x, y, key);
+              pe('pointerup', 84, x, y, key);
+              [px, py] = at(w);
+              pe('pointerdown', 85, px, py, wheel);
+              pe('pointerup', 85, px, py, wheel);
+              ok(P.weapon === w, 'the ' + w + ' sector gives the ' + w);
+            }
+            // the middle and anywhere else close it without choosing
+            A.setWeapon('rifle');
+            [x, y] = mid(kr());
+            pe('pointerdown', 86, x, y, key);
+            pe('pointerup', 86, x, y, key);
+            pe('pointerdown', 87, W.cx, W.cy, wheel);
+            pe('pointerup', 87, W.cx, W.cy, wheel);
+            ok(!W.open && P.weapon === 'rifle', 'touching the middle closes it and keeps what you have');
+            pe('pointerdown', 88, x, y, key);
+            pe('pointerup', 88, x, y, key);
+            pe('pointerdown', 89, Wd * 0.3, H * 0.4, document.getElementById('lookPad'));
+            pe('pointerup', 89, Wd * 0.3, H * 0.4, document.getElementById('lookPad'));
+            ok(!W.open && P.weapon === 'rifle', 'so does touching anywhere else');
+            // let go in the middle of a slide, nowhere near a sector: nothing is chosen
+            pe('pointerdown', 90, x, y, key);
+            pe('pointermove', 90, x, y + 3, key);
+            pe('pointerup', 90, x, y + 3, key);
+            ok(W.open && P.weapon === 'rifle', 'sliding nowhere is just a tap');
+            A.wheelClose();
+            // it still fits when the key has been put at an edge
+            CTL.b.tWeap = { x: 0.97, y: 0.93 };
+            A.applyLayout();
+            [x, y] = mid(kr());
+            pe('pointerdown', 91, x, y, key);
+            pe('pointerup', 91, x, y, key);
+            const er = wheel.getBoundingClientRect();
+            ok(W.open && er.left >= 0 && er.top >= 0 && er.right <= Wd + 0.5 && er.bottom <= H + 0.5, 'with the key in a corner the wheel is still whole on the screen');
+            A.wheelClose();
+            // bundled in the menu it still works
+            CTL.b.tWeap = { w: 'menu' };
+            A.applyLayout();
+            ok(!!document.querySelector('#hubGrid #tWeap'), 'put in the menu, the key goes into the grid');
+            A.setHub(true);
+            [x, y] = mid(kr());
+            pe('pointerdown', 92, x, y, key);
+            ok(W.open, 'and opens the wheel from there');
+            [px, py] = at('machete');
+            pe('pointermove', 92, px, py, key);
+            pe('pointerup', 92, px, py, key);
+            ok(P.weapon === 'machete' && !W.open && !A.HUB.open, 'sliding out of it picks, and the menu closes behind');
+            // the wheel does not stay over a menu
+            A.setWeapon('rifle');
+            A.wheelOpen(Wd * 0.5, H * 0.5);
+            A.touchLabels();
+            ok(W.open, 'it is open');
+            A.pause();
+            A.touchLabels();
+            ok(!W.open, 'and gone when the game is paused');
+            A.resume();
+            if (saved === null) localStorage.removeItem('apexRidgeLayout');
+            else localStorage.setItem('apexRidgeLayout', saved);
+            for (const k in CTL.b) delete CTL.b[k];
+            A.applyLayout();
+            A.TOUCH.on = false;
+            document.body.classList.remove('touch', 'scoped');
+          }
           fresh();
           P.invuln = 0;
         }
@@ -21785,6 +22740,10 @@ window.__bootInner = async function () {
     sky,
     updateHud,
     cycleHeadlights,
+    toggleLight,
+    toggleTorch,
+    lampMount,
+    LAMP,
     updateHeadlights,
     toggleSupplies,
     updateSupplies,
@@ -21801,6 +22760,11 @@ window.__bootInner = async function () {
     WEAPONS,
     setWeapon,
     cycleWeapon,
+    WHEEL,
+    WPN,
+    wheelOpen,
+    wheelClose,
+    wheelSector,
     swingMachete,
     fireDeagle,
     PISTOL_ZERO,
@@ -21862,6 +22826,7 @@ window.__bootInner = async function () {
     openEditor,
     closeEditor,
     autoKeys,
+    touchLabels,
     toast,
     blocked,
     coverAt,
