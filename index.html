@@ -674,6 +674,24 @@ button#btn:focus-visible {
   align-items: center;
   gap: 8px;
 }
+#menu[data-kind="lose"] #mFine,
+#menu[data-kind="win"] #mFine {
+  display: none;
+}
+@media (max-height: 340px) {
+  #menu[data-kind="lose"] .dkeep {
+    display: none;
+  }
+  #menu[data-kind="lose"] .stats > div:nth-child(n + 7) {
+    display: none; /* the third row of tiles gives way to the tip */
+  }
+}
+.settings .touchonly {
+  display: none;
+}
+body.touch .settings .touchonly {
+  display: flex;
+}
 .settings input[type="range"] {
   accent-color: var(--ink);
   width: 150px;
@@ -972,6 +990,10 @@ body.touch #thermalLbl {
   justify-content: center;
   background: rgba(10, 12, 8, 0.8);
   padding: 12px;
+  pointer-events: auto;
+}
+#jBody {
+  touch-action: pan-y;
 }
 #journal.on {
   display: flex;
@@ -1755,6 +1777,20 @@ body.jeep #tTherm {
 #tPause {
   right: calc(69vmin + env(safe-area-inset-right, 0px));
 }
+/* pause is out on the screen, to the left of the menu button; the sound key sits in the menu until you put it out */
+#tPause {
+  right: calc(15vmin + env(safe-area-inset-right, 0px));
+}
+#tMute {
+  right: calc(26vmin + env(safe-area-inset-right, 0px));
+}
+#tMute .m-off,
+#tMute[data-m="1"] .m-on {
+  display: none;
+}
+#tMute[data-m="1"] .m-off {
+  display: block;
+}
 /* the weapon wheel: the key sits at the right edge of the view, a little above the middle, and shows what you are holding */
 #tWeap {
   left: calc(80% - 6vmin);
@@ -2047,6 +2083,27 @@ body.touch #prompt {
 body.touch #promptTxt {
   font-size: 17px;
 }
+#mapClear {
+  position: absolute;
+  left: calc(14px + env(safe-area-inset-left, 0px));
+  top: calc(10px + env(safe-area-inset-top, 0px));
+  z-index: 2;
+  display: none;
+  width: 84px;
+  height: 58px;
+  padding: 0 8px;
+  border-radius: 14px;
+  border: 2px solid var(--paper);
+  background: rgba(10, 14, 10, 0.7);
+  color: var(--paper);
+  font: 600 17px/1.05 var(--display);
+  letter-spacing: 0.03em;
+  text-align: center;
+  cursor: pointer;
+}
+#mapClear.on {
+  display: block;
+}
 #mapX {
   position: absolute;
   right: calc(14px + env(safe-area-inset-right, 0px));
@@ -2181,6 +2238,7 @@ body.touch button#btn2 {
 body.touch button#btn2 {
   min-height: 48px;
   font-size: 22px;
+  margin: 0;
 }
 body.touch .mbtns {
   display: grid;
@@ -2233,6 +2291,7 @@ body.touch #menu.help #mBody {
 body.touch #menu.opts .settings {
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
   align-items: stretch;
   gap: 14px;
   font-size: 17px;
@@ -2657,12 +2716,6 @@ button#btn2:hover {
   <div id="hitmark"></div>
   <div id="toast"></div>
   <div id="wpnStrip"></div>
-  <div id="journal" role="dialog" aria-label="Field journal"><div class="jwrap"><div class="jhead"><h2>Field journal</h2>
-    <div class="jtabs"><button type="button" data-t="species" class="on">Species</button><button type="button" data-t="lore">Lore</button><button type="button" data-t="photos">Photos</button></div>
-    <button type="button" id="jClose" aria-label="Close journal">✕</button></div><div id="jBody"></div></div></div>
-  <div id="photoUi"><div class="hint" id="phHint"></div><div class="btns"><button type="button" id="phShot">TAKE PHOTO</button><button type="button" id="phFilter">FILTER</button><button type="button" id="phExit">EXIT</button></div></div>
-  <div id="shutter"></div>
-  <div id="replayBars"><div class="bar t"></div><div class="bar b"></div><div id="replayTxt"></div><div id="replaySkip">any key to skip</div></div>
   <div id="jeepHud"><div class="spd"><span id="jSpd">0</span> km/h</div><div class="bars"><div class="lbl" id="jFuelLbl">FUEL</div><div class="bar"><i id="jFuel"></i></div><div class="lbl">BODY</div><div class="bar"><i id="jHp"></i></div></div><div class="hint" id="jHint"></div></div>
   <div id="thermalTint"></div><div id="thermalLbl">THERMAL</div>
   <div id="seedTag"></div>
@@ -2688,6 +2741,13 @@ button#btn2:hover {
     <div id="rl"><div id="rlFill"></div></div>
   </div>
 </div>
+<!-- (the journal, the photo-mode buttons, the shutter and the replay bars sit outside the HUD: it ignores touches and is hidden in those modes) -->
+  <div id="journal" role="dialog" aria-label="Field journal"><div class="jwrap"><div class="jhead"><h2>Field journal</h2>
+    <div class="jtabs"><button type="button" data-t="species" class="on">Species</button><button type="button" data-t="lore">Lore</button><button type="button" data-t="photos">Photos</button></div>
+    <button type="button" id="jClose" aria-label="Close journal">✕</button></div><div id="jBody"></div></div></div>
+  <div id="photoUi"><div class="hint" id="phHint"></div><div class="btns"><button type="button" id="phShot">TAKE PHOTO</button><button type="button" id="phFilter">FILTER</button><button type="button" id="phExit">EXIT</button></div></div>
+  <div id="shutter"></div>
+  <div id="replayBars"><div class="bar t"></div><div class="bar b"></div><div id="replayTxt"></div><div id="replaySkip">any key to skip</div></div>
 <!-- Two icons in the top-left corner. Each opens its panel when tapped (or with O and I) and closes it again. They sit above the touch layer so a finger can reach them. -->
 <div id="dock">
   <div id="dockIcons">
@@ -2736,6 +2796,7 @@ button#btn2:hover {
   <button class="tb sm" id="tGear" data-lbl="Gear" aria-label="Gear menu" title="Gear"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg></button>
   <button class="tb sm" id="tWeap" data-lbl="Weapon" aria-label="Change weapon" title="Weapon"><svg class="ic" viewBox="0 0 24 24"><path d="M2.5 13.5h13.5l2-2.5h3.5v3.2l-3 1.8h-4.2l-1 3.5h-3.3l-1.2-3.5H2.5z"/><path d="M8 11V9.5h5V11"/></svg></button>
   <button class="tb sm" id="tPause" data-lbl="Pause" aria-label="Pause" title="Pause"><svg class="ic" viewBox="0 0 24 24"><rect class="fl" x="6.5" y="5" width="3.6" height="14" rx="1"/><rect class="fl" x="13.9" y="5" width="3.6" height="14" rx="1"/></svg></button>
+  <button class="tb sm" id="tMute" data-lbl="Sound" data-m="0" aria-label="Sound on or off" title="Sound"><svg class="ic m-on" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.2 9.2a4 4 0 0 1 0 5.6M17.8 6.8a7.5 7.5 0 0 1 0 10.4"/></svg><svg class="ic m-off" viewBox="0 0 24 24"><path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.5 9.5l5 5M20.5 9.5l-5 5"/></svg></button>
   <div id="hubPanel"><div id="hubGrid"></div></div>
   <div id="wheel" aria-label="Weapon wheel"></div>
   <div id="gear"><button id="gFuel" type="button">REFUEL JEEP</button><button id="gFix" type="button">REPAIR JEEP</button><button id="gLights" type="button">LIGHT</button><button id="gSup" type="button">SUPPLIES</button><button id="gTherm" type="button">THERMAL</button><button id="gRead" type="button">READ GROUND</button><button id="gThrow" type="button">THROW</button><button id="gSel" type="button">FLARE / BAIT</button><button id="gAmmo" type="button">DARTS / LIVE</button><button id="gJournal" type="button">JOURNAL</button><button id="gPhoto" type="button">PHOTO</button><button id="gLayout" type="button">MOVE / SIZE KEYS</button><button id="gFs" type="button">FULL SCREEN</button><button id="gAssist" type="button">AIM ASSIST</button></div>
@@ -2756,25 +2817,29 @@ button#btn2:hover {
 </div>
 <pre id="touchDbg"></pre>
 <div id="rotate">Turn your phone sideways to play</div>
-<div id="map"><button id="mapX" aria-label="Close map">✕</button><div class="mapwrap"><canvas id="mapCv" width="760" height="760"></canvas>
+<div id="map"><button id="mapX" aria-label="Close map">✕</button><button id="mapClear" type="button">Clear<br>waypoint</button><div class="mapwrap"><canvas id="mapCv" width="760" height="760"></canvas>
   <div class="mapside"><h3>Reserve map</h3>
     <div><i style="background:#8a6d3b"></i>Ranger camp</div><div><i style="background:#c4402f"></i>Tower, broken</div>
     <div><i style="background:#3f7d3a"></i>Tower, restored</div><div><i style="background:#d9a43a;border-radius:50%"></i>Nest with eggs</div>
     <div><i style="background:#8a8a80;border-radius:50%"></i>Nest, empty</div><div><i style="border:2px dashed #9b2d20;border-radius:50%"></i>Alpha territory</div>
     <div><i style="background:#2f6fb5;border-radius:50%"></i>Waypoint</div><div><i style="background:#6c7a3c"></i>Jeep</div>
-    <div class="hint">Click to place a waypoint, right-click to clear it. Ground you have not walked past stays blank. Restoring a tower maps its surroundings. M or Esc to close.</div></div></div></div>
+    <div class="hint">Click or tap to place a waypoint; right-click or the Clear waypoint button removes it, and it clears itself when you arrive. Ground you have not walked past stays blank. Restoring a tower maps its surroundings. M or Esc to close.</div></div></div></div>
 
 <div id="menu">
   <div class="sheet">
     <div class="stamp" id="stamp">Sector 7</div>
     <h1 id="mTitle">Apex<br>Ridge</h1>
-    <div class="sub" id="mSub">Overwatch post 7, Cretaceous reserve. Dawn mist, light wind.</div>
+    <div class="sub" id="mSub">Overwatch post 7, Cretaceous reserve. Clear morning, light wind.</div>
     <div id="mBody"></div>
     <div class="settings"><label>Mouse sensitivity <input type="range" id="sens" min="30" max="250" value="100"><span id="sensVal">1.00x</span></label>
       <label><input type="checkbox" id="invY"> Invert Y</label>
       <label title="Slows your aim over an animal, ranges for you in the scope, steadies the rifle and nudges a close shot onto the animal (on by default on a touch screen)"><input type="checkbox" id="assistOn"> Aim assist</label>
       <label title="Shows where the round will land in the scope, from the range you are reading and the wind"><input type="checkbox" id="ballAid" checked> Ballistic aid</label>
       <label><input type="checkbox" id="killcamOn" checked> Long-shot replay</label>
+      <label class="touchonly" title="Scoped, the bullet key fires when you lift your thumb, so you can slide it to put the crosshair on the animal first"><input type="checkbox" id="fireUp"> Fire on release when scoped</label>
+      <label title="After a reload the scope goes back up by itself, unless you touched it yourself"><input type="checkbox" id="rescope" checked> Scope back up after a reload</label>
+      <label title="Relaxed: gentler bites, faster healing, more ammunition, animals notice you from less far. Hunter is the reverse. The world is the same on all three.">Difficulty <select id="diffSel"><option value="relaxed">Relaxed</option><option value="standard">Standard</option><option value="hunter">Hunter</option></select></label>
+      <label title="Holding the picture to 60 or 30 a second saves battery and heat on a phone, and keeps a fast screen from drawing frames nobody can use">Frame rate <select id="fpsSel"><option value="0">As fast as the screen</option><option value="60">60 a second</option><option value="30">30 a second (saves battery)</option></select></label>
       <label>World seed <input type="text" id="seedIn" maxlength="24" spellcheck="false" autocomplete="off"></label><button id="layoutBtn" type="button">Customize controls</button><button id="seedGo" type="button">Load</button><button id="seedNew" type="button">New random world</button><button id="fsBtn" type="button">Full screen</button>
       <label>Graphics <select id="qSel"><option value="auto">Auto</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label><span id="qInfo"></span></div>
     <div class="macts"><button id="btn">Deploy</button><button id="btn2" style="display:none">New operation</button>
@@ -2971,6 +3036,13 @@ window.__bootInner = async function () {
   if (!seedText) {
     try {
       seedText = (localStorage.getItem('apexRidgeSeed') || '').trim();
+    } catch (e) {}
+  }
+  if (!seedText && !TEST) {
+    // no seed asked for: the world of a saved operation comes back (a phone that dropped the tab, a reload), else a new random one
+    try {
+      const sv = JSON.parse(localStorage.getItem('apexRidgeSave') || 'null');
+      if (sv && sv.v === 1 && typeof sv.seed === 'string' && sv.seed.trim() && Date.now() - (+sv.at || 0) < 14 * 86400000) seedText = sv.seed.trim();
     } catch (e) {}
   }
   if (!seedText) seedText = String(100000 + Math.floor(Math.random() * 900000));
@@ -6675,6 +6747,7 @@ window.__bootInner = async function () {
             d.climb = 0;
             d.diveT = 0;
             Aud.screech(d);
+            journalNote(d.type, 'track'); // "when it folds its wings, it has chosen you": the only sign a flyer leaves
           }
         }
       } else if (d.state === 'hunt') {
@@ -6705,6 +6778,7 @@ window.__bootInner = async function () {
       const L = Math.hypot(d.x - ex, d.y - ey, d.z - ez);
       if (d.diveT > 0.8 && L < 2.6) {
         damagePlayer(sp.dmg, d);
+        journalNote(d.type, 'hunt');
         d.state = 'patrol';
         d.awareness = 0;
         d.noticed = false;
@@ -7166,9 +7240,9 @@ window.__bootInner = async function () {
     updateDiscoveries();
     ecoWorldTick(step);
     const free = dinos.filter(d => d.type === 'raptor' && !d.dead && !d.guard && !d.hatchling).length; // wandering raptor packs return over time, out of sight
-    if (free < CONFIG.wildlife.minWildRaptors) {
+    if (free < DIFF().raptors) {
       respT += step;
-      if (respT > CONFIG.wildlife.raptorRespawnSeconds) {
+      if (respT > CONFIG.wildlife.raptorRespawnSeconds * DIFF().respawn) {
         respT = 0;
         for (let n = 0; n < 40; n++) {
           const a = rand(0, TAU),
@@ -7193,7 +7267,13 @@ window.__bootInner = async function () {
     nb: null,
     rev: null,
     wind: null,
-    muted: false,
+    muted: (() => {
+      try {
+        return localStorage.getItem('apexRidgeMute') === '1';
+      } catch (e) {
+        return false;
+      }
+    })(),
     init() {
       if (TEST) return; // tests run silent
       if (this.c) {
@@ -7207,7 +7287,7 @@ window.__bootInner = async function () {
         const comp = c.createDynamicsCompressor();
         comp.connect(c.destination);
         this.out = c.createGain();
-        this.out.gain.value = 0.85;
+        this.out.gain.value = this.muted ? 0 : 0.85;
         this.out.connect(comp);
         const nb = c.createBuffer(1, c.sampleRate * 2, c.sampleRate),
           nd = nb.getChannelData(0);
@@ -7284,6 +7364,17 @@ window.__bootInner = async function () {
         this.c = null;
       }
     },
+    // a call, a lock screen or another app leaves the context suspended (or "interrupted" on an iPhone): any touch or key brings it back
+    wake() {
+      const c = this.c;
+      if (!c) return;
+      try {
+        if (c.state !== 'running' && c.resume) {
+          const r = c.resume();
+          if (r && r.catch) r.catch(() => {});
+        }
+      } catch (e) {}
+    },
     pan(pos) {
       if (!pos) return this.out;
       const p = this.c.createPanner();
@@ -7301,7 +7392,7 @@ window.__bootInner = async function () {
       return p;
     },
     noise(o) {
-      if (!this.c) return;
+      if (!this.c || this.c.state !== 'running') return; // (nothing is queued while it sleeps: it would all go off at once on waking)
       try {
         const c = this.c,
           t0 = c.currentTime + (o.delay || 0),
@@ -7331,7 +7422,7 @@ window.__bootInner = async function () {
       } catch (e) {}
     },
     tone(o) {
-      if (!this.c) return;
+      if (!this.c || this.c.state !== 'running') return;
       try {
         const c = this.c,
           t0 = c.currentTime + (o.delay || 0),
@@ -7656,8 +7747,20 @@ window.__bootInner = async function () {
     toggle() {
       this.muted = !this.muted;
       if (this.out) this.out.gain.value = this.muted ? 0 : 0.85;
+      try {
+        localStorage.setItem('apexRidgeMute', this.muted ? '1' : '0');
+      } catch (e) {}
+      return this.muted;
     }
   };
+  ['pointerdown', 'touchend', 'keydown'].forEach(ev => addEventListener(ev, () => Aud.wake(), { capture: true, passive: true }));
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) Aud.wake();
+  });
+  addEventListener('pageshow', () => Aud.wake());
+  function toggleMute() {
+    toast(Aud.toggle() ? 'Sound off.' : 'Sound on.');
+  }
   const _f = new T.Vector3(),
     _u = new T.Vector3();
 
@@ -7847,9 +7950,9 @@ window.__bootInner = async function () {
     dart: Object.freeze({
       key: 'dart',
       mass: 0.004,
-      v0: 150,
+      v0: 250,
       vsd: 2,
-      bc: 0.03,
+      bc: 0.08,
       sightH: 0.06,
       sigmaMil: 0.25,
       rangeFloor: 1
@@ -8414,7 +8517,7 @@ window.__bootInner = async function () {
   /* A snap shot with a heavy scoped rifle is not accurate. Looking through the scope removes the cone; the rifle still has its own tiny group. */
   function hipSpread() {
     const adsK = clamp((P.optAmt - 0.55) / 0.4, 0, 1);
-    return 0.024 * [1, 0.7, 0.45][P.stance] * (P.moving ? 2.2 : 1) * (1 + 0.5 * P.pulse) * (1 - adsK) * (SET.assist ? 0.6 : 1);
+    return 0.024 * [1, 0.7, 0.45][P.stance] * (P.moving ? 2.2 : 1) * (1 + 0.5 * P.pulse) * (1 - adsK) * (SET.assist ? 0.6 : 1) * DIFF().sway;
   }
   /* =====================================================================
    AIM ASSIST (on by default on a touch screen; the Gear menu or the start screen turns it off). A thumb covers far fewer pixels than a
@@ -8545,13 +8648,13 @@ window.__bootInner = async function () {
     cam.getWorldDirection(aim);
     _rt.setFromMatrixColumn(cam.matrixWorld, 0).normalize();
     _up.setFromMatrixColumn(cam.matrixWorld, 1).normalize();
-    aim = assistTurn(aim, 0); // (aim assist: a shot close to an animal is pulled onto it)
+    aim = assistTurn(aim, P.ammoMode === 'tranq' ? WEAPONS.dart.v0 : 0); // (aim assist: a shot close to an animal is pulled onto it, with the dart's own lead)
     // where the crosshair really points, kept so the spotter can call the impact against it
     const rr = rayWorld(cam.position, aim, 900);
     const aimInfo = rr.d < 899 ? { d: rr.d, p: cam.position.clone().addScaledVector(aim, rr.d) } : null;
-    if (assistOn()) assistDial(ASSIST.shotR || (rr.d < 899 ? rr.d * Math.hypot(aim.x, aim.z) : 0)); // (and the turret is set for the range)
-    // bore sits below the scope and is tilted up by the zero plus whatever is dialed on the turret
-    const dir = aim.clone().applyAxisAngle(_rt, boreAngle());
+    if (assistOn() && P.ammoMode !== 'tranq') assistDial(ASSIST.shotR || (rr.d < 899 ? rr.d * Math.hypot(aim.x, aim.z) : 0)); // (and the turret is set for the range)
+    // bore sits below the scope and is tilted up by the zero plus whatever is dialed on the turret (a dart has its own zero and no turret)
+    const dir = aim.clone().applyAxisAngle(_rt, P.ammoMode === 'tranq' ? DART_ZERO : boreAngle());
     const sp = hipSpread(),
       ang = RG() * TAU,
       rad = sp * Math.sqrt(RG());
@@ -8603,7 +8706,7 @@ window.__bootInner = async function () {
     puff(o.clone().addScaledVector(aim, 1), 0xcfcfc8, 5, 2.5, 0.8, 1.8, 0.2, 3, 0.35);
     if (P.stance >= 1)
       puff(new T.Vector3(o.x, heightAt(o.x, o.z) + 0.15, o.z), 0xa89a78, 6, 2.2, 0.6, 1.4, 0.2, 2.5, 0.45); // muzzle blast kicks up dust
-    makeNoise(P.x, P.z, 320, { x: P.x, z: P.z });
+    makeNoise(P.x, P.z, P.ammoMode === 'tranq' ? 36 : 320, { x: P.x, z: P.z }); // a dart is a cough, not a gunshot: only what is beside you hears it
     updateAmmoHud();
   }
   function fireDeagle() {
@@ -8692,6 +8795,36 @@ window.__bootInner = async function () {
     }
     return (lo + hi) / 2;
   })();
+  // the dart is sighted for 50 m, with no turret: inside about 80 m you aim at the animal and it arrives
+  const DART_ZERO = (() => {
+    const W = WEAPONS.dart,
+      k = dragK(W.bc),
+      R = 50;
+    const fl = al => {
+      let x = 0,
+        y = -W.sightH,
+        vx = W.v0 * Math.cos(al),
+        vy = W.v0 * Math.sin(al);
+      const hh = 1 / 600;
+      while (x < R) {
+        const s = Math.hypot(vx, vy),
+          q = k * cdG7(s / CSND) * s;
+        vx -= q * vx * hh;
+        vy += (-q * vy - G) * hh;
+        x += vx * hh;
+        y += vy * hh;
+      }
+      return y;
+    };
+    let lo = -0.002,
+      hi = 0.05;
+    for (let i = 0; i < 24; i++) {
+      const m = (lo + hi) / 2;
+      if (fl(m) < 0) lo = m;
+      else hi = m;
+    }
+    return (lo + hi) / 2;
+  })();
   function swingMachete() {
     const W = WEAPONS.machete;
     if (P.swingT > 0) return;
@@ -8746,7 +8879,8 @@ window.__bootInner = async function () {
     if (P.inJeep) return;
     P.weapon = w;
     P.reloading = false;
-    P.cycle = 0.35;
+    P.reScope = null;
+    P.cycle = Math.max(P.cycle, 0.35); // (never shorter than the rifle's own bolt cycle: fire, swap, swap back must not be a faster rifle)
     P.swingT = 0;
     P.optOn = false;
     if (w === 'deagle' && P.pRounds === 0 && P.pReserve > 0) startReload();
@@ -9042,6 +9176,7 @@ window.__bootInner = async function () {
         toast('The alpha tyrannosaur is down.');
         Aud.chime();
         checkWin();
+        saveGame();
       }
     } else {
       const fine = sp.fine || 400;
@@ -9058,9 +9193,12 @@ window.__bootInner = async function () {
       Aud.screech(d);
     } else Aud.roar(d.type === 'rex' ? 'rex' : d.type, d);
   }
+  // what hurt you, kept for the death sheet: when, by what, and what you were doing
+  const LIFE = { hits: [], last: null };
   function damagePlayer(amount, src) {
     if (!P.alive || game.state !== STATE.PLAY || P.invuln > 0) return;
     if (SET.assist) amount *= 0.7; // aim assist: a bite does 30 per cent less
+    amount *= DIFF().dmg;
     if (P.inJeep) {
       jeepHit(amount * 0.3, 'dino'); // the body takes the bite; a tyrannosaur still wrecks it in about fifteen seconds
       P.invuln = 0.6;
@@ -9068,6 +9206,21 @@ window.__bootInner = async function () {
     }
     P.hp -= amount;
     P.regenT = CONFIG.player.regenDelay;
+    LIFE.hits.push(game.time);
+    if (LIFE.hits.length > 24) LIFE.hits.shift();
+    LIFE.last = {
+      type: src.type,
+      name: (src.sp && src.sp.name) || 'animal',
+      pred: !!(src.sp && src.sp.pred),
+      fly: !!(src.sp && src.sp.fly),
+      guard: !!src.guard,
+      dist: Math.round(Math.hypot(src.x - P.x, src.z - P.z)),
+      sprint: !!P.sprint,
+      torch: !!P.torch,
+      shotAgo: game.time - P.lastShot,
+      empty: P.weapon === 'rifle' ? P.rounds <= 0 : P.weapon === 'deagle' ? P.pRounds <= 0 : false,
+      kits: P.kits
+    };
     P.shake = Math.max(P.shake, 0.9);
     Aud.grunt();
     P.kickP += 0.04;
@@ -9207,7 +9360,7 @@ window.__bootInner = async function () {
   });
   addEventListener('mousemove', e => {
     if ((game.state !== STATE.PLAY && game.state !== STATE.PHOTO) || !P.alive) return;
-    if (!(locked || (!useLock && e.buttons & 1))) return;
+    if (!(locked || ((!useLock || game.state === STATE.PHOTO) && e.buttons & 1))) return; // (Esc frees the mouse in photo mode: drag to look)
     const k = sensK();
     P.yaw -= e.movementX * k;
     P.pitch = clamp(P.pitch - e.movementY * k * (SET.inv ? -1 : 1), -1.45, 1.45);
@@ -9218,13 +9371,30 @@ window.__bootInner = async function () {
       (0.0022 * SET.sens * Math.tan((cam.fov * Math.PI) / 360)) / Math.tan((HIP_FOV * Math.PI) / 360)
     );
   }
-  const SET = { sens: 1, inv: false, aid: true, assist: COARSE }; // aim assist is on by default on a touch screen
+  /* Difficulty is a handful of multipliers on numbers that already exist (CONFIG is frozen, so they are applied where each is used). The same
+     seed is the same world on every setting: only how hard it bites, how fast you mend, how far it notices you, how much ammunition there is
+     and how many raptors come back change. Standard is the game as it was. */
+  const DIFFS = {
+    relaxed: { name: 'Relaxed', dmg: 0.6, regenRate: 1.5, regenDelay: 0.6, detect: 0.8, reserve: 1.5, crate: 1.25, crateCool: 0.7, raptors: 6, respawn: 1.6, sway: 0.8 },
+    standard: { name: 'Standard', dmg: 1, regenRate: 1, regenDelay: 1, detect: 1, reserve: 1, crate: 1, crateCool: 1, raptors: 9, respawn: 1, sway: 1 },
+    hunter: { name: 'Hunter', dmg: 1.35, regenRate: 0.55, regenDelay: 1.6, detect: 1.2, reserve: 0.8, crate: 0.8, crateCool: 1.4, raptors: 11, respawn: 0.8, sway: 1.15 }
+  };
+  // aim assist, fire on release and Relaxed are on by default on a touch screen
+  // (fps: 0 is as fast as the screen goes; a phone is held to 60 by default, which saves its battery on a 90 or 120 Hz screen)
+  const SET = { sens: 1, inv: false, aid: true, assist: COARSE, fireUp: COARSE, rescope: true, diff: COARSE ? 'relaxed' : 'standard', fps: COARSE ? 60 : 0 };
+  const DIFF = () => DIFFS[SET.diff] || DIFFS.standard;
   try {
     const s = JSON.parse(localStorage.getItem('apexRidgeSet') || '{}');
-    if (s.sens) SET.sens = clamp(s.sens, 0.3, 2.5);
-    SET.inv = !!s.inv;
-    SET.aid = s.aid === undefined ? true : !!s.aid;
-    SET.assist = s.assist === undefined ? COARSE : !!s.assist;
+    if (s && typeof s === 'object') {
+      if (Number.isFinite(+s.sens) && +s.sens > 0) SET.sens = clamp(+s.sens, 0.3, 2.5);
+      SET.inv = !!s.inv;
+      SET.aid = s.aid === undefined ? true : !!s.aid;
+      SET.assist = s.assist === undefined ? COARSE : !!s.assist;
+      if (s.fireUp !== undefined) SET.fireUp = !!s.fireUp;
+      if (s.rescope !== undefined) SET.rescope = !!s.rescope;
+      if (typeof s.diff === 'string' && DIFFS[s.diff]) SET.diff = s.diff;
+      if ([0, 30, 60].includes(+s.fps) && s.fps !== null && s.fps !== '') SET.fps = +s.fps;
+    }
   } catch (e) {}
   const assistClass = () => document.body.classList.toggle('assist', !!SET.assist);
   assistClass();
@@ -9256,19 +9426,50 @@ window.__bootInner = async function () {
     SET.inv = $('invY').checked;
     saveSet();
   });
+  $('fireUp').checked = SET.fireUp;
+  $('fireUp').addEventListener('change', () => {
+    SET.fireUp = $('fireUp').checked;
+    saveSet();
+  });
+  $('rescope').checked = SET.rescope;
+  $('rescope').addEventListener('change', () => {
+    SET.rescope = $('rescope').checked;
+    saveSet();
+  });
+  $('diffSel').value = SET.diff;
+  $('diffSel').addEventListener('change', () => {
+    if (!DIFFS[$('diffSel').value]) return;
+    SET.diff = $('diffSel').value;
+    saveSet();
+    toast('Difficulty: ' + DIFF().name + '.');
+  });
+  $('fpsSel').value = String(SET.fps);
+  $('fpsSel').addEventListener('change', () => {
+    const v = +$('fpsSel').value;
+    if (![0, 30, 60].includes(v)) return;
+    SET.fps = v;
+    saveSet();
+  });
   addEventListener('mousedown', e => {
+    if (game.state === STATE.PHOTO) {
+      if (e.button === 0 && locked) capturePhoto(); // "click: photo", as the hint says
+      return;
+    }
     if (game.state !== STATE.PLAY) return;
     if (e.button === 0 && locked) fire();
     else if (e.button === 2) {
-      // tap to toggle the scope, or hold to look through it only while the button is down
-      if (P.optOn && P.optKind === 'scope') {
+      // tap to toggle the optic, or hold to look through it only while the button is down. It goes through toggleOptic, like F, so the pistol
+      // gets its sights and the machete gets nothing (neither has the rifle's scope).
+      if (P.optOn && (P.optKind === 'scope' || P.optKind === 'sights')) {
         P.optOn = false;
+        P.reScope = null;
         rmbWasOff = false;
-      } else if (!P.swimming) {
-        P.optOn = true;
-        P.optKind = 'scope';
-        rmbWasOff = true;
-        rmbT = performance.now();
+      } else {
+        toggleOptic('scope');
+        if (P.optOn) {
+          rmbWasOff = true;
+          rmbT = performance.now();
+        }
       }
     }
   });
@@ -9276,7 +9477,7 @@ window.__bootInner = async function () {
     rmbWasOff = false;
   addEventListener('mouseup', e => {
     if (e.button === 2) {
-      if (rmbWasOff && performance.now() - rmbT > 300 && P.optKind === 'scope') P.optOn = false;
+      if (rmbWasOff && performance.now() - rmbT > 300 && (P.optKind === 'scope' || P.optKind === 'sights')) P.optOn = false;
       rmbWasOff = false;
     }
   });
@@ -9293,7 +9494,7 @@ window.__bootInner = async function () {
     }
     keys[e.code] = true;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
-    if (e.code === 'KeyN') Aud.toggle();
+    if (e.code === 'KeyN') toggleMute();
     if (e.code === 'KeyM') {
       if (game.state === STATE.PLAY) openMap();
       else if (game.state === STATE.MAP) closeMap();
@@ -9325,7 +9526,7 @@ window.__bootInner = async function () {
       return;
     }
     if (game.state === STATE.PAUSED && e.code === 'KeyP') {
-      resume();
+      if (!EDIT.on) resume(); // (not behind the layout editor, which would leave a running game under a "Paused" sheet)
       return;
     }
     if (game.state !== STATE.PLAY || !P.alive) return;
@@ -9640,14 +9841,16 @@ window.__bootInner = async function () {
       f.oy = clamp(y, Rv + 6, h - Rv - 6);
       f.R = Rv;
       f.sc = sc;
+      f.lx = x; // where the thumb really landed: the stick's zero is here, even when the drawn base had to be kept inside the screen
+      f.ly = y;
       joy.style.left = f.ox - Rb + 'px';
       joy.style.top = f.oy - Rb + 'px';
       joy.style.bottom = 'auto';
       joy.classList.add('on');
     };
     const stickMove = (f, x, y) => {
-      let dx = x - f.ox,
-        dy = y - f.oy;
+      let dx = x - f.lx,
+        dy = y - f.ly;
       const L = Math.hypot(dx, dy);
       if (L > f.R) {
         dx *= f.R / L;
@@ -9670,7 +9873,7 @@ window.__bootInner = async function () {
       TOUCH.edge = m > 0.92 && sz > 0.45; // pushed to the rim, forwards: sprint
       joy.classList.toggle('run', TOUCH.edge);
     };
-    const release = id => {
+    const release = (id, cancel) => {
       const f = fingers.get(id);
       if (!f) return;
       fingers.delete(id);
@@ -9681,15 +9884,16 @@ window.__bootInner = async function () {
       } else if (f.kind === 'btn') {
         f.b.el.classList.remove('on');
         if (f.b.up) f.b.up();
+        if (f.fireUp && !cancel && game.state === STATE.PLAY) fire(); // scoped: the shot goes when the thumb lifts, wherever the slide left the crosshair
         if (!EDIT.on && f.b.el.closest('#hubPanel')) setHub(false); // a key taken from the menu closes it
       }
     };
     const releaseAll = () => {
-      for (const id of [...fingers.keys()]) release(id);
+      for (const id of [...fingers.keys()]) release(id, true); // (nothing fires because the page lost focus)
       stickReset();
     };
     const begin = (id, x, y, target) => {
-      if (fingers.has(id)) release(id);
+      if (fingers.has(id)) release(id, true);
       if (HUB.open && !EDIT.on && !(target && target.closest && target.closest('#hubPanel, #tHub'))) setHub(false); // a tap anywhere else closes the menu
       if (WHEEL.open && !EDIT.on) {
         if (target && target.closest && target.closest('#wheel')) {
@@ -9706,9 +9910,18 @@ window.__bootInner = async function () {
       const b = el && BTN[el.id];
       if (b) {
         // the fire key is also a look pad: keep the thumb on it and slide to aim (a tap that wobbles a few pixels does not turn the view)
-        fingers.set(id, el.id === 'tFire' ? { kind: 'btn', b, look: true, x, y, moved: 0 } : el.id === 'tWeap' ? { kind: 'btn', b, wheelKey: true } : { kind: 'btn', b });
+        // scoped, the bullet key waits for you to lift your thumb: you slide it to settle the crosshair, then let go (touch-down used to spend the round first)
+        const holdFire = el.id === 'tFire' && SET.fireUp && P.optAmt > 0.5 && P.weapon !== 'machete' && game.state === STATE.PLAY;
+        fingers.set(
+          id,
+          el.id === 'tFire'
+            ? { kind: 'btn', b, look: true, x, y, moved: 0, fireUp: holdFire }
+            : el.id === 'tWeap'
+              ? { kind: 'btn', b, wheelKey: true }
+              : { kind: 'btn', b }
+        );
         b.el.classList.add('on');
-        if (game.state === STATE.PLAY || el.id === 'tMap') b.down();
+        if ((game.state === STATE.PLAY || el.id === 'tMap') && !holdFire) b.down();
         trace('button ' + el.id);
       } else if (x < innerWidth * STICK_ZONE && ![...fingers.values()].some(q => q.kind === 'stick')) {
         // (a second finger on the left half is a look finger: there is only one stick)
@@ -9748,7 +9961,7 @@ window.__bootInner = async function () {
     const sync = list => {
       const live = new Set();
       for (let i = 0; i < list.length; i++) live.add('t' + list[i].identifier);
-      for (const id of [...fingers.keys()]) if (id[0] === 't' && !live.has(id)) release(id);
+      for (const id of [...fingers.keys()]) if (id[0] === 't' && !live.has(id)) release(id, true);
     };
     // a finger on the pause/gear menus, which are ordinary clickable things, must be left alone so the click still happens
     const native = t => !!(t && t.closest && (t.closest('#gear') || t.closest('#tGear')));
@@ -9769,7 +9982,7 @@ window.__bootInner = async function () {
         if (mine) e.preventDefault();
       };
       const onEnd = e => {
-        for (const t of e.changedTouches) release('t' + t.identifier);
+        for (const t of e.changedTouches) release('t' + t.identifier, e.type === 'touchcancel');
         sync(e.touches);
         trace('end');
       };
@@ -9796,7 +10009,7 @@ window.__bootInner = async function () {
           move(pid(e), e.clientX, e.clientY);
         }
       });
-      const up = e => release(pid(e));
+      const up = e => release(pid(e), e.type === 'pointercancel');
       root.addEventListener('pointerup', up);
       root.addEventListener('pointercancel', up);
     }
@@ -9853,6 +10066,7 @@ window.__bootInner = async function () {
     btn('tBino', () => toggleOptic('bino'));
     btn('tTrack', () => cycleTrack());
     btn('tPause', () => pause());
+    btn('tMute', () => toggleMute());
     btn('tMap', () => {
       if (game.state === STATE.PLAY) openMap();
       else if (game.state === STATE.MAP) closeMap();
@@ -9965,6 +10179,7 @@ window.__bootInner = async function () {
     $('tBino').classList.toggle('on', P.optOn && P.optKind === 'bino');
     $('tLight').classList.toggle('on', P.inJeep ? LAMP.jeepOn : !!P.torch);
     $('tTherm').classList.toggle('on', !!P.thermal);
+    $('tMute').dataset.m = Aud.muted ? '1' : '0';
     weaponSync();
     if (WHEEL.open && (game.state !== STATE.PLAY || P.inJeep || !P.alive)) wheelClose();
   }
@@ -10010,13 +10225,14 @@ window.__bootInner = async function () {
     tObj: { name: 'Briefing (objectives)', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tSup: { name: 'Supplies', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tGear: { name: 'Gear menu', def: 'menu', opts: ['menu', 'screen'] },
-    tPause: { name: 'Pause', def: 'menu', opts: ['menu', 'screen'] },
+    tPause: { name: 'Pause', def: 'screen', opts: ['screen', 'menu'] },
+    tMute: { name: 'Sound on / off', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tHub: { name: 'Menu button', def: 'screen', opts: ['screen'] },
     tScopeRow: { name: 'Scope: zoom and range card', def: 'auto', opts: ['auto'] },
     joy: { name: 'Move stick', def: 'screen', opts: ['screen'] }
   };
   const WHERE_LBL = { screen: 'On screen', auto: 'When needed', menu: 'In menu', hide: 'Hidden' };
-  const HUB_ORDER = ['tMap', 'tBino', 'tTrack', 'tObj', 'tSup', 'tWeap', 'tKit', 'tLight', 'tTherm', 'tReload', 'tStance', 'tJump', 'tGear', 'tPause'];
+  const HUB_ORDER = ['tMap', 'tBino', 'tTrack', 'tObj', 'tSup', 'tWeap', 'tKit', 'tLight', 'tTherm', 'tReload', 'tStance', 'tJump', 'tMute', 'tGear', 'tPause'];
   const CTL = { v: 1, size: 1, op: 1, b: {} };
   const HUB = { open: false };
   const EDIT = { on: false, sel: null, drag: null, from: 'start', flip: false };
@@ -10248,7 +10464,10 @@ window.__bootInner = async function () {
     setHub(false);
     saveLayout();
     applyLayout();
-    showMenu(EDIT.from === 'start' ? 'start' : 'pause');
+    // back to whichever sheet it was opened from, judged by where the game is now (never "Paused" over a game that is running, or over the death sheet)
+    const kind = { [STATE.MENU]: 'start', [STATE.PAUSED]: 'pause', [STATE.DEAD]: 'lose', [STATE.WON]: 'win' }[game.state];
+    if (kind) showMenu(kind);
+    else hideMenu();
   }
   {
     const ed = $('editor');
@@ -10346,6 +10565,7 @@ window.__bootInner = async function () {
     $('mCtl').addEventListener('click', () => openEditor());
   }
   function toggleOptic(kind) {
+    P.reScope = null; // what you do with the optic yourself wins over the automatic one
     if (kind === 'scope' && P.weapon === 'machete') return;
     if (kind === 'scope' && P.weapon === 'deagle') kind = 'sights';
     if (P.swimming) {
@@ -10364,6 +10584,11 @@ window.__bootInner = async function () {
     if (P.swimming) {
       if (s === 1) P.diving = !P.diving;
       return;
+    }
+    if (s === 2 && P.depth > 0.45) {
+      // lying down in water this deep puts your eyes under it: kneel instead
+      if (P.stance !== 1) toast('Too deep to lie down.');
+      s = 1;
     }
     P.stance = s;
     P.crouch = s >= 1;
@@ -10425,23 +10650,26 @@ window.__bootInner = async function () {
   }
   const RELOAD_T = CONFIG.weapon.reloadSeconds;
   function startReload() {
-    if (P.ammoMode === 'tranq') {
-      toast('Darts need no reload. Press U to go back to live rounds.');
-      return;
-    }
     if (P.weapon === 'machete') return;
     if (P.weapon === 'deagle') {
+      // (the rifle's dart mode is not the pistol's business: it always carries live rounds)
       if (P.reloading || P.pRounds >= WEAPONS.deagle.mag || P.pReserve <= 0 || !P.alive) return;
       P.reloading = true;
       P.reloadT = WEAPONS.deagle.reload;
+      P.reScope = SET.rescope && P.optOn && P.optKind === 'sights' ? 'sights' : null;
       P.optOn = false;
       Aud.reload();
+      return;
+    }
+    if (P.ammoMode === 'tranq') {
+      toast('Darts need no reload. Press U to go back to live rounds.');
       return;
     }
     // one tap: the magazine is swapped and topped up in a single motion
     if (P.reloading || P.rounds >= CONFIG.weapon.magazine || P.reserve <= 0 || !P.alive) return;
     P.reloading = true;
     P.reloadT = RELOAD_T;
+    P.reScope = SET.rescope && P.optOn && P.optKind === 'scope' ? 'scope' : null; // (it comes down for the reload, and goes back up after)
     P.optOn = false;
     Aud.reload(); // the scope comes down so you can see the rifle being worked
   }
@@ -10551,16 +10779,44 @@ window.__bootInner = async function () {
     P.stepD = 0;
     Aud.step(STEALTH.surface);
   }
+  // a fall of more than FALL_SAFE metres hurts: 12 hp a metre beyond it, up to 85, scaled by the difficulty. Deep water breaks any fall.
+  const FALL_SAFE = 3.2;
+  function fallDamage(h) {
+    if (!P.alive || P.invuln > 0 || game.state !== STATE.PLAY) return;
+    const dmg = Math.min(85, (h - FALL_SAFE) * 12) * DIFF().dmg;
+    if (!(dmg > 0)) return;
+    P.hp -= dmg;
+    P.regenT = CONFIG.player.regenDelay;
+    P.shake = Math.max(P.shake, 1);
+    P.stun = Math.max(P.stun, 0.4 + h * 0.04);
+    P.landDip = 1;
+    P.optOn = false;
+    LIFE.last = { cause: 'fall', h };
+    Aud.grunt();
+    makeNoise(P.x, P.z, 30, { x: P.x, z: P.z });
+    toast(`Hard landing: ${Math.round(h)} m.`);
+    if (P.hp <= 0) killPlayer();
+  }
   function updateJump(rdt) {
     if (P.inJeep || !P.alive || P.swimming) {
       P.alt = 0;
       P.jv = 0;
       P.grounded = true;
       P.landDip = 0;
+      P.lastG = NaN;
       return;
     }
     const dt = Math.min(rdt, 0.05),
       g0 = groundAtP(P.x, P.z);
+    // the ground fell away faster than a slope can (a cliff, the edge of the mesa): you keep your height and fall, as off the end of a log
+    if (P.grounded && Number.isFinite(P.lastG)) {
+      const drop = P.lastG - g0,
+        moved = Math.hypot(P.x - P.lastX, P.z - P.lastZ);
+      if (drop > 0.3 && drop > 1.8 * Math.max(moved, 0.05)) P.alt += drop;
+    }
+    P.lastG = g0;
+    P.lastX = P.x;
+    P.lastZ = P.z;
     let floor = g0;
     const st = standTop(P.x, P.z, g0 + P.alt);
     if (st > floor) floor = st;
@@ -10585,6 +10841,8 @@ window.__bootInner = async function () {
           Aud.step(STEALTH.surface);
           if (hit > 5) makeNoise(P.x, P.z, 14 * STEALTH.noiseK, { x: P.x, z: P.z });
         }
+        const fell = (hit * hit) / (2 * JUMP_G);
+        if (fell > FALL_SAFE && P.depth < 0.8) fallDamage(fell);
       }
     }
     P.landDip *= Math.exp(-7 * dt);
@@ -10819,14 +11077,14 @@ window.__bootInner = async function () {
       toast('The crate is still being restocked.');
       return;
     }
-    P.reserve = clamp(P.reserve + CONFIG.objectives.crateRounds, 0, CONFIG.weapon.maxReserve);
+    P.reserve = clamp(P.reserve + Math.round(CONFIG.objectives.crateRounds * DIFF().crate), 0, CONFIG.weapon.maxReserve);
     P.pReserve = Math.min(42, P.pReserve + 14);
     restockGadgets();
     P.kits = Math.max(P.kits, 3);
     P.fuelCans = Math.min(3, P.fuelCans + 1);
     P.hp = 100;
-    if (camp) o.crateT = CONFIG.objectives.campCrateCooldown;
-    else o.crate = CONFIG.objectives.towerCrateCooldown;
+    if (camp) o.crateT = CONFIG.objectives.campCrateCooldown * DIFF().crateCool;
+    else o.crate = CONFIG.objectives.towerCrateCooldown * DIFF().crateCool;
     toast(
       `Resupplied: ${P.reserve} rounds in reserve, ${P.kits} medkits, ${P.fuelCans} jerry can${P.fuelCans > 1 ? 's' : ''}.`
     );
@@ -10846,6 +11104,7 @@ window.__bootInner = async function () {
     revealMap(t.x, t.z, 320);
     if (typeof updateTowerVis === 'function') updateTowerVis(t);
     checkWin();
+    saveGame();
   }
   function takeEgg(n) {
     n.eggs--;
@@ -10887,13 +11146,17 @@ window.__bootInner = async function () {
     P.eggList = [];
     toast('Eggs secured in the incubator.');
     checkWin();
+    saveGame();
   }
+  // The victory sheet follows the last objective by 2.6 s of play. It is counted down in stepFrame, and only while the state is PLAY: a long-shot
+  // replay, the map, the journal, the pause sheet or a death in that window postpones it instead of throwing it away.
+  let winT = 0;
   function checkWin() {
     if (OBJ.done) return;
     if (OBJ.towers >= 3 && OBJ.eggs >= 3 && OBJ.alpha) {
       OBJ.done = true;
       game.score += CONFIG.objectives.completeScore;
-      defer(() => endGame(true), 2600);
+      winT = 2.6;
     }
   }
   function surveyTag(d) {
@@ -10905,6 +11168,7 @@ window.__bootInner = async function () {
     if (n === 4) {
       game.score += 400;
       P.reserve = Math.min(CONFIG.weapon.maxReserve, P.reserve + 10);
+      updateAmmoHud();
       toast('Field survey complete: +400 and ten rounds from HQ.');
       Aud.chime();
     }
@@ -10943,7 +11207,10 @@ window.__bootInner = async function () {
       if (P.swimming) {
         if (P.stance > 0) P.stance = 0;
         P.optOn = false;
-      } else P.diving = false;
+      } else {
+        P.diving = false;
+        if (P.stance === 2 && P.depth > 0.45) P.stance = 1; // wading into water too deep to lie in: up on a knee (it used to drown you on your belly)
+      }
       const dT = P.swimming && P.diving ? Math.min(3.6, P.depth - 0.7) : 0;
       P.diveD += (dT - P.diveD) * Math.min(1, rdt * 2.5);
       P.under = cam.position.y < WATER - 0.05;
@@ -10952,6 +11219,7 @@ window.__bootInner = async function () {
         if (P.air <= 0 && P.alive) {
           P.hp -= CONFIG.player.drownPerSecond * rdt;
           P.regenT = 4;
+          LIFE.last = { cause: 'drown' };
           P.shake = Math.max(P.shake, 0.3);
           if (P.hp <= 0) killPlayer();
         }
@@ -10975,6 +11243,7 @@ window.__bootInner = async function () {
     P.stun = Math.max(0, P.stun - rdt);
     P.sprint =
       P.moving &&
+      !P.inJeep && // (a stick pushed to its rim while driving is not a sprint: it drained stamina and doubled how far predators notice you)
       (keys.ShiftLeft || keys.ShiftRight || TOUCH.edge) &&
       P.stance === 0 &&
       P.optAmt < 0.2 &&
@@ -11064,7 +11333,8 @@ window.__bootInner = async function () {
       (P.rested ? 0.6 : 1) *
       (P.moving ? (P.prone ? 2.2 : 3) : 1) *
       (P.optKind === 'bino' ? 0.6 : 1) *
-      (SET.assist ? 0.55 : 1);
+      (SET.assist ? 0.55 : 1) *
+      DIFF().sway;
     A *= 1 + Math.min(1.5, Math.abs(P.eye - STANCE_EYE[P.stance]) * 1.6); // still settling into a new stance
     A *= 1 + 0.7 * P.pulse;
     let brAmp = 1,
@@ -11099,12 +11369,17 @@ window.__bootInner = async function () {
           P.reserve -= take;
         }
         P.reloading = false;
+        if (P.reScope && !P.optOn && !P.inJeep && !P.swimming && (P.reScope === 'sights') === (P.weapon === 'deagle') && P.weapon !== 'machete') {
+          P.optOn = true;
+          P.optKind = P.reScope;
+        }
+        P.reScope = null;
         updateAmmoHud();
       }
     }
     // health
-    if (P.regenT > 0) P.regenT -= rdt;
-    else if (P.hp < 100) P.hp = Math.min(100, P.hp + CONFIG.player.regenPerSecond * rdt);
+    if (P.regenT > 0) P.regenT -= rdt / DIFF().regenDelay;
+    else if (P.hp < 100) P.hp = Math.min(100, P.hp + CONFIG.player.regenPerSecond * DIFF().regenRate * rdt);
     if (P.heal > 0) {
       const k = Math.min(P.heal, rdt * CONFIG.player.medkitRate);
       P.hp = Math.min(100, P.hp + k);
@@ -11469,8 +11744,8 @@ window.__bootInner = async function () {
     STEALTH.hiddenS += (hide - STEALTH.hiddenS) * Math.min(1, dt * 3);
     const weather = 1 - 0.38 * ENV.rain;
     const lamp = 1 + LAMP.SEEN * LAMP.torchK * Math.max(ENV.night, ENV.storm * 0.6, P.inCave ? 1 : 0); // a lit torch carries in the dark
-    STEALTH.vis = (P.inJeep ? 1.6 * weather : (P.prone ? 0.38 : P.crouch ? 0.55 : 1) * (1 - hide) * weather) * lamp;
-    STEALTH.visFly = (P.prone ? 0.5 : P.crouch ? 0.7 : 1) * (1 - hide * 0.45) * weather;
+    STEALTH.vis = (P.inJeep ? 1.6 * weather : (P.prone ? 0.38 : P.crouch ? 0.55 : 1) * (1 - hide) * weather) * lamp * DIFF().detect;
+    STEALTH.visFly = (P.prone ? 0.5 : P.crouch ? 0.7 : 1) * (1 - hide * 0.45) * weather * DIFF().detect;
     STEALTH.noiseK = (SURF_NOISE[STEALTH.surface] || 1) * (1 - 0.25 * ENV.rain);
   }
 
@@ -11775,6 +12050,11 @@ window.__bootInner = async function () {
     P.pReserve = 28;
     P.swingT = 0;
     updateGunModel();
+    resetSky();
+  }
+  // the sky an operation begins under: the same hour, clear, and no storm timer left over from the menu or the last run
+  function resetSky() {
+    ENV.tod = CONFIG.time.startHour;
     setWeather('clear', true);
     ENV.stateT = rand(150, 220);
     ENV.boltT = 6;
@@ -12255,7 +12535,10 @@ window.__bootInner = async function () {
       d.hz += (tgt.z - d.hz) * k;
       d.R += (15 - d.R) * k;
       d.alt += (8 - d.alt) * k;
-      if (!d.scav && !d.sp.pred) journalNote(d.type, 'scavenge');
+      if (!d.scav && !d.sp.pred) {
+        journalNote(d.type, 'scavenge');
+        if (d.sp.fly) journalNote(d.type, 'track'); // "a flock wheeling low over one spot: something has died there"
+      }
       d.scav = true;
     } else {
       d.scav = false;
@@ -12379,6 +12662,7 @@ window.__bootInner = async function () {
     void hm.offsetWidth;
     hm.className = 'on';
     if (d.sp.fly) {
+      journalNote(d.type, 'sedated'); // learning that a dart cannot hold a flyer is the handling entry
       toast('A dart cannot hold a flyer.');
       d.fleeT = d.sp.pred ? 0 : 8;
       d.fleeX = P.x;
@@ -12583,6 +12867,7 @@ window.__bootInner = async function () {
     prey: 'behav',
     scavenge: 'behav',
     hatch: 'behav',
+    watch: 'behav', // watched at length (an animal nothing hunts has no other way to show its habits)
     sedated: 'care'
   };
   const JTXT = {
@@ -12640,8 +12925,25 @@ window.__bootInner = async function () {
   const JRN = { sp: {}, lore: [], photos: [], rewarded: {} };
   try {
     const j = JSON.parse(localStorage.getItem('apexRidgeJournal') || 'null');
-    if (j && typeof j === 'object')
-      Object.assign(JRN, { sp: j.sp || {}, lore: j.lore || [], photos: j.photos || [], rewarded: j.rewarded || {} });
+    if (j && typeof j === 'object') {
+      // only the shapes this game writes are accepted: a damaged save must not throw from the frame loop every half second
+      const isObj = o => !!o && typeof o === 'object' && !Array.isArray(o),
+        sp = {},
+        rewarded = {};
+      if (isObj(j.sp))
+        for (const t of JORDER)
+          if (isObj(j.sp[t])) {
+            sp[t] = {};
+            for (const [k] of JSLOTS) if (j.sp[t][k]) sp[t][k] = 1;
+          }
+      if (isObj(j.rewarded)) for (const k of [...JORDER, 'all']) if (j.rewarded[k]) rewarded[k] = 1;
+      Object.assign(JRN, {
+        sp,
+        rewarded,
+        lore: Array.isArray(j.lore) ? j.lore.filter(l => l && typeof l.t === 'string' && typeof l.x === 'string') : [],
+        photos: Array.isArray(j.photos) ? j.photos.filter(x => typeof x === 'string' && x.indexOf('data:image/') === 0).slice(0, 8) : []
+      });
+    }
   } catch (e) {}
   function saveJournal() {
     try {
@@ -12753,7 +13055,9 @@ window.__bootInner = async function () {
     for (const d of dinos) {
       if (d.dead) continue;
       const jr = JRN.sp[d.type];
-      if (jr && jr.id) continue;
+      const needId = !(jr && jr.id),
+        needWatch = d.type === 'apato' && !(jr && jr.behav); // nothing hunts it: its behaviour is learned by watching it for a while
+      if (!needId && !needWatch) continue;
       const vx = d.x - cam.position.x,
         vy = d.y + 1.2 - cam.position.y,
         vz = d.z - cam.position.z,
@@ -12767,7 +13071,8 @@ window.__bootInner = async function () {
       const rr = rayWorld(cam.position, _jv, dist + 4);
       if (rr.dino === d || rr.d > dist - 2) {
         d.seenT = (d.seenT || 0) + 0.5;
-        if (d.seenT >= 1.5) journalNote(d.type, 'seen');
+        if (needId && d.seenT >= 1.5) journalNote(d.type, 'seen');
+        if (needWatch && d.seenT >= 10) journalNote(d.type, 'watch');
       } else d.seenT = 0;
     }
   }
@@ -12793,7 +13098,7 @@ window.__bootInner = async function () {
       $('phHint'),
       TOUCH.on
         ? 'Photo mode'
-        : 'PHOTO MODE   WASD move · Q/E down, up · Shift fast · [ ] zoom · 1-4 filters · click or Enter: photo · Esc or K: exit'
+        : 'PHOTO MODE   WASD move · Q/E down, up · Shift fast · [ ] zoom · 1-4 filters · click or Enter: photo · K or EXIT: leave (Esc frees the mouse for the buttons)'
     );
   }
   function exitPhoto() {
@@ -13207,13 +13512,32 @@ window.__bootInner = async function () {
       fixing: false,
       fixT: 0,
       lightK: 0,
-      lightsMode: 'auto'
+      lightsMode: 'auto',
+      onBridge: false
     });
     P.inJeep = false;
     P.fuelCans = 1;
     P.canLeft = 0;
     if (JEEP.cab) JEEP.cab.visible = true;
     poseJeep();
+  }
+  // true on a bridge deck and in the few metres before and after one: there the car is held to its own width, so the rails guide it on
+  function bridgeNear(x, z) {
+    for (let i = 0; i < BRIDGES.length; i++) {
+      const b = BRIDGES[i],
+        rx = x - b.ax,
+        rz = z - b.az,
+        along = rx * b.dx + rz * b.dz,
+        lat = Math.abs(-rx * b.dz + rz * b.dx);
+      if (along > -6 && along < b.len + 6 && lat < b.hw + 2.4) return true;
+    }
+    return false;
+  }
+  // the ground under the jeep: the terrain, or the deck of a bridge it is on or is rolling onto (terrain within 0.7 m under the deck), as for you
+  function jeepGroundAt(x, z, onBr) {
+    const g = heightAt(x, z),
+      bh = bridgeH(x, z);
+    return bh > -1e8 && (g >= bh - 0.7 || onBr) ? Math.max(g, bh) : g;
   }
   function poseJeep(dt = 1 / 60) {
     const J = JEEP,
@@ -13223,10 +13547,11 @@ window.__bootInner = async function () {
       c = Math.cos(J.heading),
       L = 1.6,
       Wd = 0.9,
-      hF = heightAt(J.x + s * L, J.z + c * L),
-      hB = heightAt(J.x - s * L, J.z - c * L),
-      hL = heightAt(J.x - c * Wd, J.z + s * Wd),
-      hR = heightAt(J.x + c * Wd, J.z - s * Wd);
+      ob = !!J.onBridge,
+      hF = jeepGroundAt(J.x + s * L, J.z + c * L, ob),
+      hB = jeepGroundAt(J.x - s * L, J.z - c * L, ob),
+      hL = jeepGroundAt(J.x - c * Wd, J.z + s * Wd, ob),
+      hR = jeepGroundAt(J.x + c * Wd, J.z - s * Wd, ob);
     J.y = Math.max((hF + hB + hL + hR) / 4, WATER + 0.1) + J.lift; // lift: riding up over a stump or small rock
     J.pitch = -Math.atan2(hF - hB, 2 * L);
     J.roll = Math.atan2(hR - hL, 2 * Wd); // positive when the left-hand side (local +x) is the high one
@@ -13291,17 +13616,24 @@ window.__bootInner = async function () {
     const J = JEEP,
       s = Math.sin(J.heading),
       c = Math.cos(J.heading);
-    // step out on the driver's side, or the other side if that one is blocked
-    for (const side of [-1, 1]) {
-      const x = J.x - c * 2.2 * side,
-        z = J.z + s * 2.2 * side,
-        gh = heightAt(x, z);
+    // step out on the driver's side, or the other side if that one is blocked; on a bridge the sides are water, so along the deck
+    for (const [ox, oz] of [
+      [c * 2.2, -s * 2.2],
+      [-c * 2.2, s * 2.2],
+      [-s * 3.2, -c * 3.2],
+      [s * 3.2, c * 3.2]
+    ]) {
+      const x = J.x + ox,
+        z = J.z + oz,
+        gh = jeepGroundAt(x, z, J.onBridge);
       if (gh > WATER + 0.2 && trunkAt(x, gh + 1, z, gh, 0.4) < 0) {
         P.x = x;
         P.z = z;
         break;
       }
     }
+    P.onBridge = !!J.onBridge;
+    J.speed = 0; // the handbrake goes on: it does not roll on through the trees and into a lake
     document.body.classList.remove('jeep');
     if (JEEP.cab) JEEP.cab.visible = true;
     Aud.setEngine(0, 0);
@@ -13326,7 +13658,7 @@ window.__bootInner = async function () {
     // gravity along the slope
     const s = Math.sin(J.heading),
       c = Math.cos(J.heading),
-      grade = (heightAt(J.x + s * 2, J.z + c * 2) - heightAt(J.x - s * 2, J.z - c * 2)) / 4;
+      grade = (jeepGroundAt(J.x + s * 2, J.z + c * 2, J.onBridge) - jeepGroundAt(J.x - s * 2, J.z - c * 2, J.onBridge)) / 4;
     J.speed -= G * grade * 0.55 * rdt;
     J.speed = clamp(J.speed, -C.reverse, C.maxSpeed);
     // steering: full lock at a crawl, less at speed; the car turns about its wheelbase
@@ -13360,11 +13692,14 @@ window.__bootInner = async function () {
     for (let i = 0; i < n && !blocked; i++) {
       const nx = J.x + Math.sin(J.heading) * (dist / n),
         nz = J.z + Math.cos(J.heading) * (dist / n),
-        gh = heightAt(nx, nz),
-        g0 = heightAt(J.x, J.z);
-      if (gh < WATER + 0.45) blocked = 'water';
+        deck = bridgeH(nx, nz),
+        onDeck = deck > -1e8 && (heightAt(nx, nz) >= deck - 0.7 || J.onBridge), // a bridge carries the jeep as it carries you
+        gh = onDeck ? Math.max(heightAt(nx, nz), deck) : heightAt(nx, nz),
+        g0 = jeepGroundAt(J.x, J.z, J.onBridge);
+      if (!onDeck && gh < WATER + 0.45) blocked = 'water'; // (a low bridge sits only a few decimetres over the water: the deck is dry, whatever is under it)
       else if (Math.abs(nx) > HALF - 12 || Math.abs(nz) > HALF - 12) blocked = 'edge';
       else if (
+        !onDeck &&
         gh - g0 > 0.06 &&
         Math.hypot(heightAt(nx + 1, nz) - heightAt(nx - 1, nz), heightAt(nx, nz + 1) - heightAt(nx, nz - 1)) / 2 > 0.95
       )
@@ -13372,10 +13707,12 @@ window.__bootInner = async function () {
       else {
         J.x = nx;
         J.z = nz;
+        J.onBridge = onDeck;
       }
       const bx = J.x,
         bz = J.z;
-      bump = Math.max(bump, jeepPush(J, 1.45));
+      // (the rails of a bridge leave 2.7 m between them: the car is a little under 2 m wide, so it is a snug fit and the rails guide it)
+      bump = Math.max(bump, jeepPush(J, J.onBridge || bridgeNear(J.x, J.z) ? 0.95 : 1.45));
       if (Math.abs(J.x - bx) + Math.abs(J.z - bz) > 0.03) blocked = 'trunk';
     }
     // stumps and small rocks are driven over: the body rides up as the wheels meet them, slows a little, and shakes. Nothing breaks.
@@ -14592,6 +14929,7 @@ window.__bootInner = async function () {
       g = cv.getContext('2d'),
       S = cv.width,
       m2w = v => ((v + HALF) / WORLD) * S;
+    $('mapClear').classList.toggle('on', !!P.wp);
     if (!mapBase) mapBase = buildMapBase();
     if (!fogCv) {
       fogCv = document.createElement('canvas');
@@ -14814,10 +15152,17 @@ window.__bootInner = async function () {
     P.track = 3;
     drawMap();
   });
-  $('mapCv').addEventListener('contextmenu', e => {
-    e.preventDefault();
+  function clearWaypoint() {
     P.wp = null;
     if (P.track === 3) P.track = 0;
+  }
+  $('mapCv').addEventListener('contextmenu', e => {
+    e.preventDefault();
+    clearWaypoint();
+    drawMap();
+  });
+  $('mapClear').addEventListener('click', () => {
+    clearWaypoint();
     drawMap();
   });
   function trackTarget() {
@@ -15144,10 +15489,11 @@ window.__bootInner = async function () {
       updateNestVis(n);
     }
     CAMP.crateT = 0;
-    Object.assign(OBJ, { towers: 0, eggs: 0, alpha: false, done: false, explore: 0 });
+    Object.assign(OBJ, { towers: 0, eggs: 0, alpha: false, done: false, explore: 0, exploreDone: false });
     for (const l of LAND) {
       l.found = false;
       l.looted = false;
+      l.read = false;
       l.t = 0;
     }
     OBJ.survey = { raptor: false, para: false, trike: false, rex: false };
@@ -16213,10 +16559,14 @@ window.__bootInner = async function () {
    FLOW: menu / pause / end
    ===================================================================== */
   function best() {
+    // (numbers only: a hand-edited or damaged save is read as "no best score" instead of taking the start screen down)
+    const num = v => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : 0);
     try {
-      return JSON.parse(localStorage.getItem('apexRidgeBest') || '{}');
+      const b = JSON.parse(localStorage.getItem('apexRidgeBest') || '{}');
+      if (!b || typeof b !== 'object' || Array.isArray(b)) return { score: 0, longest: 0 };
+      return { score: num(b.score), longest: num(b.longest) };
     } catch (e) {
-      return {};
+      return { score: 0, longest: 0 };
     }
   }
   function saveBest() {
@@ -16256,6 +16606,36 @@ window.__bootInner = async function () {
   <div>Jeep: refuel (jerry can) / repair<b>4 / 5</b></div><div>Pistol sights<b>F or right click</b></div>
   <div>Swing the machete<b>Fire</b></div><div>Jeep: handbrake<b>Space</b></div>
 </div>`;
+  // the death sheet: what happened, what to try, what you keep
+  function deathLine(rp) {
+    const L = LIFE.last,
+      n = LIFE.hits.filter(t => game.time - t < 25).length;
+    let what = 'You were taken.';
+    if (L && L.cause === 'drown') what = 'You ran out of air.';
+    else if (L && L.cause === 'fall') what = `You fell ${Math.round(L.h)} m.`;
+    else if (L) {
+      const art = /^[aeiou]/i.test(L.name) ? 'an ' : 'a ';
+      what = `Taken by ${art}${L.name}` + (n > 1 ? `: ${n} hits in 25 s` : '') + (L.sprint ? ', while sprinting' : '') + '.';
+    }
+    return `${what} You wake at ${rp.name}, 250 points lighter.<span class="dkeep"> Towers, eggs delivered, ammunition and medkits are kept; eggs in hand go back to their nests.</span>`;
+  }
+  function deathTip() {
+    const L = LIFE.last;
+    let tip = 'Mend before you fight: health returns after a few seconds out of harm, and a medkit gives 60.';
+    if (L && L.cause === 'drown') tip = 'Under water you have about 22 seconds of air: surface early and swim for the shore.';
+    else if (L && L.cause === 'fall') tip = 'More than three metres hurts and ten can kill. Walk round cliff edges, or jump into deep water: it breaks any fall.';
+    else if (L) {
+      if (L.type === 'rex') tip = 'A tyrannosaur outruns a sprint and gives up only when you are far, hidden or it tires. The jeep outruns it, and lakes stop it.';
+      else if (L.type === 'raptor') tip = 'Raptors circle in packs. Put your back to a tree or rock and take the nearest first; the pistol is quickest up close.';
+      else if (L.fly) tip = 'A pteranodon stoops on anyone in the open and strikes once. Go prone in tall grass, or keep moving.';
+      else if (L.type === 'trike') tip = 'A triceratops charge cannot turn: step aside at the last moment. Lure guards off or sedate them before taking an egg.';
+      else if (!L.pred) tip = 'Protected animals only fight back when hurt. Check the crosshair before you fire.';
+      if (L.shotAgo < 10 && L.pred) tip += ' You had just fired: shots carry 320 m.';
+      else if (L.torch) tip += ' Your torch showed where you were.';
+      else if (L.empty) tip += ' Your magazine was empty.';
+    }
+    return `<div class="fine" style="margin:0 0 6px"><b>Next time:</b> ${tip}</div>`;
+  }
   function showMenu(kind) {
     wheelClose();
     const m = $('menu'),
@@ -16263,6 +16643,7 @@ window.__bootInner = async function () {
       btn = $('btn'),
       bs = best();
     m.classList.remove('opts', 'help');
+    m.dataset.kind = kind;
     $('mFine').textContent = TOUCH.on
       ? 'Turn sound on: you hear them before you see them.' +
         (isIOS() && !isStandalone() && !fsAvailable()
@@ -16278,13 +16659,15 @@ window.__bootInner = async function () {
       qSel.disabled = kind !== 'start'; // changing it rebuilds the world, so only from the start screen
       qSel.title = kind === 'start' ? '' : 'Graphics can be changed from the start screen (reload the page)';
     }
+    const sv = kind === 'start' ? readSave() : null;
     if (kind === 'start') {
       $('mTitle').innerHTML = 'Apex<br> Ridge';
       $('stamp').textContent = 'Sector 7';
-      $('mSub').textContent = 'Cretaceous reserve. The watch network is down. Dawn mist, light wind.';
+      $('mSub').textContent = 'Cretaceous reserve. The watch network is down. Clear morning, light wind.';
       b.innerHTML = `<p>Ranger, the reserve is yours to roam. Three watch towers have fallen and the beasts have moved in. Restore the towers, steal three eggs from guarded nests for the incubator, and bring down the alpha tyrannosaur.</p>
-    <p>Restored towers keep a supply crate and become your respawn points. Hammering is loud. Nests are guarded: raptors, a tyrannosaur, a triceratops herd. Pteranodons stoop on anyone they notice, so watch the sky. Hadrosaurs, triceratops, stegosaurs, apatosaurs and pterodactyls in the wild are protected: dropping one costs points. Lakes are open to you (swim, and dive with C), and ground predators will not follow you in. Open the map with M. Your rifle is a .338 Lapua Magnum zeroed at 100 m: range the target, dial the turret, read the flags, and fire at the bottom of an exhale.</p>${controlsHtml()}${bestLine}`;
-      btn.textContent = 'Deploy';
+    <p>Restored towers keep a supply crate and become your respawn points. Hammering is loud. Nests are guarded: raptors, a tyrannosaur, a triceratops herd. Pteranodons stoop on anyone they notice, so watch the sky. Hadrosaurs, triceratops, stegosaurs, apatosaurs and pterodactyls in the wild are protected: dropping one costs points. Lakes are open to you (swim, and dive with C), and ground predators will not follow you in. Open the map with M. Your rifle is a .338 Lapua Magnum zeroed at 100 m: range the target, dial the turret, read the flags, and fire at the bottom of an exhale.</p>${controlsHtml()}${sv ? `<div class="fine" style="margin:0 0 8px"><b>Saved operation:</b> ${saveInfo(sv)}.</div>` : ''}${bestLine}`;
+      btn.textContent = sv ? 'Continue' : 'Deploy';
+      if (sv) $('btn2').style.display = 'inline-block';
     } else if (kind === 'pause') {
       $('mTitle').innerHTML = 'Paused';
       $('stamp').textContent = 'On hold';
@@ -16296,17 +16679,15 @@ window.__bootInner = async function () {
         acc = s.shots ? Math.round((s.hits / s.shots) * 100) : 0,
         win = kind === 'win';
       $('mTitle').innerHTML = win ? 'Operation<br> complete' : 'Mauled';
-      $('stamp').textContent = win ? 'Mission complete' : 'Down';
+      $('stamp').textContent = (win ? 'Mission complete' : 'Down') + ' · ' + DIFF().name;
       const rp = respawnPoint();
-      $('mSub').textContent = win
-        ? 'Towers lit, eggs secured, alpha down. Good shooting, ranger.'
-        : `You were taken. You will wake at ${rp.name}. Eggs you carried are returned to their nests.`;
+      $('mSub').innerHTML = win ? 'Towers lit, eggs secured, alpha down. Good shooting, ranger.' : deathLine(rp);
       b.innerHTML = `<div class="stats">
       <div><strong>${game.score}</strong>Score</div><div><strong>${s.longest} m</strong>Longest kill</div>
       <div><strong>${acc}%</strong>Accuracy (${s.hits}/${s.shots})</div><div><strong>${s.heads}</strong>Headshots</div>
       <div><strong>${OBJ.towers}/3</strong>Towers restored</div><div><strong>${OBJ.eggs}/3</strong>Eggs delivered</div>
       <div><strong>${s.rap} + ${s.rex}</strong>Raptors + tyrannosaurs</div><div><strong>${s.herb}</strong>Protected animals killed</div>
-      <div><strong>${Math.floor(s.t / 60)}:${String(Math.floor(s.t % 60)).padStart(2, '0')}</strong>Time on station</div></div>${bestLine}`;
+      <div><strong>${Math.floor(s.t / 60)}:${String(Math.floor(s.t % 60)).padStart(2, '0')}</strong>Time on station</div></div>${win ? '' : deathTip()}${bestLine}`;
       btn.textContent = win ? 'Keep exploring' : 'Respawn';
       if (win) {
         $('btn2').style.display = 'inline-block';
@@ -16331,13 +16712,18 @@ window.__bootInner = async function () {
       b.trail.material.dispose();
     }
     bullets.length = 0;
+    winT = 0;
+    pendingReplay = null;
+    P.reScope = null;
+    LIFE.hits.length = 0;
+    LIFE.last = null;
     Object.assign(P, {
       x: 0,
       z: 0,
       hp: 100,
       alive: true,
       rounds: CONFIG.weapon.magazine,
-      reserve: CONFIG.weapon.startReserve,
+      reserve: startReserve(),
       cycle: 0,
       reloading: false,
       breath: 1,
@@ -16397,11 +16783,225 @@ window.__bootInner = async function () {
     $('feed').innerHTML = '';
     updateAmmoHud();
   }
+  const startReserve = () => Math.min(CONFIG.weapon.maxReserve, Math.round(CONFIG.weapon.startReserve * DIFF().reserve));
   let fresh = true;
+  /* ---------- autosave ----------
+   The world is built from the seed, so a save only holds what you changed: towers, nests, objectives, score, what you carry, where you and the
+   jeep are, the hour and the map you have uncovered. It is written when a tower is restored, an egg delivered, the alpha downed, after you
+   wake, on pause and when the page is hidden or closed, and every 30 s of play. Animals are not saved: a restored operation meets them fresh. */
+  const SAVE_KEY = 'apexRidgeSave';
+  let runOn = false,
+    saveT = 30;
+  const num = (v, d) => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+  function packFog() {
+    const bytes = new Uint8Array((FOGN * FOGN + 7) >> 3);
+    for (let i = 0; i < FOGN * FOGN; i++) if (fog[i] > 127) bytes[i >> 3] |= 1 << (i & 7);
+    let b = '';
+    for (let i = 0; i < bytes.length; i++) b += String.fromCharCode(bytes[i]);
+    return btoa(b);
+  }
+  function unpackFog(str) {
+    const b = atob(str);
+    if (b.length !== (FOGN * FOGN + 7) >> 3) return false;
+    for (let i = 0; i < FOGN * FOGN; i++) fog[i] = b.charCodeAt(i >> 3) & (1 << (i & 7)) ? 255 : 0;
+    return true;
+  }
+  function buildSave() {
+    return {
+      v: 1,
+      seed: seedText,
+      at: Date.now(),
+      diff: SET.diff,
+      score: game.score,
+      stats: Object.assign({}, game.stats),
+      obj: { towers: OBJ.towers, eggs: OBJ.eggs, alpha: !!OBJ.alpha, explore: OBJ.explore || 0, exploreDone: !!OBJ.exploreDone, survey: Object.assign({}, OBJ.survey) },
+      towers: POI.towers.map(t => [t.done ? 1 : 0, Math.round(num(t.prog, 0) * 100) / 100, Math.round(num(t.crate, 0))]),
+      nests: POI.nests.map(n => [n.eggs, Math.round(num(n.hatchT, 0)), n.crack ? 1 : 0]),
+      land: LAND.map(l => (l.found ? 1 : 0) | (l.looted ? 2 : 0) | (l.read ? 4 : 0)),
+      campT: Math.round(CAMP.crateT),
+      fog: packFog(),
+      p: {
+        x: P.inJeep ? JEEP.x - Math.cos(JEEP.heading) * 2.4 : P.x,
+        z: P.inJeep ? JEEP.z + Math.sin(JEEP.heading) * 2.4 : P.z,
+        yaw: P.yaw,
+        hp: Math.max(1, P.hp),
+        rounds: P.rounds,
+        reserve: P.reserve,
+        kits: P.kits,
+        darts: P.darts,
+        flares: P.flares,
+        baits: P.baits,
+        pRounds: P.pRounds,
+        pReserve: P.pReserve,
+        fuelCans: P.fuelCans,
+        canLeft: P.canLeft,
+        eggs: P.eggList.map(e => [e.nest, e.val]),
+        weapon: P.weapon,
+        ammoMode: P.ammoMode,
+        lureSel: P.lureSel,
+        thermal: Math.round(P.thermalCharge * 100) / 100
+      },
+      jeep: { x: JEEP.x, z: JEEP.z, heading: JEEP.heading, fuel: JEEP.fuel, hp: JEEP.hp, dead: !!JEEP.dead },
+      tod: ENV.tod
+    };
+  }
+  function saveGame(force) {
+    if ((TEST && !force) || !runOn || OBJ.done || !P.alive || game.state === STATE.MENU || game.state === STATE.DEAD) return false;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(buildSave()));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  function clearSave() {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch (e) {}
+  }
+  // the saved operation if there is one for this world and it is whole, else null
+  function readSave() {
+    try {
+      const sv = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+      if (!sv || sv.v !== 1 || sv.seed !== seedText || typeof sv.fog !== 'string') return null;
+      if (!Array.isArray(sv.towers) || sv.towers.length !== POI.towers.length) return null;
+      if (!Array.isArray(sv.nests) || sv.nests.length !== POI.nests.length) return null;
+      if (!Array.isArray(sv.land) || sv.land.length !== LAND.length) return null;
+      if (!sv.p || !sv.obj || !sv.jeep || typeof sv.p.x !== 'number' || typeof sv.p.z !== 'number') return null;
+      if (!(Date.now() - num(sv.at, 0) < 14 * 86400000)) return null;
+      return sv;
+    } catch (e) {
+      return null;
+    }
+  }
+  function applySave(sv) {
+    const ok = POI.towers.every((t, i) => Array.isArray(sv.towers[i])) && POI.nests.every((n, i) => Array.isArray(sv.nests[i]));
+    if (!ok) return false;
+    POI.towers.forEach((t, i) => {
+      const a = sv.towers[i];
+      t.done = a[0] === 1;
+      t.prog = t.done ? 1 : clamp(num(a[1], 0), 0, 1);
+      t.crate = Math.max(0, num(a[2], 0));
+      updateTowerVis(t);
+    });
+    POI.nests.forEach((n, i) => {
+      const a = sv.nests[i];
+      n.eggs = clamp(Math.round(num(a[0], 2)), 0, 2);
+      n.hatchT = Math.max(1, num(a[1], 500));
+      n.crack = a[2] === 1;
+      updateNestVis(n);
+    });
+    LAND.forEach((l, i) => {
+      const f = num(sv.land[i], 0);
+      l.found = !!(f & 1);
+      l.looted = !!(f & 2);
+      l.read = !!(f & 4);
+    });
+    CAMP.crateT = Math.max(0, num(sv.campT, 0));
+    if (typeof sv.fog === 'string') {
+      try {
+        unpackFog(sv.fog);
+      } catch (e) {}
+    }
+    const o = sv.obj;
+    Object.assign(OBJ, {
+      towers: clamp(num(o.towers, 0), 0, 3),
+      eggs: clamp(num(o.eggs, 0), 0, 6),
+      alpha: !!o.alpha,
+      done: false,
+      explore: Math.max(0, num(o.explore, 0)),
+      exploreDone: !!o.exploreDone
+    });
+    if (o.survey && typeof o.survey === 'object') for (const k in OBJ.survey) OBJ.survey[k] = !!o.survey[k];
+    game.score = num(sv.score, 0);
+    if (sv.stats && typeof sv.stats === 'object') for (const k in game.stats) game.stats[k] = num(sv.stats[k], game.stats[k] || 0);
+    const p = sv.p;
+    P.x = p.x;
+    P.z = p.z;
+    P.yaw = num(p.yaw, P.yaw);
+    P.pitch = -0.04;
+    P.hp = clamp(num(p.hp, 100), 1, 100);
+    P.rounds = clamp(Math.round(num(p.rounds, 5)), 0, CONFIG.weapon.magazine);
+    P.reserve = clamp(Math.round(num(p.reserve, 30)), 0, CONFIG.weapon.maxReserve);
+    P.kits = clamp(Math.round(num(p.kits, 2)), 0, 9);
+    P.darts = clamp(Math.round(num(p.darts, 8)), 0, 30);
+    P.flares = clamp(Math.round(num(p.flares, 3)), 0, 9);
+    P.baits = clamp(Math.round(num(p.baits, 2)), 0, 9);
+    P.pRounds = clamp(Math.round(num(p.pRounds, WEAPONS.deagle.mag)), 0, WEAPONS.deagle.mag);
+    P.pReserve = clamp(Math.round(num(p.pReserve, 28)), 0, 60);
+    P.fuelCans = clamp(Math.round(num(p.fuelCans, 1)), 0, 3);
+    P.canLeft = clamp(num(p.canLeft, 0), 0, 1);
+    P.eggList = Array.isArray(p.eggs) ? p.eggs.slice(0, 3).map(e => ({ nest: num(e[0], 0), val: num(e[1], 450) })) : [];
+    P.eggs = P.eggList.length;
+    P.ammoMode = p.ammoMode === 'tranq' ? 'tranq' : 'live';
+    P.lureSel = p.lureSel === 'bait' ? 'bait' : 'flare';
+    P.thermalCharge = clamp(num(p.thermal, 1), 0, 1);
+    if (WEAPON_ORDER.includes(p.weapon)) {
+      P.weapon = p.weapon;
+      updateGunModel();
+    }
+    const j = sv.jeep;
+    if (j && JEEP.g) {
+      Object.assign(JEEP, {
+        x: num(j.x, JEEP.x),
+        z: num(j.z, JEEP.z),
+        heading: num(j.heading, JEEP.heading),
+        fuel: clamp(num(j.fuel, 1), 0, 1),
+        hp: clamp(num(j.hp, CONFIG.jeep.hp), 0, CONFIG.jeep.hp),
+        dead: !!j.dead,
+        speed: 0
+      });
+      poseJeep();
+    }
+    if (OBJ.alpha) {
+      // the alpha you downed stays down: it is removed quietly (no bounty, no replay), and the carcass is gone with the first frame
+      const al = dinos.find(d => d.alpha && !d.dead);
+      if (al) {
+        al.dead = true;
+        al.deadT = 1;
+        al.hp = 0;
+        al.speed = 0;
+        al.corpseT = CONFIG.wildlife.corpseSeconds + CONFIG.wildlife.bonesSeconds + 1;
+        al.g.traverse(m => {
+          if (m.isMesh) m.layers.disable(1);
+        });
+      }
+    }
+    if (typeof sv.tod === 'number' && Number.isFinite(sv.tod)) ENV.tod = ((sv.tod % 24) + 24) % 24;
+    if (DIFFS[sv.diff]) SET.diff = sv.diff;
+    revealMap(P.x, P.z, 170);
+    updateHud();
+    updateAmmoHud();
+    return true;
+  }
+  function saveInfo(sv) {
+    const t = sv.towers.filter(a => a && a[0] === 1).length,
+      m = Math.floor(num(sv.stats && sv.stats.t, 0) / 60);
+    return `${t} of 3 towers, ${num(sv.obj.eggs, 0)} of 3 eggs${sv.obj.alpha ? ', alpha down' : ''}, ${m} min on station, ${(DIFFS[sv.diff] || DIFFS.standard).name}`;
+  }
+  function continueGame() {
+    const sv = readSave();
+    startGame();
+    if (sv && applySave(sv)) {
+      toast('Operation resumed: ' + saveInfo(sv) + '.');
+      saveT = 30;
+    }
+  }
   function startGame() {
     Aud.init();
+    const first = fresh;
     if (!fresh) resetGame();
+    else {
+      // the very first deploy: the menu has been turning the clock and the weather, and the camera, so begin as every operation begins
+      resetSky();
+      P.yaw = valleyYaw;
+      P.pitch = -0.04;
+      P.reserve = startReserve();
+      updateAmmoHud();
+    }
     fresh = false;
+    runOn = true;
+    saveT = 30;
     hideMenu();
     setState(STATE.PLAY);
     requestLock();
@@ -16411,7 +17011,7 @@ window.__bootInner = async function () {
         toast('Mouse capture unavailable here. Drag with the left mouse button to look, Enter to fire.');
       }
     }, 900);
-    if (game.stats.shots === 0 && game.time < 1) {
+    if (game.stats.shots === 0 && (first || game.time < 1)) {
       setTimeout(() => toast(TOUCH.on ? 'The four-squares button holds the map, binoculars, objectives and supplies. Keys appear when you need them.' : 'O opens your objectives and I your supplies. M is the map, Q cycles the tracked objective.'), 1300);
       setTimeout(() => toast('Raise the binoculars with B and glass the reserve.'), 7500);
     }
@@ -16419,6 +17019,8 @@ window.__bootInner = async function () {
   function newOperation() {
     resetGame();
     fresh = false;
+    runOn = true;
+    saveT = 30;
     Aud.init();
     hideMenu();
     setState(STATE.PLAY);
@@ -16506,9 +17108,15 @@ window.__bootInner = async function () {
     P.reserve = Math.max(P.reserve, 15);
     P.kits = Math.max(P.kits, 2);
     P.pitch = -0.04;
+    pendingReplay = null; // (a long-shot replay queued as you fell must not start over the new life)
+    P.reScope = null;
+    LIFE.hits.length = 0;
+    LIFE.last = null;
+    JEEP.fixing = false;
     for (const d of dinos) {
       if (d.dead || !d.sp.pred) continue;
-      if (Math.hypot(d.x - P.x, d.z - P.z) < 160) {
+      const dd = Math.hypot(d.x - P.x, d.z - P.z);
+      if (dd < 160) {
         d.state = 'patrol';
         d.awareness = 0;
         d.hasT = false;
@@ -16516,15 +17124,36 @@ window.__bootInner = async function () {
         d.backT = 0;
         d.attackT = 0;
         d.invT = 0;
+        d.angryT = 0;
+        d.calmT = rand(14, 20); // it ignores you unless you walk right up to it or fire, as after a hunt it gave up
+        if (dd < 45 && !d.hatchling && !d.sp.fly) {
+          // the one that took you is not left standing at the tower: it has wandered off
+          const base = Math.atan2(d.x - P.x, d.z - P.z);
+          for (let k = 0; k < 8; k++) {
+            const a = base + k * 0.7854,
+              x = P.x + Math.sin(a) * 70,
+              z = P.z + Math.cos(a) * 70,
+              gh = heightAt(x, z);
+            if (gh > WATER + 1.5 && trunkAt(x, gh + 1, z, gh, 2.5) < 0) {
+              d.x = x;
+              d.z = z;
+              break;
+            }
+          }
+        }
       }
     }
+    updateAmmoHud();
     hideMenu();
     setState(STATE.PLAY);
     requestLock();
+    Aud.wake();
     toast('Respawned at ' + rp.name + '.');
+    saveGame();
   }
   function pause() {
     if (game.state !== STATE.PLAY) return;
+    saveGame();
     setState(STATE.PAUSED);
     try {
       document.exitPointerLock();
@@ -16536,11 +17165,14 @@ window.__bootInner = async function () {
     hideMenu();
     setState(STATE.PLAY);
     requestLock();
+    Aud.wake();
   }
   function endGame(win) {
     if (win) {
       if (game.state !== STATE.PLAY) return;
       setState(STATE.WON);
+      clearSave(); // the operation is complete: nothing to continue
+      runOn = false;
     } else if (game.state !== STATE.DEAD) return;
     saveBest();
     try {
@@ -16552,10 +17184,15 @@ window.__bootInner = async function () {
     if (game.state === STATE.PAUSED) resume();
     else if (game.state === STATE.DEAD) respawn();
     else if (game.state === STATE.WON) keepExploring();
-    else startGame();
+    else if (game.state === STATE.MENU) continueGame(); // (a saved operation if there is one, else a new one; any other state: nothing)
   });
   $('btn2').addEventListener('click', () => {
     if (game.state === STATE.WON) newOperation();
+    else if (game.state === STATE.MENU) startGame(); // a new operation instead of the saved one (the next autosave replaces it)
+  });
+  addEventListener('pagehide', () => saveGame());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) saveGame();
   });
   $('btn').addEventListener(
     'click',
@@ -16572,6 +17209,7 @@ window.__bootInner = async function () {
   /* =====================================================================
    LOOP
    ===================================================================== */
+  let drawDirty = true; // the picture must be redrawn at the next frame whatever the throttle says (a resize clears it)
   function resize() {
     const w = innerWidth,
       h = innerHeight,
@@ -16582,6 +17220,7 @@ window.__bootInner = async function () {
     ov.width = Math.floor(w * dpr);
     ov.height = Math.floor(h * dpr);
     ov._dpr = dpr;
+    drawDirty = true;
   }
   let szW = innerWidth,
     szH = innerHeight;
@@ -16612,10 +17251,27 @@ window.__bootInner = async function () {
      a couple of seconds: draw fewer pixels, a step at a time, until frames fit. At the lowest sharpness the tier allows and still slow
      (Auto only): trim shadows and draw distance as well. Fast for a while: sharpen again, one step at a time, but never above a level that
      failed before. On a 60 Hz screen a machine that keeps up shows 16.7 ms frames, so "fast" means "within a hair of the refresh". */
+  // the gap between frames when it is one steady, regular number (a screen or a battery saver holding 30 or 50 a second), else 0
+  function steadyGap(gh) {
+    if (gh.length < 100) return 0;
+    let m = 0;
+    for (const g of gh) m += g;
+    m /= gh.length;
+    let v = 0;
+    for (const g of gh) v += (g - m) * (g - m);
+    const sd = Math.sqrt(v / gh.length),
+      capped = (m > 30.5 && m < 36.5) || (m > 19 && m < 22.5) || (m > 23 && m < 26.5);
+    return capped && sd < 1.3 ? m : 0;
+  }
   function perfStep(R, ms, dt) {
     R.t += dt;
     R.cool -= dt;
-    R.ema += (Math.min(ms, 60) - R.ema) * 0.04;
+    const gh = R.gh || (R.gh = []);
+    gh.push(ms);
+    if (gh.length > 150) gh.shift();
+    // a frame-rate cap (the one in Settings, or one the browser or the screen imposes) is not slowness: the gap is judged against the cap
+    const capF = R.capOwn || R.capExt || 1;
+    R.ema += (Math.min(ms * capF, 60) - R.ema) * 0.04;
     if (R.warm > 0) {
       R.warm -= dt;
       return null;
@@ -16624,6 +17280,7 @@ window.__bootInner = async function () {
     R.slowT = R.ema > 21.5 ? (R.slowT || 0) + dt : 0; // slow has to last a second: a hitch or two does not count
     if (R.ema > 21.5) {
       R.stable = 0;
+      R.fast = 0;
       if (R.slowT < 1) return null;
       if (R.mobile) {
         // Frames that stay slow after the picture has been made a fifth smaller are not slow because of the pixels (a phone's processor,
@@ -16651,23 +17308,60 @@ window.__bootInner = async function () {
         return 'down';
       }
       if (R.auto && R.level < 3 && R.ema > 24) {
+        if (R.restoredAt !== undefined && R.t - R.restoredAt < 40) R.noRestore = true; // what was given back did not hold: leave it trimmed
         R.level++;
         R.cool = 4;
         return 'degrade';
       }
+      // everything is trimmed and the gap is still one steady, regular number: that is a frame-rate cap (a 30 Hz screen, a battery saver),
+      // not a slow machine, so give everything back and judge against the cap from now on
+      if (R.auto && R.level >= 3 && !R.capExt) {
+        const m = steadyGap(gh);
+        if (m) {
+          R.capExt = 16.67 / m;
+          R.level = 0;
+          R.scale = 1;
+          R.ceil = 1;
+          R.downs = 0;
+          R.ema = 16.7;
+          R.cool = 8;
+          return 'uncap';
+        }
+      }
       return null;
     }
-    if (R.ema < 17.6 && R.scale < R.ceil - 1e-6) {
-      R.stable += dt;
-      if (R.stable > 6) {
-        R.scale = Math.min(R.ceil, Math.round((R.scale + 0.05) * 20) / 20);
+    if (R.ema < 17.6) {
+      R.fast = (R.fast || 0) + dt;
+      if (R.scale < R.ceil - 1e-6) {
+        R.stable += dt;
+        if (R.stable > 6) {
+          R.scale = Math.min(R.ceil, Math.round((R.scale + 0.05) * 20) / 20);
+          R.stable = 0;
+          R.cool = 2;
+          R.lastUp = R.t;
+          R.ups++;
+          return 'up';
+        }
+      } else {
         R.stable = 0;
-        R.cool = 2;
-        R.lastUp = R.t;
-        R.ups++;
-        return 'up';
+        // quick for twenty seconds at full sharpness: give back one thing that was trimmed (a fight is over, a hot phone has cooled)
+        if (R.auto && !R.mobile && R.level > 0 && !R.noRestore && R.fast > 20) {
+          R.level--;
+          R.fast = 0;
+          R.cool = 5;
+          R.restoredAt = R.t;
+          return 'restore';
+        }
+        // and after four quiet minutes a ceiling that was set by a failed attempt is allowed to rise a notch
+        if (R.ceil < 1 - 1e-6 && R.fast > 240) {
+          R.ceil = Math.min(1, Math.round((R.ceil + 0.05) * 20) / 20);
+          R.fast = 0;
+        }
       }
-    } else R.stable = 0;
+    } else {
+      R.stable = 0;
+      R.fast = 0;
+    }
     return null;
   }
   function applyScale() {
@@ -16688,6 +17382,21 @@ window.__bootInner = async function () {
     NAT.vt = 0;
     updateNature(0);
   }
+  // the level now in force is `level`: undo what the levels above it did (the mirror of degradeQuality)
+  function restoreQuality(level) {
+    if (level < 1) RES.shadowEvery = QP.shadowEvery;
+    if (!RES.mobile) {
+      if (level < 2) {
+        renderer.shadowMap.enabled = !!QP.shadow;
+        sun.castShadow = !!QP.shadow;
+        CULL.k = 1;
+      }
+      if (level < 3) CULL.lod = 1;
+      if (level === 2) CULL.k = 0.85;
+    }
+    NAT.vt = 0;
+    updateNature(0);
+  }
   const PERF = { on: false, acc: 0, n: 0, el: null };
   function togglePerf(on) {
     PERF.on = on === undefined ? !PERF.on : on;
@@ -16699,9 +17408,15 @@ window.__bootInner = async function () {
       RES.warm = Math.max(RES.warm, 1.5); // a tab switch or a long pause is not the machine being slow
       return;
     }
+    RES.capOwn = SET.fps && SET.fps < 59 ? SET.fps / 60 : 0; // (30 a second: a 33 ms gap is the cap, not a slow machine)
     const act = perfStep(RES, rawMs, rdt);
     if (act === 'down' || act === 'up') applyScale();
     else if (act === 'degrade') degradeQuality(RES.level);
+    else if (act === 'restore') restoreQuality(RES.level);
+    else if (act === 'uncap') {
+      applyScale();
+      restoreQuality(0);
+    }
     PERF.acc += rawMs;
     PERF.n++;
     if (PERF.on && PERF.acc >= 500) {
@@ -16761,12 +17476,30 @@ window.__bootInner = async function () {
       pendingReplay = null;
       startReplay(pr);
     }
+    if (winT > 0 && game.state === STATE.PLAY) {
+      winT -= rdt;
+      if (winT <= 0) {
+        winT = 0;
+        endGame(true);
+      }
+    }
     let dt = rdt;
     if (game.slowT > 0) {
       game.slowT -= rdt;
       dt = rdt * 0.3;
     }
     const st = game.state;
+    if (st === STATE.PLAY && P.wp && Math.hypot(P.wp.x - P.x, P.wp.z - P.z) < 25) {
+      clearWaypoint();
+      toast('Waypoint reached.');
+    }
+    if (st === STATE.PLAY && !TEST) {
+      saveT -= rdt;
+      if (saveT <= 0) {
+        saveT = 30;
+        saveGame();
+      }
+    }
     if (st === STATE.PLAY || st === STATE.DEAD) {
       game.time += dt;
       updateWind(dt);
@@ -16831,9 +17564,24 @@ window.__bootInner = async function () {
     framePhase = '',
     firstPhase = '',
     firstFrameErr = null;
+  /* Behind a sheet (paused, the map, the journal, the win sheet, the start sheet) the world hardly changes, so it is redrawn a few times a
+     second instead of at the screen's rate: a phone that is left paused stops running hot. The game state is stepped at the same pace. */
+  const STILL = { paused: 250, map: 250, journal: 250, won: 100, menu: 66 };
+  // true when this screen refresh is to be skipped: inside the cap's interval (with 1.5 ms of slack), or the picture is still and is not due
+  const capSkip = (now, tick, fps) => fps > 0 && now - tick < 1000 / fps - 1.5;
+  const stillSkip = (state, now, drawn, dirty) => {
+    const g = STILL[state] || 0;
+    return g > 0 && !dirty && now - drawn < g;
+  };
+  let lastTick = 0,
+    lastDraw = 0,
+    stillAcc = 0;
   function frame(now) {
     if (halted) return;
     requestAnimationFrame(frame);
+    // the frame-rate cap: skip the refreshes in between (1.5 ms of slack, so 60 on a 60 Hz screen never drops every other one)
+    if (!TEST && capSkip(now, lastTick, SET.fps)) return;
+    lastTick = now;
     // a frame time can arrive older than the one before it (long boot, tab switches): never let time run backwards
     const rdt = frameDelta(now, last),
       rawMs = now - last;
@@ -16847,12 +17595,20 @@ window.__bootInner = async function () {
           RES.warm = Math.max(RES.warm, 1.5);
           return;
         }
+        const gap = STILL[game.state] || 0;
+        if (stillSkip(game.state, now, lastDraw, drawDirty)) {
+          stillAcc += rdt;
+          return;
+        }
         framePhase = 'update';
-        stepFrame(rdt);
+        stepFrame(gap ? Math.min(0.1, rdt + stillAcc) : rdt);
+        stillAcc = 0;
         framePhase = 'draw';
         renderFrame();
+        lastDraw = now;
+        drawDirty = false;
         framePhase = 'timing';
-        perfFrame(rawMs, rdt);
+        if (!gap) perfFrame(rawMs, rdt);
       }
       frameErrors = 0;
     } catch (err) {
@@ -16903,6 +17659,7 @@ window.__bootInner = async function () {
         for (let i = 0; i < n; i++) stepSim(1 / 60);
       },
       flush = () => tickFake(1e9);
+    SET.diff = 'standard'; // (the suites below were written for the game as it was)
     const keepAud = { hit: Aud.hit, growl: Aud.growl };
     const suites = [
       [
@@ -17508,7 +18265,7 @@ window.__bootInner = async function () {
           while (!al.dead && guard++ < 20) A.hitDino(al, 'head', mk(), { x: al.x, y: al.y + 3, z: al.z });
           ok(al.dead && A.OBJ.alpha, 'alpha bounty claimed');
           ok(A.OBJ.done, 'operation flagged complete');
-          flush();
+          run(Math.round(2.8 * 60)); // (the sheet follows the last objective by 2.6 s of play)
           ok(A.game.state === 'won', 'win screen reached (state ' + A.game.state + ')');
           A.keepExploring();
           ok(A.game.state === 'play', 'Keep exploring returns to free roam');
@@ -19212,6 +19969,7 @@ window.__bootInner = async function () {
               dead.dead && near < d0 * 0.3 && fk.scav,
               'pterodactyls gather over the carcass (' + d0.toFixed(0) + ' m to ' + near.toFixed(0) + ' m)'
             );
+            ok(A.JRN.sp.ptero && A.JRN.sp.ptero.sign && A.JRN.sp.ptero.behav, 'which fills in their sign and behaviour entries');
           }
           // ---- eggs hatch
           fresh();
@@ -19713,7 +20471,7 @@ window.__bootInner = async function () {
               d6 = drop('dart', 60),
               p1 = drop('deagle', 100);
             ok(r3 !== null && r3 > 0.5 && r3 < 0.8, 'a rifle round fired level drops ' + r3.toFixed(2) + ' m by 300 m');
-            ok(d6 !== null && d6 > 0.6, 'a dart drops ' + d6.toFixed(2) + ' m by 60 m: aim high');
+            ok(d6 !== null && d6 > 0.15 && d6 < 0.7, 'a dart fired level still drops ' + d6.toFixed(2) + ' m by 60 m (it is sighted for 50 m, so it lands where you aim inside about 80 m)');
             ok(p1 !== null && p1 > 0.2, 'a pistol round drops ' + p1.toFixed(2) + ' m by 100 m');
           }
           // ---- the jeep
@@ -20979,30 +21737,33 @@ window.__bootInner = async function () {
             dirC = null,
             tgt = null;
           {
-            const open = (() => {
-              for (let i = 0; i < 6000; i++) {
-                const x = Math.sin(i * 12.9898) * 300,
-                  z = Math.cos(i * 78.233) * 300;
-                if (A.heightAt(x, z) > 4 && A.coverAt(x, z) < 0.3) return [x, z];
-              }
-            })();
-            P.x = open[0];
-            P.z = open[1];
+            // open ground with a clear line 120 m to somewhere: the first spot that has one (a seed can hem the first open spot in with trees)
+            const spots = [];
+            for (let i = 0; i < 6000 && spots.length < 60; i++) {
+              const x = Math.sin(i * 12.9898) * 300,
+                z = Math.cos(i * 78.233) * 300;
+              if (A.heightAt(x, z) > 4 && A.coverAt(x, z) < 0.3) spots.push([x, z]);
+            }
             para = A.dinos.find(d => d.type === 'para' && !d.dead);
             let placed = false;
-            for (let a = 0; a < 6.28 && !placed; a += 0.2) {
-              const x = P.x + Math.sin(a) * 120,
-                z = P.z + Math.cos(a) * 120;
-              if (A.heightAt(x, z) < A.WATER + 2) continue;
-              para.x = x;
-              para.z = z;
-              para.grazeT = 999;
-              para.fleeT = 0;
-              para.state = 'wander';
-              run(4);
-              const eye = A.cam.position,
-                cy = para.y + para.parts.hipY;
-              if (!A.blocked(eye, para.x, cy, para.z)) placed = true;
+            for (const sp of spots) {
+              if (placed) break;
+              P.x = sp[0];
+              P.z = sp[1];
+              for (let a = 0; a < 6.28 && !placed; a += 0.2) {
+                const x = P.x + Math.sin(a) * 120,
+                  z = P.z + Math.cos(a) * 120;
+                if (A.heightAt(x, z) < A.WATER + 2) continue;
+                para.x = x;
+                para.z = z;
+                para.grazeT = 999;
+                para.fleeT = 0;
+                para.state = 'wander';
+                run(4);
+                const eye = A.cam.position,
+                  cy = para.y + para.parts.hipY;
+                if (!A.blocked(eye, para.x, cy, para.z)) placed = true;
+              }
             }
             ok(placed, 'found a clear line to an animal 120 m away');
             run(2);
@@ -21291,12 +22052,12 @@ window.__bootInner = async function () {
           // ---- the default screen is a few keys, not a wall of icons
           const onScreen = [...document.querySelectorAll('#touch .tb')].filter(e => !e.closest('#hubPanel') && shown(e.id)).map(e => e.id);
           ok(
-            onScreen.length === 7 && ['tFire', 'tScope', 'tRun', 'tStance', 'tJump', 'tHub', 'tWeap'].every(id => onScreen.includes(id)),
-            'by default seven keys are out on the screen (' + onScreen.join(', ') + '), not sixteen'
+            onScreen.length === 8 && ['tFire', 'tScope', 'tRun', 'tStance', 'tJump', 'tHub', 'tWeap', 'tPause'].every(id => onScreen.includes(id)),
+            'by default eight keys are out on the screen (' + onScreen.join(', ') + '), not sixteen'
           );
           const inHub = [...document.querySelectorAll('#hubGrid .tb')].map(e => e.id);
           ok(
-            inHub.join() === 'tMap,tBino,tTrack,tObj,tSup,tGear,tPause',
+            inHub.join() === 'tMap,tBino,tTrack,tObj,tSup,tMute,tGear',
             'and the menu button holds the rest: ' + inHub.join(', ')
           );
           ok(!shown('tUse') && !shown('tReload') && !shown('tKit'), 'the hand, reload and medkit are not shown when there is nothing to use, no magazine to fill and no wound');
@@ -22036,6 +22797,1094 @@ window.__bootInner = async function () {
         }
       ],
       [
+        'Fixes: the win, journal and photo buttons, right click, darts, the jeep, restarts, the editor and damaged saves',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            J = A.JEEP,
+            keys = A.keys;
+          const sec = s => run(Math.round(s * 60));
+          const away = () =>
+            A.dinos.forEach(d => {
+              if (!d.dead && !d.sp.fly) {
+                d.x = 9999;
+                d.z = 9999;
+                d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+              }
+            });
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.ammoMode = 'live';
+            P.alive = true;
+            A.setStance(0);
+            A.setWeapon('rifle');
+            away();
+            for (const k in keys) keys[k] = false;
+          };
+          const key = (code, down) => window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code, bubbles: true }));
+          const winNow = () => {
+            A.OBJ.towers = 3;
+            A.OBJ.eggs = 3;
+            A.OBJ.alpha = true;
+            A.checkWin();
+          };
+          const again = () => {
+            A.newOperation();
+            sec(1);
+            away();
+            P.invuln = 999;
+          };
+          const hits = el => {
+            const r = el.getBoundingClientRect(),
+              h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+            return r.width > 0 && !!h && (h === el || el.contains(h));
+          };
+
+          // ---- the win cannot be lost to a menu, a journal, a pause or a death in the 2.6 s after the last objective
+          fresh();
+          {
+            winNow();
+            ok(A.OBJ.done && A.game.state === 'play', 'the last objective is met and you are still playing');
+            A.openMap();
+            sec(4);
+            ok(A.game.state === 'map', 'the map stays open for longer than the old 2.6 s timer');
+            A.closeMap();
+            sec(1);
+            ok(A.game.state === 'play', 'the clock waited: a second after closing the map it is not yet time');
+            sec(2);
+            ok(A.game.state === 'won', 'then the Operation complete sheet comes up');
+            again();
+            ok(A.game.state === 'play' && !A.OBJ.done, 'a new operation is not interrupted by the old win');
+            winNow();
+            A.openJournal();
+            sec(4);
+            A.closeJournal();
+            sec(3);
+            ok(A.game.state === 'won', 'a journal open at that moment does not lose it either');
+            again();
+            winNow();
+            A.pause();
+            sec(4);
+            A.resume();
+            sec(3);
+            ok(A.game.state === 'won', 'nor does the pause sheet');
+            again();
+            winNow();
+            const killer = A.dinos.find(d => d.sp.pred && !d.sp.fly && !d.dead);
+            P.invuln = 0;
+            A.damagePlayer(999, killer);
+            sec(2.5);
+            ok(A.game.state === 'dead', 'dying in that window shows the death sheet');
+            A.respawn();
+            sec(3);
+            ok(A.game.state === 'won', 'and the win follows after you wake');
+            again();
+          }
+          // ---- the journal and the photo buttons are on top, and can be touched
+          fresh();
+          {
+            A.openJournal();
+            const jc = document.getElementById('jClose'),
+              tab = document.querySelector('.jtabs button[data-t="lore"]');
+            ok(A.game.state === 'journal' && getComputedStyle(jc).pointerEvents !== 'none' && hits(jc), 'the journal\'s close button is the thing under the pointer');
+            ok(hits(tab), 'and so are its tabs');
+            tab.click();
+            ok(document.querySelector('.jtabs button.on').dataset.t === 'lore', 'a tab changes the page');
+            jc.click();
+            ok(A.game.state === 'play', 'the close button closes it');
+            A.enterPhoto();
+            const shot = document.getElementById('phShot'),
+              ex = document.getElementById('phExit');
+            ok(A.game.state === 'photo' && hits(shot) && hits(ex), 'in photo mode the take-photo and exit buttons are on the screen and reachable');
+            ex.click();
+            ok(A.game.state === 'play', 'the exit button leaves photo mode');
+          }
+          // ---- right click raises the optic the weapon has
+          fresh();
+          {
+            const rmb = down => window.dispatchEvent(new MouseEvent(down ? 'mousedown' : 'mouseup', { button: 2, bubbles: true }));
+            A.setWeapon('deagle');
+            rmb(true);
+            rmb(false);
+            ok(P.optOn && P.optKind === 'sights', 'right click with the pistol raises its sights, not the rifle scope');
+            rmb(true);
+            rmb(false);
+            ok(!P.optOn, 'and a second tap lowers them');
+            A.setWeapon('machete');
+            rmb(true);
+            rmb(false);
+            ok(!P.optOn, 'with the machete it does nothing');
+            A.setWeapon('rifle');
+            rmb(true);
+            rmb(false);
+            ok(P.optOn && P.optKind === 'scope', 'with the rifle it raises the scope');
+            rmb(true);
+            rmb(false);
+            ok(!P.optOn, 'and lowers it');
+          }
+          // ---- the pistol reloads with darts loaded
+          fresh();
+          {
+            P.ammoMode = 'tranq';
+            A.setWeapon('deagle');
+            P.pRounds = 2;
+            P.pReserve = 14;
+            P.reloading = false;
+            A.startReload();
+            ok(P.reloading, 'the pistol reloads while the rifle has darts in it');
+            P.reloading = false;
+            A.setWeapon('rifle');
+            A.startReload();
+            ok(!P.reloading, 'the rifle with darts still has nothing to reload');
+            P.ammoMode = 'live';
+            A.setWeapon('deagle');
+            P.pRounds = 7;
+            A.setWeapon('rifle');
+          }
+          // ---- a dart is nearly silent, and flies true inside 80 m
+          fresh();
+          {
+            const rex = A.dinos.find(d => d.sp.pred && !d.sp.fly && !d.dead && !d.hatchling);
+            const place = () => {
+              rex.x = P.x + 120;
+              rex.z = P.z;
+              rex.state = 'patrol';
+              rex.awareness = 0;
+              rex.invT = 0;
+              rex.calmT = 0;
+              rex.hasT = false;
+            };
+            place();
+            P.ammoMode = 'tranq';
+            P.darts = 5;
+            P.cycle = 0;
+            A.fire();
+            ok(rex.awareness === 0 && !(rex.invT > 0), 'a dart is not heard by a predator 120 m away');
+            place();
+            P.ammoMode = 'live';
+            P.rounds = 5;
+            P.cycle = 0;
+            A.fire();
+            ok(rex.awareness > 0.3 && rex.invT > 0, 'a rifle shot is (awareness ' + rex.awareness.toFixed(2) + ')');
+            P.ammoMode = 'live';
+            P.rounds = 5;
+            const W = A.WEAPONS.dart;
+            const above = R => {
+              const o = new T3.Vector3(0, 300 - W.sightH, 0); // (above the terrain, and below the 400 m ceiling bullets are removed at)
+              const b = {
+                w: W,
+                k: A.dragK(W.bc),
+                trace: [],
+                p: o.clone(),
+                v: new T3.Vector3(0, Math.sin(A.DART_ZERO), -Math.cos(A.DART_ZERO)).multiplyScalar(W.v0),
+                t: 0,
+                alive: true,
+                start: o.clone(),
+                trail: { geometry: { attributes: { position: { setXYZ() {}, needsUpdate: false } } }, material: { opacity: 1, dispose() {} } },
+                dist0: o.clone(),
+                aim: null,
+                eye: new T3.Vector3(0, 300, 0),
+                dart: true
+              };
+              A.bullets.push(b);
+              let y = null;
+              for (let i = 0; i < 2000 && b.alive; i++) {
+                A.stepBullets(1 / 240);
+                if (-b.p.z >= R) {
+                  y = b.p.y - 300; // relative to the sight line
+                  break;
+                }
+              }
+              A.bullets.length = 0;
+              return y;
+            };
+            const y25 = above(25),
+              y50 = above(50),
+              y80 = above(80),
+              y100 = above(100);
+            ok(Math.abs(y50) < 0.06, 'a dart crosses the sight line at 50 m (' + y50.toFixed(2) + ' m)');
+            ok(y25 > 0 && y25 < 0.35, 'rises a little before that (' + y25.toFixed(2) + ' m at 25 m)');
+            ok(y80 > -0.5, 'and is still within half a metre at 80 m (' + y80.toFixed(2) + ' m): inside a raptor');
+            ok(y100 > -1.1, 'and about a metre low at 100 m (' + y100.toFixed(2) + ' m)');
+          }
+          // ---- swapping weapons does not shorten the bolt cycle
+          fresh();
+          {
+            P.cycle = 1.25;
+            A.setWeapon('deagle');
+            ok(P.cycle >= 1.24, 'fire, swap: the rifle is still cycling (' + P.cycle.toFixed(2) + ' s)');
+            P.cycle = 0;
+            A.setWeapon('rifle');
+            ok(Math.abs(P.cycle - 0.35) < 1e-6, 'and a swap with nothing cycling takes its usual 0.35 s');
+          }
+          // ---- the jeep stops where you leave it; stick to the rim is not a sprint in the seat
+          fresh();
+          {
+            P.x = J.x - 3;
+            P.z = J.z;
+            A.enterJeep();
+            keys.KeyW = true;
+            keys.ShiftLeft = true;
+            sec(0.5);
+            ok(!P.sprint && P.stamina > 0.98, 'driving with Shift held is not sprinting (stamina ' + P.stamina.toFixed(2) + ')');
+            keys.KeyW = false;
+            keys.ShiftLeft = false;
+            J.speed = 15;
+            const x0 = J.x,
+              z0 = J.z;
+            A.leaveJeep();
+            ok(J.speed === 0, 'leaving puts the handbrake on');
+            sec(3);
+            ok(Math.hypot(J.x - x0, J.z - z0) < 0.01, 'it is still where you left it');
+          }
+          // ---- every operation starts the same way, and waking leaves the ammunition on the screen right
+          fresh();
+          {
+            A.setTimeOfDay(22.5);
+            A.OBJ.exploreDone = true;
+            A.newOperation();
+            ok(Math.abs(E.tod - 8.5) < 0.05, 'a new operation starts at the same hour as the first (' + E.tod.toFixed(2) + ')');
+            ok(A.OBJ.exploreDone === false, 'and can earn the explore bonus again');
+            sec(1);
+            away();
+            P.invuln = 0;
+            P.rounds = 1;
+            const rex = A.dinos.find(d => d.sp.pred && !d.sp.fly && !d.dead && !d.hatchling);
+            rex.x = P.x + 12;
+            rex.z = P.z;
+            rex.state = 'hunt';
+            rex.awareness = 1.4;
+            A.damagePlayer(999, rex);
+            sec(2.5);
+            ok(A.game.state === 'dead', 'killed');
+            A.respawn();
+            ok(document.getElementById('ammo').textContent === String(P.rounds) && P.rounds === 5, 'waking shows the magazine as it is (' + document.getElementById('ammo').textContent + ')');
+            const dd = Math.hypot(rex.x - P.x, rex.z - P.z);
+            ok(rex.state === 'patrol' && rex.calmT > 10 && dd > 45, 'the one that took you is not at the tower: ' + dd.toFixed(0) + ' m away, calm for ' + rex.calmT.toFixed(0) + ' s');
+          }
+          // ---- the layout editor cannot lose a run or cover the death sheet
+          fresh();
+          {
+            document.body.classList.add('touch');
+            A.TOUCH.on = true;
+            A.applyLayout();
+            P.invuln = 0;
+            A.game.score = 777;
+            A.pause();
+            A.openEditor();
+            key('KeyP', true);
+            key('KeyP', false);
+            ok(A.game.state === 'paused', 'P does not resume the game behind the editor');
+            document.getElementById('edDone').click();
+            ok(document.getElementById('mTitle').textContent === 'Paused' && document.getElementById('btn').textContent === 'Resume', 'Done brings back the pause sheet');
+            document.getElementById('btn').click();
+            ok(A.game.state === 'play' && A.game.score === 777, 'Resume resumes: the score is still ' + A.game.score);
+            document.getElementById('btn').click();
+            ok(A.game.state === 'play' && A.game.score === 777, 'and the button, if it is somehow touched while playing, does not start a new game');
+            // the death sheet survives the editor
+            const rex = A.dinos.find(d => d.sp.pred && !d.sp.fly && !d.dead);
+            A.damagePlayer(999, rex);
+            sec(2.5);
+            ok(A.game.state === 'dead', 'dead');
+            A.openEditor();
+            document.getElementById('edDone').click();
+            ok(A.game.state === 'dead' && /Mauled/.test(document.getElementById('mTitle').textContent) && document.getElementById('btn').textContent === 'Respawn', 'closing the editor shows the death sheet again, not "Paused"');
+            A.respawn();
+            A.TOUCH.on = false;
+            document.body.classList.remove('touch');
+          }
+          // ---- the thumb that lands at the edge does not start the stick pushed over
+          fresh();
+          {
+            const Wd = innerWidth,
+              H = innerHeight;
+            document.body.classList.add('touch');
+            A.TOUCH.on = true;
+            A.TOUCH.releaseAll();
+            const pd = (type, id, x, y) =>
+              document.getElementById('lookPad').dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 }));
+            pd('pointerdown', 95, 4, H * 0.5);
+            ok(Math.abs(A.TOUCH.mx) < 0.05 && Math.abs(A.TOUCH.mz) < 0.05, 'landing 4 px from the left edge starts with no push (' + A.TOUCH.mx.toFixed(2) + ', ' + A.TOUCH.mz.toFixed(2) + ')');
+            pd('pointermove', 95, 4 + 40, H * 0.5);
+            ok(A.TOUCH.mx > 0.15, 'and sliding right pushes right');
+            pd('pointerup', 95, 44, H * 0.5);
+            pd('pointerdown', 96, 40, H - 3);
+            ok(Math.abs(A.TOUCH.mx) < 0.05 && Math.abs(A.TOUCH.mz) < 0.05, 'nor does landing at the bottom edge');
+            pd('pointerup', 96, 40, H - 3);
+            A.TOUCH.on = false;
+            document.body.classList.remove('touch');
+            void Wd;
+          }
+          // ---- every journal entry can be filled in
+          fresh();
+          {
+            const mkDart = () => ({ dart: true, v: new T3.Vector3(0, 0, -200), dist0: new T3.Vector3(0, 0, 0) });
+            const pt = A.dinos.find(d => d.type === 'ptera' && !d.dead);
+            delete A.JRN.sp.ptera;
+            delete A.JRN.rewarded.ptera;
+            A.sedateHit(pt, 'body', mkDart(), { x: pt.x, y: pt.y, z: pt.z });
+            ok(A.JRN.sp.ptera && A.JRN.sp.ptera.care, 'a dart on a pteranodon fills in its handling entry ("a dart cannot hold a flyer")');
+            pt.x = P.x + 80;
+            pt.z = P.z;
+            pt.hx = pt.x;
+            pt.hz = pt.z;
+            pt.awareness = 1.5;
+            pt.cool = 0;
+            P.invuln = 0;
+            P.regenT = 0;
+            for (let i = 0; i < 60 * 20 && !(A.JRN.sp.ptera && A.JRN.sp.ptera.behav); i++) {
+              run(1);
+              P.hp = 100;
+            }
+            ok(A.JRN.sp.ptera.sign, 'its stoop fills in the sign entry');
+            ok(A.JRN.sp.ptera.behav, 'and its strike the behaviour entry');
+            P.invuln = 999;
+            // the apatosaurus: watched for ten seconds in the open
+            delete A.JRN.sp.apato;
+            const spots = [];
+            for (let i = 0; i < 20000 && spots.length < 6; i++) {
+              // somewhere with a clear, level line to a point 60 m ahead, in one of eight directions (trees and rises in the way hide it)
+              const x = Math.sin(i * 12.9898) * 560,
+                z = Math.cos(i * 78.233) * 560,
+                gh = A.heightAt(x, z);
+              if (gh < A.WATER + 3) continue;
+              for (let k = 0; k < 8 && spots.length < 6; k++) {
+                const yaw = k * 0.7854 + 0.2,
+                  tx = x - Math.sin(yaw) * 60,
+                  tz = z - Math.cos(yaw) * 60,
+                  tg = A.heightAt(tx, tz);
+                if (tg < A.WATER + 1.5 || Math.abs(tg - gh) > 6) continue;
+                const o = new T3.Vector3(x, gh + 1.7, z),
+                  v = new T3.Vector3(tx - x, tg + 1.2 - (gh + 1.7), tz - z),
+                  len = v.length();
+                v.normalize();
+                if (A.rayWorld(o, v, len + 4).d > len - 0.5) spots.push([x, z, yaw]); // (the same ray the journal's sight check uses)
+              }
+            }
+            ok(spots.length > 0, 'found open ground to watch from');
+            const ap = A.dinos.find(d => d.type === 'apato' && !d.dead);
+            let got = false;
+            for (const sp of spots) {
+              if (got) break;
+              delete A.JRN.sp.apato;
+              P.x = sp[0];
+              P.z = sp[1];
+              P.yaw = sp[2];
+              const fx = -Math.sin(P.yaw),
+                fz = -Math.cos(P.yaw);
+              for (let i = 0; i < 60 * 14 && !got; i++) {
+                ap.x = P.x + fx * 60;
+                ap.z = P.z + fz * 60;
+                ap.state = 'wander';
+                P.pitch = Math.atan2(ap.y + 1.2 - A.cam.position.y, 60); // (looking at it, wherever the ground rises)
+                run(1);
+                got = !!(A.JRN.sp.apato && A.JRN.sp.apato.behav);
+              }
+            }
+            ok(got, 'watching an apatosaurus for ten seconds in the open fills in how it behaves');
+          }
+          // ---- damaged saves do not take the start screen down
+          {
+            const keep = localStorage.getItem('apexRidgeBest');
+            localStorage.setItem('apexRidgeBest', 'null');
+            let threw = null;
+            try {
+              A.showMenu('pause');
+            } catch (e) {
+              threw = e;
+            }
+            ok(!threw && A.best().score === 0, 'a stored best score of "null" is read as no score');
+            localStorage.setItem('apexRidgeBest', '{"score":"abc","longest":[1]}');
+            ok(A.best().score === 0 && A.best().longest === 0, 'and rubbish numbers as zero');
+            localStorage.setItem('apexRidgeBest', JSON.stringify({ score: 4200, longest: 311 }));
+            ok(A.best().score === 4200 && A.best().longest === 311, 'a good one is kept');
+            if (keep === null) localStorage.removeItem('apexRidgeBest');
+            else localStorage.setItem('apexRidgeBest', keep);
+            A.hideMenu && A.hideMenu();
+          }
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
+        'Comfort: fire on release, the scope back up after a reload, sound and pause keys, audio waking, difficulty, the death sheet, autosave and Continue',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            J = A.JEEP,
+            keys = A.keys,
+            SET = A.SET,
+            Aud = A.Aud;
+          const sec = s => run(Math.round(s * 60));
+          const away = () =>
+            A.dinos.forEach(d => {
+              if (!d.dead && !d.sp.fly) {
+                d.x = 9999;
+                d.z = 9999;
+                d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+              }
+            });
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.ammoMode = 'live';
+            P.alive = true;
+            A.setStance(0);
+            A.setWeapon('rifle');
+            away();
+            for (const k in keys) keys[k] = false;
+          };
+          const pe = (type, id, x, y, target) =>
+            target.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y, buttons: type === 'pointerup' ? 0 : 1 }));
+          const centre = el => {
+            const r = el.getBoundingClientRect();
+            return [r.left + r.width / 2, r.top + r.height / 2];
+          };
+          const key = (code, down) => window.dispatchEvent(new KeyboardEvent(down ? 'keydown' : 'keyup', { code, bubbles: true }));
+          const keep = { diff: SET.diff, fireUp: SET.fireUp, rescope: SET.rescope, assist: SET.assist };
+          const keepSave = localStorage.getItem('apexRidgeSave'),
+            keepMute = localStorage.getItem('apexRidgeMute'),
+            keepSet = localStorage.getItem('apexRidgeSet'),
+            wasMuted = Aud.muted;
+          SET.assist = false;
+
+          // ---- the bullet key, scoped, fires when you let go
+          fresh();
+          {
+            document.body.classList.add('touch');
+            A.TOUCH.on = true;
+            A.TOUCH.releaseAll();
+            A.applyLayout();
+            const fk = document.getElementById('tFire');
+            const [x, y] = centre(fk);
+            SET.fireUp = true;
+            const setUp = () => {
+              P.optOn = true;
+              P.optKind = 'scope';
+              P.optAmt = 1;
+              P.cycle = 0;
+            };
+            P.rounds = 5;
+            setUp();
+            pe('pointerdown', 201, x, y, fk);
+            ok(P.rounds === 5, 'scoped, touching the bullet key does not fire yet');
+            pe('pointermove', 201, x + 30, y - 20, fk);
+            ok(P.rounds === 5, 'nor does sliding it to put the crosshair on the animal');
+            pe('pointerup', 201, x + 30, y - 20, fk);
+            ok(P.rounds === 4, 'letting go does');
+            P.optOn = false;
+            P.optAmt = 0;
+            P.cycle = 0;
+            pe('pointerdown', 202, x, y, fk);
+            ok(P.rounds === 3, 'unscoped it fires the moment it is touched, as before');
+            pe('pointerup', 202, x, y, fk);
+            ok(P.rounds === 3, 'and not again when it is released');
+            SET.fireUp = false;
+            setUp();
+            pe('pointerdown', 203, x, y, fk);
+            ok(P.rounds === 2, 'with the setting off, scoped, it fires on touch-down');
+            pe('pointerup', 203, x, y, fk);
+            SET.fireUp = true;
+            setUp();
+            pe('pointerdown', 204, x, y, fk);
+            A.TOUCH.releaseAll();
+            pe('pointerup', 204, x, y, fk);
+            ok(P.rounds === 2, 'a finger lost to a focus change fires nothing');
+            const lbl = document.getElementById('fireUp').parentNode;
+            ok(getComputedStyle(lbl).display !== 'none', 'the setting is shown on a touch screen');
+            document.body.classList.remove('touch');
+            ok(getComputedStyle(lbl).display === 'none', 'and not on a PC');
+            A.TOUCH.on = false;
+          }
+          // ---- the scope goes back up after a reload
+          fresh();
+          {
+            SET.rescope = true;
+            P.optOn = true;
+            P.optKind = 'scope';
+            P.optAmt = 1;
+            P.rounds = 2;
+            P.reserve = 30;
+            A.startReload();
+            ok(P.reloading && !P.optOn, 'a reload brings the scope down');
+            sec(2.7);
+            ok(!P.reloading && P.rounds === 5 && P.optOn && P.optKind === 'scope', 'and it goes back up when the magazine is in');
+            P.rounds = 2;
+            A.startReload();
+            A.toggleOptic('scope');
+            A.toggleOptic('scope');
+            sec(2.7);
+            ok(!P.optOn && P.rounds === 5, 'a scope you worked by hand during the reload is left as you left it');
+            SET.rescope = false;
+            P.optOn = true;
+            P.optKind = 'scope';
+            P.optAmt = 1;
+            P.rounds = 2;
+            A.startReload();
+            sec(2.7);
+            ok(!P.optOn, 'with the setting off it stays down');
+            SET.rescope = true;
+            A.setWeapon('deagle');
+            P.optOn = true;
+            P.optKind = 'sights';
+            P.optAmt = 1;
+            P.pRounds = 2;
+            P.pReserve = 20;
+            A.startReload();
+            ok(P.reloading && !P.optOn, 'the pistol lowers its sights for a reload');
+            sec(2.2);
+            ok(P.optOn && P.optKind === 'sights' && P.pRounds === 7, 'and raises them again');
+            P.optOn = true;
+            P.optKind = 'sights';
+            P.pRounds = 2;
+            A.startReload();
+            A.setWeapon('rifle');
+            sec(2.2);
+            ok(!P.optOn && P.weapon === 'rifle', 'changing weapon in the middle drops the idea');
+          }
+          // ---- pause is out on the screen, sound is a key, and it is remembered
+          fresh();
+          {
+            document.body.classList.add('touch');
+            A.TOUCH.on = true;
+            A.TOUCH.releaseAll();
+            for (const k in A.CTL.b) delete A.CTL.b[k];
+            A.applyLayout();
+            ok(A.whereOf('tPause') === 'screen' && A.whereOf('tMute') === 'menu', 'pause is out on the screen by default, and the sound key is in the menu');
+            const mk = document.getElementById('tMute'),
+              pk = document.getElementById('tPause');
+            const m0 = Aud.muted;
+            const r = A.toggleMute();
+            ok(Aud.muted === !m0 && localStorage.getItem('apexRidgeMute') === (Aud.muted ? '1' : '0'), 'the sound key toggles it and the choice is saved');
+            A.touchLabels();
+            ok(mk.dataset.m === (Aud.muted ? '1' : '0'), 'and the key shows which it is');
+            void r;
+            key('KeyN', true);
+            key('KeyN', false);
+            ok(Aud.muted === m0, 'N does the same');
+            const [px, py] = centre(pk);
+            pe('pointerdown', 211, px, py, pk);
+            pe('pointerup', 211, px, py, pk);
+            ok(A.game.state === 'paused', 'the pause key pauses');
+            A.resume();
+            A.TOUCH.on = false;
+            document.body.classList.remove('touch');
+          }
+          // ---- audio wakes after a call or a lock screen, and queues nothing meanwhile
+          {
+            const realC = Aud.c;
+            let resumed = 0,
+              made = 0;
+            Aud.c = {
+              state: 'suspended',
+              currentTime: 0,
+              resume() {
+                resumed++;
+                this.state = 'running';
+                return Promise.resolve();
+              },
+              createBufferSource() {
+                made++;
+                throw new Error('scheduled while asleep');
+              },
+              createOscillator() {
+                made++;
+                throw new Error('scheduled while asleep');
+              }
+            };
+            Aud.noise({ f0: 100, dur: 0.1, gain: 0.1 });
+            Aud.tone({ f0: 300, dur: 0.1, gain: 0.1 });
+            ok(made === 0, 'nothing is scheduled while the context is asleep');
+            window.dispatchEvent(new Event('pointerdown'));
+            ok(resumed === 1 && Aud.c.state === 'running', 'the next touch wakes it');
+            Aud.c = realC;
+          }
+          // ---- difficulty
+          fresh();
+          {
+            const pred = A.dinos.find(d => d.type === 'rex' && !d.dead) || A.dinos.find(d => d.sp.pred && !d.sp.fly && !d.dead);
+            const hurt = () => {
+              P.hp = 100;
+              P.invuln = 0;
+              A.damagePlayer(20, pred);
+              return 100 - P.hp;
+            };
+            SET.diff = 'standard';
+            const st = hurt();
+            SET.diff = 'relaxed';
+            const rl = hurt();
+            SET.diff = 'hunter';
+            const hu = hurt();
+            ok(Math.abs(st - 20) < 0.01 && Math.abs(rl - 12) < 0.01 && Math.abs(hu - 27) < 0.01, 'a 20-point bite does ' + rl.toFixed(0) + ' / ' + st.toFixed(0) + ' / ' + hu.toFixed(0) + ' on Relaxed / Standard / Hunter');
+            const mend = d => {
+              SET.diff = d;
+              P.invuln = 999;
+              P.hp = 50;
+              P.regenT = 0;
+              sec(2);
+              return P.hp - 50;
+            };
+            const mr = mend('relaxed'),
+              ms = mend('standard'),
+              mh = mend('hunter');
+            ok(mr > ms * 1.3 && mh < ms * 0.7, 'you mend faster on Relaxed and slower on Hunter (' + mr.toFixed(1) + ' / ' + ms.toFixed(1) + ' / ' + mh.toFixed(1) + ' hp in 2 s)');
+            const seen = d => {
+              SET.diff = d;
+              sec(0.5);
+              return A.STEALTH.vis;
+            };
+            const vr = seen('relaxed'),
+              vs = seen('standard'),
+              vh = seen('hunter');
+            ok(vr < vs && vh > vs && Math.abs(vr / vs - 0.8) < 0.02, 'animals notice you from less far on Relaxed, from further on Hunter');
+            const reserve = d => {
+              SET.diff = d;
+              A.newOperation();
+              away();
+              return P.reserve;
+            };
+            const rr = reserve('relaxed'),
+              rs = reserve('standard'),
+              rh = reserve('hunter');
+            ok(rr === 45 && rs === 30 && rh === 24, 'a new operation starts with ' + rr + ' / ' + rs + ' / ' + rh + ' rounds in reserve');
+            const sel = document.getElementById('diffSel');
+            sel.value = 'hunter';
+            sel.dispatchEvent(new Event('change'));
+            ok(SET.diff === 'hunter' && /"diff":"hunter"/.test(localStorage.getItem('apexRidgeSet')), 'the setting changes and is saved');
+            SET.diff = 'standard';
+          }
+          // ---- the death sheet says what happened, what to try and what you keep
+          fresh();
+          {
+            SET.diff = 'standard';
+            const pred = A.dinos.find(d => d.type === 'rex' && !d.dead);
+            P.invuln = 0;
+            A.damagePlayer(30, pred);
+            P.invuln = 0;
+            A.damagePlayer(999, pred);
+            sec(2.5);
+            const sub = document.getElementById('mSub').textContent,
+              body = document.getElementById('mBody').textContent;
+            ok(A.game.state === 'dead' && sub.indexOf('Taken by a ' + pred.sp.name) === 0 && /2 hits in 25 s/.test(sub), 'it says what took you, and how many hits: "' + sub.slice(0, 60) + '"');
+            ok(/250 points/.test(sub) && /are kept/.test(sub) && /eggs in hand go back/.test(sub), 'what you lose and what you keep');
+            ok(/Next time:/.test(body) && /jeep/i.test(body) && /Standard/.test(document.getElementById('stamp').textContent), 'a tip for that animal, and the difficulty on the stamp');
+            A.respawn();
+            A.LIFE.last = { cause: 'drown' };
+            A.showMenu('lose');
+            ok(/ran out of air/.test(document.getElementById('mSub').textContent) && /22 seconds/.test(document.getElementById('mBody').textContent), 'drowning has its own words');
+            A.LIFE.last = null;
+          }
+          // ---- autosave and Continue
+          fresh();
+          {
+            SET.diff = 'standard';
+            localStorage.removeItem('apexRidgeSave');
+            const btn = document.getElementById('btn'),
+              btn2 = document.getElementById('btn2');
+            ok(A.readSave() === null, 'nothing is saved to begin with');
+            A.showMenu('start');
+            ok(btn.textContent === 'Deploy' && btn2.style.display === 'none', 'the start sheet says Deploy');
+            fresh();
+            const t0 = A.POI.towers[0];
+            A.completeTower(t0);
+            A.OBJ.eggs = 2;
+            A.OBJ.alpha = true;
+            P.reserve = 41;
+            P.kits = 3;
+            A.game.score = 1234;
+            P.x = 120;
+            P.z = -80;
+            A.setTimeOfDay(15.5);
+            J.fuel = 0.4;
+            ok(A.saveGame(true), 'the operation is saved');
+            const sv = A.readSave();
+            ok(!!sv && sv.towers[0][0] === 1 && sv.p.reserve === 41 && sv.obj.eggs === 2, 'the save holds the tower, the rounds and the eggs');
+            A.newOperation();
+            sec(1);
+            away();
+            ok(A.OBJ.towers === 0 && !t0.done && P.reserve === 30, 'a new operation starts from nothing');
+            A.showMenu('start');
+            ok(btn.textContent === 'Continue' && btn2.style.display === 'inline-block' && /Saved operation/.test(document.getElementById('mBody').textContent), 'with a save, the start sheet offers Continue and New operation, and says what is saved');
+            A.continueGame();
+            sec(0.3);
+            ok(A.OBJ.towers === 1 && t0.done && t0.prog === 1, 'Continue brings the tower back');
+            ok(P.reserve === 41 && P.kits === 3 && A.game.score === 1234 && A.OBJ.eggs === 2, 'and what you carry, what you scored and the eggs delivered');
+            ok(Math.abs(P.x - 120) < 4 && Math.abs(P.z + 80) < 4, 'and where you stood (' + P.x.toFixed(0) + ', ' + P.z.toFixed(0) + ')');
+            ok(Math.abs(E.tod - 15.5) < 0.1 && Math.abs(J.fuel - 0.4) < 0.01, 'and the hour and the jeep\'s fuel');
+            ok(A.OBJ.alpha && A.dinos.every(d => !d.alpha || d.dead), 'the alpha you downed stays down');
+            ok(A.game.state === 'play', 'and you are playing');
+            // damaged or foreign saves are ignored
+            localStorage.setItem('apexRidgeSave', '{"v":1,"seed":"' + A.seedText + '"}');
+            ok(A.readSave() === null, 'a save missing its parts is not used');
+            const good = JSON.parse(JSON.stringify(sv));
+            good.seed = 'some other world';
+            localStorage.setItem('apexRidgeSave', JSON.stringify(good));
+            ok(A.readSave() === null, 'nor is one from another world');
+            localStorage.setItem('apexRidgeSave', 'not json');
+            let threw = null;
+            try {
+              A.readSave();
+              A.continueGame();
+            } catch (e) {
+              threw = e;
+            }
+            ok(!threw && A.OBJ.towers === 0, 'rubbish does no harm: Continue starts a new operation');
+            // a finished operation leaves nothing to continue
+            fresh();
+            A.OBJ.towers = 3;
+            A.OBJ.eggs = 3;
+            A.OBJ.alpha = true;
+            A.saveGame(true);
+            ok(!!A.readSave(), 'saved before the end');
+            A.checkWin();
+            ok(A.saveGame(true) === false, 'nothing is saved once the operation is done');
+            sec(3);
+            ok(A.game.state === 'won' && A.readSave() === null, 'the win clears the save');
+            A.newOperation();
+          }
+          // put back what the test touched
+          SET.diff = keep.diff;
+          SET.fireUp = keep.fireUp;
+          SET.rescope = keep.rescope;
+          SET.assist = keep.assist;
+          if (keepSave === null) localStorage.removeItem('apexRidgeSave');
+          else localStorage.setItem('apexRidgeSave', keepSave);
+          if (keepMute === null) localStorage.removeItem('apexRidgeMute');
+          else localStorage.setItem('apexRidgeMute', keepMute);
+          if (keepSet === null) localStorage.removeItem('apexRidgeSet');
+          else localStorage.setItem('apexRidgeSet', keepSet);
+          Aud.muted = wasMuted;
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
+        'Last comforts: pause draws less, a frame-rate cap, steady quality, waypoint, deep water, falls and the jeep on bridges',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            J = A.JEEP,
+            keys = A.keys,
+            SET = A.SET;
+          const sec = s => run(Math.round(s * 60));
+          const away = () =>
+            A.dinos.forEach(d => {
+              if (!d.dead) {
+                d.x = 9999;
+                d.z = 9999;
+                if (d.sp.fly) {
+                  d.hx = 9999;
+                  d.hz = 9999;
+                } else d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+              }
+            });
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.alive = true;
+            A.setStance(0);
+            A.setWeapon('rifle');
+            away();
+            for (const k in keys) keys[k] = false;
+          };
+          const keep = { diff: SET.diff, fps: SET.fps };
+          const keepSet = localStorage.getItem('apexRidgeSet');
+
+          // ---- the picture is not redrawn at the screen's rate behind a sheet, and a cap is honoured
+          {
+            ok(A.STILL.paused >= 200 && A.STILL.map >= 200 && A.STILL.journal >= 200, 'paused, the map and the journal are redrawn only a few times a second (' + A.STILL.paused + ' ms)');
+            ok(A.stillSkip('paused', 100, 0, false) && !A.stillSkip('paused', 300, 0, false), 'a paused picture waits for its turn');
+            ok(!A.stillSkip('play', 5, 0, false) && !A.stillSkip('photo', 5, 0, false) && !A.stillSkip('replay', 5, 0, false) && !A.stillSkip('dead', 5, 0, false), 'but playing, photo mode, the replay and the death animation are drawn every frame');
+            ok(!A.stillSkip('paused', 100, 0, true), 'a resize makes it draw at once');
+            ok(A.capSkip(100, 90, 60) && !A.capSkip(106.5, 90, 60), 'a cap of 60 skips the refreshes in between');
+            ok(!A.capSkip(116.7, 100, 60) && !A.capSkip(100, 99, 0), 'and not one on a 60 Hz screen, or when there is no cap');
+            ok(A.capSkip(116.7, 100, 30) && !A.capSkip(133.4, 100, 30), 'a cap of 30 draws every second refresh of a 60 Hz screen');
+            const sel = document.getElementById('fpsSel');
+            sel.value = '30';
+            sel.dispatchEvent(new Event('change'));
+            ok(SET.fps === 30 && /"fps":30/.test(localStorage.getItem('apexRidgeSet')), 'the frame-rate setting changes and is saved');
+            SET.fps = keep.fps;
+          }
+          // ---- the quality controller gives back what it took, and knows a cap from a slow machine
+          {
+            const R0 = () => ({ shadowEvery: 1, scale: 1, min: 0.5, ceil: 1, ema: 16.7, warm: 3, cool: 0, stable: 0, t: 0, lastUp: -99, ups: 0, downs: 0, level: 0, auto: true });
+            const sim = (R, msAt, seconds) => {
+              const log = [];
+              let t = 0;
+              while (t < seconds) {
+                const ms = msAt(R);
+                const act = A.perfStep(R, ms, ms / 1000);
+                if (act) log.push([Math.round(t), act, R.level]);
+                t += ms / 1000;
+              }
+              return log;
+            };
+            let R = R0();
+            let log = sim(R, () => 33.33, 150);
+            ok(R.scale === 1 && R.level === 0 && R.capExt > 0.45 && R.capExt < 0.55 && log.some(x => x[1] === 'uncap'), 'a gap of exactly 33 ms that nothing helps is a 30 a second cap: everything is given back (sharpness ' + Math.round(R.scale * 100) + '%, trim ' + R.level + ')');
+            const quiet = log.filter(x => x[0] > 100).length;
+            ok(quiet === 0, 'and it stays put afterwards');
+            R = R0();
+            R.capOwn = 0.5;
+            log = sim(R, () => 33.33, 60);
+            ok(log.length === 0 && R.scale === 1, 'with our own cap of 30 the same gaps are exactly on time and nothing is done');
+            R = R0();
+            R.capOwn = 0.5;
+            log = sim(R, () => 55, 60);
+            ok(R.scale < 1, 'but a machine that cannot hold even 30 is still helped');
+            // trimmed, then quick for a while: one level comes back at a time
+            R = R0();
+            R.level = 2;
+            log = sim(R, () => 16.5, 80);
+            ok(R.level === 0 && log.filter(x => x[1] === 'restore').length === 2, 'quick frames give back the trim, one level at a time (' + log.filter(x => x[1] === 'restore').length + ' steps)');
+            // ... unless giving it back made it slow again soon after
+            R = R0();
+            R.level = 2;
+            const prof = r => (r.t < 30 ? 16.5 : r.t < 50 ? 45 : 16.5);
+            log = sim(R, prof, 120);
+            ok(R.noRestore === true && R.level >= 2, 'what was given back and did not hold is left trimmed (level ' + R.level + ')');
+            // a failed attempt at a sharper picture is forgiven after a long quiet spell
+            R = R0();
+            R.scale = 0.7;
+            R.ceil = 0.7;
+            log = sim(R, () => 16.5, 300);
+            ok(R.ceil > 0.7 && R.scale > 0.7, 'a ceiling set by a failed probe rises again after four quiet minutes (' + Math.round(R.scale * 100) + '%)');
+            // what the controller undoes is really undone
+            const keepQ = { k: A.CULL.k, l: A.CULL.lod, e: A.RES.shadowEvery, cs: A.sun.castShadow, se: A.renderer.shadowMap.enabled };
+            A.degradeQuality(3);
+            A.restoreQuality(0);
+            ok(A.CULL.k === 1 && A.CULL.lod === 1 && A.sun.castShadow === !!A.QP.shadow && A.renderer.shadowMap.enabled === !!A.QP.shadow && A.RES.shadowEvery === A.QP.shadowEvery, 'trimming and restoring leaves the shadows, distances and refresh as they were');
+            A.CULL.k = keepQ.k;
+            A.CULL.lod = keepQ.l;
+            A.RES.shadowEvery = keepQ.e;
+            A.sun.castShadow = keepQ.cs;
+            A.renderer.shadowMap.enabled = keepQ.se;
+            const steady = A.steadyGap(new Array(120).fill(33.4)),
+              ragged = A.steadyGap(Array.from({ length: 120 }, (_, i) => 30 + (i % 7) * 2));
+            ok(steady > 33 && steady < 34 && ragged === 0, 'a regular 33 ms is recognised, an uneven one is not');
+          }
+          // ---- a waypoint can be cleared by touch, and clears itself on arrival
+          fresh();
+          {
+            P.wp = { x: P.x + 200, z: P.z };
+            P.track = 3;
+            A.openMap();
+            const mc = document.getElementById('mapClear');
+            ok(mc.classList.contains('on') && getComputedStyle(mc).display !== 'none', 'the map shows a Clear waypoint button while there is one');
+            mc.click();
+            ok(P.wp === null && P.track === 0 && !mc.classList.contains('on'), 'tapping it removes the waypoint (and the button goes)');
+            A.closeMap();
+            P.wp = { x: P.x + 10, z: P.z };
+            P.track = 3;
+            sec(0.2);
+            ok(P.wp === null && P.track === 0, 'arriving within 25 m clears it');
+            P.wp = { x: P.x + 300, z: P.z };
+            P.track = 3;
+            sec(0.2);
+            ok(!!P.wp, 'a faraway one stays');
+            P.wp = null;
+            P.track = 0;
+          }
+          // ---- too deep to lie down
+          fresh();
+          {
+            let spot = null;
+            for (let i = 0; i < 20000 && !spot; i++) {
+              const x = Math.sin(i * 12.9898) * 560,
+                z = Math.cos(i * 78.233) * 560,
+                d = A.WATER - A.heightAt(x, z);
+              if (d > 0.6 && d < 0.95 && A.bridgeH(x, z) < -1e8) spot = [x, z, d];
+            }
+            ok(!!spot, 'found water 0.6 to 0.95 m deep');
+            P.x = spot[0];
+            P.z = spot[1];
+            sec(0.5);
+            A.setStance(2);
+            ok(P.stance === 1, 'in water this deep you cannot lie down: you kneel (' + spot[2].toFixed(2) + ' m deep)');
+            sec(8);
+            ok(!P.under && P.air > 0.98 && P.hp === 100, 'and you do not run out of air');
+            // walking in on your belly: stood up on a knee
+            let dry = null;
+            for (let i = 0; i < 20000 && !dry; i++) {
+              const x = Math.sin(i * 7.3) * 560,
+                z = Math.cos(i * 3.1) * 560;
+              if (A.heightAt(x, z) > A.WATER + 3 && A.WATER - A.heightAt(x, z) < 0) dry = [x, z];
+            }
+            P.x = dry[0];
+            P.z = dry[1];
+            sec(0.3);
+            A.setStance(2);
+            ok(P.stance === 2, 'on dry ground you still can');
+            A.setStance(0);
+          }
+          // ---- falls hurt
+          fresh();
+          {
+            ok(A.FALL_SAFE > 3 && A.FALL_SAFE < 4, 'a fall under about three metres is free (' + A.FALL_SAFE + ' m)');
+            const drop = h => {
+              P.x = 0;
+              P.z = 0;
+              A.setTimeOfDay(12);
+              sec(0.3);
+              P.hp = 100;
+              P.invuln = 0;
+              P.stun = 0;
+              P.alt = h;
+              P.grounded = false;
+              P.jv = 0;
+              sec(2.5);
+              return 100 - P.hp;
+            };
+            SET.diff = 'standard';
+            const small = drop(2);
+            ok(small === 0, 'a two-metre drop costs nothing');
+            const mid = drop(6);
+            ok(Math.abs(mid - (6 - A.FALL_SAFE) * 12) < 4, 'six metres costs about ' + mid.toFixed(0) + ' hp');
+            const big = drop(9);
+            ok(big > mid && Math.abs(big - Math.min(85, (9 - A.FALL_SAFE) * 12)) < 4, 'nine metres costs about ' + big.toFixed(0) + ' hp');
+            SET.diff = 'relaxed';
+            const soft = drop(9);
+            ok(soft < big * 0.7, 'less on Relaxed (' + soft.toFixed(0) + ' hp against ' + big.toFixed(0) + ')');
+            SET.diff = 'standard';
+            // the ground falling away under your feet: you fall, you do not slide down it
+            P.x = 0;
+            P.z = 0;
+            sec(0.3);
+            P.lastG = A.heightAt(0, 0) + 7;
+            P.lastX = P.x;
+            P.lastZ = P.z;
+            P.invuln = 0;
+            P.hp = 100;
+            run(1);
+            ok(!P.grounded && P.alt > 5, 'a ledge that drops away under you starts a fall (' + P.alt.toFixed(1) + ' m up)');
+            sec(2.5);
+            ok(P.grounded && P.hp < 100, 'and you land hurt (' + P.hp.toFixed(0) + ' hp)');
+            // a walkable slope is not a fall
+            P.lastG = A.heightAt(0, 0) + 0.2;
+            P.lastX = P.x + 0.3;
+            P.lastZ = P.z;
+            P.hp = 100;
+            run(1);
+            ok(P.grounded && P.hp === 100, 'a gentle slope is still just walking');
+            // it can kill, and the sheet says so
+            P.invuln = 0;
+            P.hp = 20;
+            P.alt = 9;
+            P.grounded = false;
+            P.jv = 0;
+            sec(2.5);
+            ok(A.game.state === 'dead' || !P.alive, 'a long fall on little health kills');
+            sec(2.2);
+            const sub = document.getElementById('mSub').textContent;
+            ok(/You fell \d+ m/.test(sub) && /jump into deep water/.test(document.getElementById('mBody').textContent), 'the death sheet says you fell, and what to do instead: "' + sub.slice(0, 40) + '"');
+            A.respawn();
+            SET.diff = keep.diff;
+          }
+          // ---- the jeep crosses a bridge
+          fresh();
+          {
+            // a bridge whose bank is high enough for a car to stand on (some span marshy ground that is only a few decimetres over the water)
+            const dryBank = b => [3, 6, 9].every(k => A.heightAt(b.ax - b.dx * k, b.az - b.dz * k) > A.WATER + 0.7);
+            const br = A.BRIDGES.find(dryBank) || A.BRIDGES[0];
+            const dx = br.dx,
+              dz = br.dz;
+            P.invuln = 999;
+            J.x = br.ax - dx * 9;
+            J.z = br.az - dz * 9;
+            J.heading = Math.atan2(dx, dz);
+            J.speed = 0;
+            J.fuel = 1;
+            J.hp = 100;
+            J.dead = false;
+            J.onBridge = false;
+            A.poseJeep();
+            P.x = J.x - dz * 3;
+            P.z = J.z + dx * 3;
+            A.enterJeep();
+            keys.KeyW = true;
+            let onDeck = false,
+              minY = 99,
+              water = false,
+              mid = null;
+            const mx = (br.ax + br.bx) / 2,
+              mz = (br.az + br.bz) / 2;
+            for (let i = 0; i < 60 * 30; i++) {
+              run(1);
+              if (J.onBridge) onDeck = true;
+              if (J.onBridge) minY = Math.min(minY, J.y);
+              if (J.speed === 0 && i > 30) water = true;
+              if (!mid && Math.hypot(J.x - mx, J.z - mz) < 2) {
+                mid = { y: J.y, on: J.onBridge, sw: P.swimming };
+                keys.KeyW = false;
+                break;
+              }
+            }
+            ok(onDeck && !!mid && mid.on, 'the jeep drives up onto the deck and along it');
+            ok(!!mid && mid.y > A.WATER + 1, 'and rides on it, not on the lake bed (' + (mid ? mid.y.toFixed(1) : '?') + ' m, water ' + A.WATER + ')');
+            ok(!water, 'without being stopped by the water');
+            // step out in the middle: you are on the deck, not in the lake
+            A.leaveJeep();
+            sec(1);
+            ok(!P.swimming && !P.wading && A.cam.position.y > A.WATER + 1.2, 'stepping out on the bridge puts you on the deck (eye ' + A.cam.position.y.toFixed(1) + ' m)');
+            A.enterJeep();
+            keys.KeyW = true;
+            let far = false;
+            for (let i = 0; i < 60 * 30 && !far; i++) {
+              run(1);
+              if (Math.hypot(J.x - br.bx, J.z - br.bz) < 4) far = true;
+            }
+            keys.KeyW = false;
+            ok(far && !J.dead && J.hp > 60, 'and it carries on to the far bank, undamaged (body ' + Math.round(J.hp) + '%)');
+            A.leaveJeep();
+            ok(J.speed === 0, 'parked at the far end');
+            // beside the bridge it is still deep water
+            J.x = mx - dz * 6;
+            J.z = mz + dx * 6;
+            J.onBridge = false;
+            J.speed = 6;
+            J.heading = Math.atan2(-dz, dx);
+            A.poseJeep();
+            const wet = A.heightAt(J.x, J.z) < A.WATER;
+            ok(!wet || !A.jeepGroundAt(J.x, J.z, false) || A.jeepGroundAt(J.x, J.z, false) < A.WATER + 0.45, 'off the deck, the jeep still sees the lake bed');
+            J.speed = 0;
+          }
+          SET.diff = keep.diff;
+          SET.fps = keep.fps;
+          if (keepSet === null) localStorage.removeItem('apexRidgeSet');
+          else localStorage.setItem('apexRidgeSet', keepSet);
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
         'Graphics: tiers, simplified distance shapes, terrain tiles, shadows and the frame-rate controller',
         function () {
           const P = A.P,
@@ -22765,6 +24614,30 @@ window.__bootInner = async function () {
     wheelOpen,
     wheelClose,
     wheelSector,
+    DART_ZERO,
+    FALL_SAFE,
+    fallDamage,
+    jeepGroundAt,
+    bridgeNear,
+    restoreQuality,
+    steadyGap,
+    clearWaypoint,
+    STILL,
+    capSkip,
+    stillSkip,
+    best,
+    resetSky,
+    DIFFS,
+    DIFF,
+    LIFE,
+    deathLine,
+    deathTip,
+    saveGame,
+    readSave,
+    applySave,
+    clearSave,
+    continueGame,
+    toggleMute,
     swingMachete,
     fireDeagle,
     PISTOL_ZERO,
