@@ -435,6 +435,46 @@ body.touch #safeTag {
   opacity: 0;
   background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 45%, rgba(160, 15, 10, 0.78) 100%);
 }
+#wound {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+}
+#wound svg {
+  width: 100%;
+  height: 100%;
+}
+#wound g {
+  display: none;
+  fill: rgba(122, 10, 8, 0.82);
+}
+#wound.claw g.claw,
+#wound.bite g.bite,
+#wound.talon g.talon {
+  display: inline;
+}
+#wound.flip svg {
+  transform: scaleX(-1);
+}
+#wound.on {
+  animation: woundA 1.15s ease-out forwards;
+}
+@keyframes woundA {
+  0% {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  7% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
 #hurtDirWrap {
   position: fixed;
   inset: 0;
@@ -2727,6 +2767,7 @@ button#btn2:hover {
 <canvas id="gl"></canvas>
 <canvas id="ov"></canvas>
 <div id="hurt"></div>
+<div id="wound"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><g class="claw"><path d="M20 8Q46 46 70 92L67 93Q42 48 18 9Z"/><path d="M32 5Q57 44 81 88L78 89Q53 46 30 6Z"/><path d="M45 4Q68 40 90 80L87 82Q64 43 43 5Z"/></g><g class="bite"><path d="M18 15.6L21.4 15.6L19.7 23.6ZM26 13.2L29.4 13.2L27.7 21.1ZM34 11.4L37.4 11.4L35.7 19.4ZM42 10.3L45.4 10.3L43.7 18.4ZM50 10.0L53.4 10.0L51.7 18.0ZM58 10.3L61.4 10.3L59.7 18.4ZM66 11.4L69.4 11.4L67.7 19.4ZM74 13.2L77.4 13.2L75.7 21.1ZM82 15.6L85.4 15.6L83.7 23.6ZM18 84.4L21.4 84.4L19.7 76.4ZM26 86.8L29.4 86.8L27.7 78.8ZM34 88.6L37.4 88.6L35.7 80.6ZM42 89.7L45.4 89.7L43.7 81.7ZM50 90.0L53.4 90.0L51.7 82.0ZM58 89.7L61.4 89.7L59.7 81.7ZM66 88.6L69.4 88.6L67.7 80.6ZM74 86.8L77.4 86.8L75.7 78.8ZM82 84.4L85.4 84.4L83.7 76.4Z"/></g><g class="talon"><path d="M36 0L39 0L44 28L42 29Z"/><path d="M48 0L51 0L52 32L50 32Z"/><path d="M60 0L63 0L59 28L57 28Z"/></g></svg></div>
 <div id="flash"></div>
 <div id="bloodWrap"></div>
 <div id="under"></div>
@@ -3103,7 +3144,7 @@ window.__bootInner = async function () {
       fallenLogs: 10,
       stumps: 150,
       pebbles: 2200,
-      treeCut: 0.2
+      treeCut: 0.36
     }),
     medium: Object.freeze({
       trees: 6400,
@@ -3117,7 +3158,7 @@ window.__bootInner = async function () {
       fallenLogs: 8,
       stumps: 110,
       pebbles: 1500,
-      treeCut: 0.2
+      treeCut: 0.36
     }),
     light: Object.freeze({
       trees: 5200,
@@ -3131,7 +3172,7 @@ window.__bootInner = async function () {
       fallenLogs: 6,
       stumps: 70,
       pebbles: 900,
-      treeCut: 0.2
+      treeCut: 0.36
     })
   });
   const QPRESETS = Object.freeze({
@@ -3215,7 +3256,7 @@ window.__bootInner = async function () {
       propCull: 620,
       flowerFade: [55, 100],
       coverFade: [135, 190],
-      lodNear: 170,
+      lodNear: 150,
       minScale: 0.6,
       density: DENSITY.desktop,
       dinoFine: 0.05, // an animal under 5% of the screen's height loses its eyes, teeth and feet (it is a few pixels across there)...
@@ -4255,44 +4296,61 @@ window.__bootInner = async function () {
   }
   function buildChunks(items, geo, mat, place, opts) {
     opts = opts || {};
-    const CHS = opts.size || CH,
-      groups = new Map();
-    for (const it of items) {
+    let CHS = opts.size || CH,
+      cull = opts.cull;
+    if (QP.mob && opts.mobSize) {
+      // (touch set) a sparse kind of plant in bigger batches: a handful of plants per draw call is mostly the cost of the call. The reach
+      // grows by the extra half-diagonal, so every plant that was drawn before is still drawn.
+      if (cull) cull += (opts.mobSize - CHS) * 0.71;
+      CHS = opts.mobSize;
+    }
+    const groups = new Map();
+    items.forEach((it, i) => {
       const k = Math.floor((it.x + HALF) / CHS) * 1000 + Math.floor((it.z + HALF) / CHS);
       let a = groups.get(k);
       if (!a) groups.set(k, (a = []));
-      a.push(it);
-    }
+      a.push(i);
+    });
     const d = new T.Object3D(),
-      col = new T.Color();
+      col = new T.Color(),
+      m4 = new T.Matrix4();
+    // every item is placed once, in the order it was made, so the random numbers it draws do not depend on how the batches are cut (an
+    // item flagged skip is not built, but its place() still runs, so nothing drawn after it moves)
+    const MX = new Float32Array(items.length * 16),
+      CL = new Float32Array(items.length * 3);
+    items.forEach((it, i) => {
+      place(it, d, col, 0, 0);
+      if (it.skip) return;
+      d.updateMatrix();
+      d.matrix.toArray(MX, i * 16);
+      col.toArray(CL, i * 3);
+    });
     const lodGeo = opts.lod ? opts.lod() : null,
       lodAt = opts.lodAt || QP.lodNear;
     for (const [ck, arr] of groups) {
       let cx = 0,
         cz = 0;
-      for (const it of arr) {
-        cx += it.x;
-        cz += it.z;
+      for (const i of arr) {
+        cx += items[i].x;
+        cz += items[i].z;
       }
       cx /= arr.length;
       cz /= arr.length;
-      // (an item flagged skip is not built, but its place() still runs, so the random numbers every later thing draws do not move)
       let live = 0;
-      for (const it of arr) if (!it.skip) live++;
-      if (!live) {
-        arr.forEach(it => place(it, d, col, cx, cz));
-        continue;
-      }
+      for (const i of arr) if (!items[i].skip) live++;
+      if (!live) continue;
       const m = new T.InstancedMesh(shareGeo(geo, CHS * 0.9 + 10, opts.cy || 12), mat, live);
       let ii = 0;
-      arr.forEach(it => {
-        place(it, d, col, cx, cz);
-        if (it.skip) return;
-        d.updateMatrix();
-        m.setMatrixAt(ii, d.matrix);
+      for (const i of arr) {
+        if (items[i].skip) continue;
+        m4.fromArray(MX, i * 16);
+        m4.elements[12] -= cx;
+        m4.elements[14] -= cz;
+        m.setMatrixAt(ii, m4);
+        col.fromArray(CL, i * 3);
         m.setColorAt(ii, col);
         ii++;
-      });
+      }
       m.position.set(cx, 0, cz);
       m.matrixAutoUpdate = false;
       m.updateMatrix();
@@ -4312,10 +4370,10 @@ window.__bootInner = async function () {
         m2.castShadow = false;
         m2.receiveShadow = m.receiveShadow;
       }
-      if (opts.cull) {
+      if (cull) {
         // enters the scene only when you are near it. A near-only and a far-only batch of the same patch share one record (the patch's
         // centre, and which of the two is showing), so they hand over to each other at one distance and never both show or both vanish.
-        const entry = { m, m2, cur: m, cx, cz, reach: opts.cull, lodAt, on: false, mode: 0, cell: null };
+        const entry = { m, m2, cur: m, cx, cz, reach: cull, lodAt, on: false, mode: 0, cell: null };
         if (opts.nearOnly || opts.farOnly) {
           const ckey = (opts.group || 'g') + ':' + ck;
           let cell = NAT.cells.get(ckey);
@@ -4432,7 +4490,9 @@ window.__bootInner = async function () {
   /* ---- wind: one vertex-shader tweak makes every plant lean with the real wind and ripple with the gusts ---- */
   let _swayId = 0;
   function swayMat(H, amp, fa, fb, speed) {
-    const m = new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: T.DoubleSide }),
+    const m = QP.mob
+        ? new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide })
+        : new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, side: T.DoubleSide }),
       id = ++_swayId,
       f = v => v.toFixed(3);
     m.onBeforeCompile = sh => {
@@ -4984,7 +5044,13 @@ window.__bootInner = async function () {
       grid.clear();
       for (let i = 0; i < w; i++) gridAdd(i);
     }
-    const treeMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
+    const treeMat = QP.mob
+      ? new T.MeshLambertMaterial({ vertexColors: true })
+      : new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
+    const fct = g => {
+      if (QP.mob) g.computeVertexNormals(); // (separate triangles: one normal per face, so the corner-lit trees stay faceted)
+      return g;
+    };
     const placeTree = (it, d, col, cx, cz) => {
       d.position.set(it.x - cx, it.gy, it.z - cz);
       d.rotation.set(0, it.rot, 0);
@@ -4995,15 +5061,15 @@ window.__bootInner = async function () {
       else col.setRGB(v * rand(0.94, 1.06), v, v * rand(0.9, 1.05));
     };
     const FARCUT = { cull: QP.treeCull }; // past this the fog has swallowed them anyway
-    const LODT = { ...FARCUT, lodAt: QP.lodNear };
-    buildChunks(lists.pine, pineGeo(), treeMat, placeTree, { ...LODT, cat: 'pine', lod: () => pineGeo(true) });
-    buildChunks(lists.oak, oakGeo(), treeMat, placeTree, { ...LODT, cat: 'oak', lod: () => withRNG(101, () => oakGeo(true)) });
-    buildChunks(lists.birch, birchGeo(), treeMat, placeTree, {
+    const LODT = { ...FARCUT, lodAt: QP.lodNear, mobSize: 240 };
+    buildChunks(lists.pine, fct(pineGeo()), treeMat, placeTree, { ...LODT, cat: 'pine', lod: () => fct(pineGeo(true)) });
+    buildChunks(lists.oak, fct(oakGeo()), treeMat, placeTree, { ...LODT, cat: 'oak', lod: () => fct(withRNG(101, () => oakGeo(true))) });
+    buildChunks(lists.birch, fct(birchGeo()), treeMat, placeTree, {
       ...LODT,
       cat: 'birch',
-      lod: () => withRNG(102, () => birchGeo(true))
+      lod: () => fct(withRNG(102, () => birchGeo(true)))
     });
-    buildChunks(lists.dead, deadGeo(), treeMat, placeTree, { ...FARCUT, cull: QP.deadCull || QP.treeCull, cat: 'dead' });
+    buildChunks(lists.dead, fct(deadGeo()), treeMat, placeTree, { ...FARCUT, cull: QP.deadCull || QP.treeCull, cat: 'dead', mobSize: 320 });
     // stumps
     for (let n = 0; n < 9000 && lists.stump.length < CONFIG.density.stumps; n++) {
       const x = rand(-HALF + 8, HALF - 8),
@@ -5025,7 +5091,7 @@ window.__bootInner = async function () {
     }
     buildChunks(
       lists.stump,
-      stumpGeo(),
+      fct(stumpGeo()),
       treeMat,
       (it, d, col, cx, cz) => {
         d.position.set(it.x - cx, it.gy - 0.05, it.z - cz);
@@ -5039,7 +5105,9 @@ window.__bootInner = async function () {
     // ---- rocks: six sculpted shapes with strata, moss on top and dark crevices, some in clusters
     const RK = [0, 1, 2, 3, 4, 5].map(k => makeRockGeo(k, k * 7.3 + 1, 2)),
       rocksV = [[], [], [], [], [], []];
-    const rockMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
+    const rockMat = QP.mob
+      ? new T.MeshLambertMaterial({ vertexColors: true })
+      : new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
     const addRock = (x, z, gy, s, v) => {
       const ys = [0.78, 0.42, 1.5, 0.55, 0.7, 1.0][v];
       const rk = { x, z, gy, s, rot: rand(0, TAU), tilt: [rand(-0.18, 0.18), rand(-0.18, 0.18)] };
@@ -5097,7 +5165,7 @@ window.__bootInner = async function () {
           col.setRGB(k, k, k * 0.98);
         },
         QP.mob
-          ? { cull: QP.treeCull, lodAt: QP.lodNear, nearOnly: true, group: 'rock', cat: 'rock' }
+          ? { cull: QP.treeCull, lodAt: QP.lodNear, nearOnly: true, group: 'rock', cat: 'rock', mobSize: 320 }
           : { ...LODT, cat: 'rock', lod: () => withRNG(300 + v, () => makeRockGeo(v, v * 7.3 + 1, 1)) }
       );
     if (QP.mob) {
@@ -5119,7 +5187,7 @@ window.__bootInner = async function () {
           const k = 0.85 + 0.3 * Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233));
           col.setRGB(k, k, k * 0.98);
         },
-        { cull: QP.treeCull, lodAt: QP.lodNear, farOnly: true, group: 'rock', cat: 'rock far', cast: false, cy: 2 }
+        { cull: QP.treeCull, lodAt: QP.lodNear, farOnly: true, group: 'rock', cat: 'rock far', cast: false, cy: 2, mobSize: 320 }
       );
     }
     // pebbles along shores and in the open: no collision, they just break up the ground
@@ -5266,7 +5334,7 @@ window.__bootInner = async function () {
       grassGeo(7, 0.85, 1.4, 0.04, [0.27, 0.25, 0.1], [0.8, 0.72, 0.34], 0.5),
       swayMat(1.4, 0.45, fa, fb, 1.3),
       place(0.8, 1.2),
-      { ...opt, cat: 'tall grass' }
+      { ...opt, cat: 'tall grass', mobSize: 200 }
     );
     buildChunks(
       scatter(CONFIG.density.ferns, CONFIG.density.ferns * 8.5, (x, z) => {
@@ -5309,7 +5377,9 @@ window.__bootInner = async function () {
       pad2.cone(0.035, 0.1, Math.cos(a) * 0.06, 0.05, Math.sin(a) * 0.06, C(0.96, 0.78, 0.86), 0.4, -a, 0, 4, 0.1);
     }
     pad2.cone(0.03, 0.05, 0, 0.04, 0, C(0.95, 0.8, 0.2), 0, 0, 0, 4, 0);
-    const padMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, side: T.DoubleSide });
+    const padMat = QP.mob
+      ? new T.MeshLambertMaterial({ vertexColors: true, side: T.DoubleSide })
+      : new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, side: T.DoubleSide });
     for (const [pg, cnt] of [
       [pad.geo(), Math.round(380 * q)],
       [pad2.geo(), Math.round(90 * q)]
@@ -5328,7 +5398,7 @@ window.__bootInner = async function () {
           d.scale.set(it.s, 1, it.s);
           col.setRGB(1, 1, 1);
         },
-        { cast: false, recv: false, size: GS, cull: reach, cy: 1, cat: 'lily' }
+        { cast: false, recv: false, size: GS, cull: reach, cy: 1, cat: 'lily', mobSize: 250 }
       );
     // flowers: nine looks in patches, so each meadow drifts from one colour to another
     const FL = [
@@ -6818,11 +6888,13 @@ window.__bootInner = async function () {
         d.attackT = 0.001;
         d.dealt = false;
         d.cdT = sp.cd;
+        Aud.snarl(d); // you hear the lunge coming
       }
       if (d.attackT > 0) {
         d.attackT += dt;
         if (!d.dealt && d.attackT > ATK.hit) {
           d.dealt = true;
+          Aud.snap(d);
           if (dist < sp.melee * 1.45 && P.alive) {
             damagePlayer(sp.dmg, d);
             d.patience = patienceFor(d); // it has you: it will not tire now
@@ -6978,7 +7050,8 @@ window.__bootInner = async function () {
     d.g.rotation.z = sgn * roll;
     d.lieLift = lieLift(d, sgn * roll);
     d.g.position.y = d.y + d.lieLift;
-    P_.rig.position.y = -0.3 * sp.legLen * buckle * (1 - fallK);
+    // the legs fold and the body comes down by exactly what that takes off their height, so the feet stay on the ground
+    P_.rig.position.y = -sp.legLen * (1 - Math.cos(0.6 * buckle)) * (1 - fallK);
     P_.rig.position.z = 0;
     P_.rig.rotation.set(0, 0, 0);
     if (!d.dead) P_.rig.scale.y = 1 + 0.014 * Math.sin(game.time * 1.7 + d.weave); // a slow breath
@@ -7062,6 +7135,12 @@ window.__bootInner = async function () {
     }
     if (atk > 0) nT = sp.neck.a - 0.55 * wind + 0.7 * snap; // head up and back, then down and forward
     P_.neck.rotation.x = lerp(P_.neck.rotation.x, nT, Math.min(1, dt * (atk > 0 ? 16 : 4)));
+    {
+      // once it connects, a tyrannosaur shakes its head and a horned animal tosses its own
+      const post = atk > 0 ? atk - (sp.pred ? ATK.hit : 0.34) : -1,
+        sh = post > 0 && post < 0.3 && (sp.key === 'rex' || sp.fights) ? (1 - post / 0.3) * Math.sin(post * 40) * 0.32 : 0;
+      if (sh || P_.neck.rotation.y) P_.neck.rotation.y = sh;
+    }
     if (P_.jaw) {
       let open = 0;
       if (d.roarT > 0) open = 0.6;
@@ -7603,8 +7682,7 @@ window.__bootInner = async function () {
       const tb = t - total,
         bt = CONFIG.wildlife.bonesSeconds,
         bsink = smooth(bt - 8, bt, tb);
-      d.bones.material.opacity = Math.min(1, sink * 1.6) * (1 - bsink);
-      d.bones.position.y = Math.max(WATER + 0.02, heightAt(d.x, d.z)) + 0.02 - 0.5 * bsink;
+      d.bones.material.opacity = Math.min(1, sink * 1.6) * (1 - bsink); // (the bones fade where they lie as well)
     }
     for (let i = 0; i < d.parts.mats.length; i++) {
       const m = d.parts.mats[i];
@@ -7614,10 +7692,8 @@ window.__bootInner = async function () {
         m.opacity = 1 - sink;
       }
     }
-    const fl = 1 - 0.8 * sink;
-    d.g.scale.set(k.s.x * (1 + 0.04 * rot) * fl, k.s.y * (1 - 0.1 * rot) * fl, k.s.z * (1 + 0.04 * rot) * fl);
-    if (d.sp.fly) d.g.position.y -= 0.45 * sink;
-    else d.g.position.y = d.y + (d.lieLift || 0) - 0.3 * sink; // (it is the last of the flesh going, not a body sinking into the ground)
+    d.g.scale.set(k.s.x * (1 + 0.04 * rot), k.s.y * (1 - 0.1 * rot), k.s.z * (1 + 0.04 * rot));
+    if (!d.sp.fly) d.g.position.y = d.y + (d.lieLift || 0); // it stays where it fell: the flesh fades away there, nothing sinks into the ground
     d.decayRot = rot;
     d.decaySink = sink;
   }
@@ -8050,6 +8126,17 @@ window.__bootInner = async function () {
     crash(k) {
       this.noise({ dur: 0.18, gain: 0.5 * (k || 1), type: 'lowpass', f0: 420, f1: 90 });
       this.tone({ type: 'sine', f0: 70, f1: 36, dur: 0.25, gain: 0.45 * (k || 1) });
+    },
+    snarl(d) {
+      const p = { x: d.x, y: d.y + (d.parts ? d.parts.hipY : 1), z: d.z },
+        big = d.type === 'rex';
+      this.noise({ dur: big ? 0.45 : 0.28, gain: big ? 0.7 : 0.45, type: 'bandpass', f0: big ? 380 : 1100, f1: big ? 160 : 520, q: 1.4, pos: p });
+      this.tone({ type: 'sawtooth', f0: big ? 90 : 240, f1: big ? 60 : 160, dur: big ? 0.4 : 0.25, gain: big ? 0.35 : 0.18, lp: big ? 400 : 1200, pos: p });
+    },
+    snap(d) {
+      const p = { x: d.x, y: d.y + (d.parts ? d.parts.hipY : 1), z: d.z };
+      this.noise({ dur: 0.07, gain: 0.8, type: 'highpass', f0: 1400, pos: p, atk: 0.002 });
+      this.tone({ type: 'square', f0: 180, f1: 70, dur: 0.06, gain: 0.25, pos: p });
     },
     thud(d, k) {
       const p = { x: d.x, y: d.y, z: d.z };
@@ -9784,6 +9871,22 @@ window.__bootInner = async function () {
       hd.style.transition = 'opacity 1.1s';
       hd.style.opacity = '0';
     });
+    {
+      // the jolt: the view snaps back and away from the side the blow came from, then settles (see applyCamera); a pounce knocks you down
+      const fly = !!(src.sp && src.sp.fly);
+      P.hitT = 0;
+      P.hitSide = ang >= 0 ? 1 : -1;
+      P.hitAmp = clamp(amount / 55, 0.07, 0.2) * (src.type === 'rex' ? 1.35 : 1);
+      P.hitDown = fly;
+      if (src.type === 'raptor') P.landDip = Math.max(P.landDip, 0.75);
+      // and the wound on the screen
+      const w = $('wound');
+      if (w) {
+        w.className = '';
+        void w.offsetWidth;
+        w.className = (fly ? 'talon' : src.type === 'rex' ? 'bite' : 'claw') + (ang < 0 ? ' flip' : '') + ' on';
+      }
+    }
     if (P.hp <= 0) {
       P.hp = 0;
       P.alive = false;
@@ -14810,6 +14913,14 @@ window.__bootInner = async function () {
       roll = P.deadT * 0.9;
       pitch = lerp(pitch, 0.2, P.deadT);
     }
+    if (P.hitT < 0.8 && P.alive) {
+      // the jolt of a bite or a blow, a kick that wobbles out in about half a second (only the view moves, not where you are)
+      P.hitT += rdt;
+      const e = Math.exp(-P.hitT * 5.5);
+      roll += -P.hitSide * P.hitAmp * e * Math.cos(P.hitT * 13);
+      pitch += P.hitAmp * 0.6 * e * Math.cos(P.hitT * 9) * (P.hitDown ? -1 : 1);
+      yaw += P.hitSide * P.hitAmp * 0.25 * e;
+    }
     if (P.inJeep && P.alive) {
       const J = JEEP;
       // the driver's seat (a marker inside the model): the eye goes where the model's own driver would be
@@ -19810,7 +19921,7 @@ window.__bootInner = async function () {
           }
           // ---------- rocks, logs and trees: solid
           ok(
-            A.TX.length > (9000 - 0.2 * A.QP.density.trees) * (A.QP.density.trees / 7600) * 0.95,
+            A.TX.length > (9000 - 0.36 * A.QP.density.trees) * (A.QP.density.trees / 7600) * 0.95,
             'colliders: ' + A.TX.length + ' (trees, stumps, rocks, logs, ruins)'
           );
           // ---------- bridges
@@ -20371,8 +20482,8 @@ window.__bootInner = async function () {
               ')'
           );
           ok(
-            late.sink > 0.1 && late.op < 0.9,
-            'then it sinks and fades (' + late.sink.toFixed(2) + ' m down, opacity ' + late.op.toFixed(2) + ')'
+            Math.abs(late.sink) < 0.05 && late.op < 0.9,
+            'then it fades where it lies, without sinking (' + late.sink.toFixed(2) + ' m down, opacity ' + late.op.toFixed(2) + ')'
           );
           sec(4);
           ok(
@@ -20382,7 +20493,7 @@ window.__bootInner = async function () {
           sec(A.CONFIG.wildlife.bonesSeconds + 2);
           ok(
             !A.dinos.includes(vic) && A.dinos.length === n0 - 1 && !vic.bones.parent,
-            'the bones settle into the ground and the record is removed'
+            'the bones fade and the record is removed'
           );
           // ---- every species rots down to a skeleton and is then taken away. (Both flyers once crashed the game here: they have no body
           // proportions to build bones from, so ~17 s after a kill the update threw on every frame and the game showed its error screen.)
@@ -21111,7 +21222,7 @@ window.__bootInner = async function () {
           const shovesOff = roam(false),
             shovesOn = roam(true);
           ok(
-            shovesOff > 5,
+            shovesOff > 3, // (fewer since the forest was thinned)
             'without steering, roaming animals are shoved off trunks ' + shovesOff.toFixed(0) + ' times a minute each'
           );
           ok(
@@ -24857,13 +24968,17 @@ window.__bootInner = async function () {
               d.dead = false;
               put(d, 9999, 9999, 0);
             }
-            // it is not sunk into the ground half-way through rotting either
+            // it does not sink as it rots: it lies at the same height until the flesh is gone
             const d = A.dinos.find(q => q.type === 'raptor' && !q.alpha && !q.hatchling && !q.dead);
             put(d, 30, -20, 0.7);
             killNow(d, 0, -800);
-            sec(12);
+            sec(4);
+            const y4 = d.g.position.y;
+            sec(8);
             const rotLow = lowest(d);
-            ok(rotLow > -0.2, 'a rotting kill still lies on the ground rather than in it (' + rotLow.toFixed(2) + ' m)');
+            ok(rotLow > -0.12, 'a rotting kill still lies on the ground rather than in it (' + rotLow.toFixed(2) + ' m)');
+            sec(10);
+            ok(Math.abs(d.g.position.y - y4) < 0.02 && d.parts.mats[0].opacity < 0.6, 'and fades away where it lies (moved ' + (d.g.position.y - y4).toFixed(3) + ' m, opacity ' + d.parts.mats[0].opacity.toFixed(2) + ')');
             d.dead = false;
             put(d, 9999, 9999, 0);
             // a runner carries on a little and does not stop dead
@@ -24932,6 +25047,15 @@ window.__bootInner = async function () {
               if (P.hp < 100) landed = d.attackT;
             }
             ok(landed >= A.ATK.hit && landed < A.ATK.hit + 0.1, 'the damage lands at the moment of the snap (attack clock ' + landed.toFixed(2) + ' s)');
+            ok(P.hitT < 0.1 && P.hitAmp > 0.05, 'the bite jolts the view');
+            ok(/\bclaw\b/.test(document.getElementById('wound').className) && /\bon\b/.test(document.getElementById('wound').className), 'and leaves claw marks on the screen');
+            P.invuln = 999;
+            put(d, 9999, 9999, 0);
+            d.state = 'patrol';
+            run(1);
+            const r0 = A.cam.rotation.z;
+            sec(1);
+            ok(Math.abs(r0) > 0.01 && Math.abs(A.cam.rotation.z) < 0.01, 'the jolt tips the view (' + r0.toFixed(3) + ' rad) and is gone a second later');
             P.invuln = 999;
             P.hp = 100;
             put(d, 9999, 9999, 0);
@@ -24944,8 +25068,8 @@ window.__bootInner = async function () {
             let trees = 0;
             for (let i = 0; i < A.TX.length; i++) if (A.TH[i] >= 8 && !A.TK[i] && A.TR[i] < 1.2) trees++;
             ok(
-              trees > dens.trees * 0.55 && trees < dens.trees * 0.84,
-              'about a fifth fewer trees than the target of ' + dens.trees + ': ' + trees + ' stand'
+              trees > dens.trees * 0.45 && trees < dens.trees * 0.68,
+              'about a third fewer trees than the target of ' + dens.trees + ' (two cuts of a fifth): ' + trees + ' stand'
             );
           }
 
