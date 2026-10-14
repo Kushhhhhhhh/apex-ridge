@@ -401,6 +401,32 @@ body.touch #siTherm {
 #toast.on {
   opacity: 1;
 }
+#safeTag {
+  position: absolute;
+  left: 50%;
+  top: calc(52px + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 4px 14px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #d9f4d0;
+  background: rgba(22, 50, 26, 0.86);
+  border: 1px solid rgba(160, 230, 150, 0.55);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+#safeTag.on {
+  opacity: 1;
+}
+body.touch #safeTag {
+  top: calc(36px + env(safe-area-inset-top, 0px));
+  font-size: 12px;
+  padding: 3px 10px;
+}
 #hurt {
   position: fixed;
   inset: 0;
@@ -1804,7 +1830,7 @@ body.jeep #tTherm {
 }
 #tWeap[data-w="rifle"] .w-rifle,
 #tWeap[data-w="deagle"] .w-deagle,
-#tWeap[data-w="machete"] .w-machete {
+#tWeap[data-w="axe"] .w-axe {
   display: block;
 }
 #wheel {
@@ -1865,7 +1891,7 @@ body.jeep #tTherm {
 }
 #wheel[data-w="rifle"] .mid[data-w="rifle"],
 #wheel[data-w="deagle"] .mid[data-w="deagle"],
-#wheel[data-w="machete"] .mid[data-w="machete"] {
+#wheel[data-w="axe"] .mid[data-w="axe"] {
   display: block;
 }
 /* on a PC, changing weapon (1 2 3, or the mouse wheel) shows where you are in the list for a moment */
@@ -2715,6 +2741,7 @@ button#btn2:hover {
   <div id="spreadRing"></div>
   <div id="hitmark"></div>
   <div id="toast"></div>
+  <div id="safeTag">SAFEHOUSE · nothing can reach you here</div>
   <div id="wpnStrip"></div>
   <div id="jeepHud"><div class="spd"><span id="jSpd">0</span> km/h</div><div class="bars"><div class="lbl" id="jFuelLbl">FUEL</div><div class="bar"><i id="jFuel"></i></div><div class="lbl">BODY</div><div class="bar"><i id="jHp"></i></div></div><div class="hint" id="jHint"></div></div>
   <div id="thermalTint"></div><div id="thermalLbl">THERMAL</div>
@@ -3075,7 +3102,8 @@ window.__bootInner = async function () {
       butterflies: 80,
       fallenLogs: 10,
       stumps: 150,
-      pebbles: 2200
+      pebbles: 2200,
+      treeCut: 0.2
     }),
     medium: Object.freeze({
       trees: 6400,
@@ -3088,7 +3116,8 @@ window.__bootInner = async function () {
       butterflies: 56,
       fallenLogs: 8,
       stumps: 110,
-      pebbles: 1500
+      pebbles: 1500,
+      treeCut: 0.2
     }),
     light: Object.freeze({
       trees: 5200,
@@ -3101,7 +3130,8 @@ window.__bootInner = async function () {
       butterflies: 36,
       fallenLogs: 6,
       stumps: 70,
-      pebbles: 900
+      pebbles: 900,
+      treeCut: 0.2
     })
   });
   const QPRESETS = Object.freeze({
@@ -3175,8 +3205,8 @@ window.__bootInner = async function () {
       maxPR: 1.5,
       overlayDpr: 1.5,
       shadow: 2048,
-      soft: true,
-      shadowHalf: 75,
+      soft: false, // the soft-edged filter takes four times the texture reads per lit pixel: the plain 3x3 one looks the same at a phone's size
+      shadowHalf: 64, // (and a frame a fifth smaller across, so the same map gives sharper shadows and fewer things are drawn into it)
       shadowEvery: 2,
       treeCull: 540,
       stumpCull: 220,
@@ -3185,10 +3215,11 @@ window.__bootInner = async function () {
       propCull: 620,
       flowerFade: [55, 100],
       coverFade: [135, 190],
-      lodNear: 210,
+      lodNear: 170,
       minScale: 0.6,
       density: DENSITY.desktop,
       dinoFine: 0.05, // an animal under 5% of the screen's height loses its eyes, teeth and feet (it is a few pixels across there)...
+      dinoFar: 0.02, // ...under 2% it is one mesh and does not animate or run its joints (a few pixels: you cannot see a leg move)...
       dinoHide: 0.01, // ...and under 1% it is not drawn (raising the scope or binoculars brings it straight back)
       muzzleLight: true,
       flowerKinds: 9, // (all nine: the same seed must grow the same world on a phone as on a computer, and fewer kinds would change how many random numbers are drawn)
@@ -3263,6 +3294,7 @@ window.__bootInner = async function () {
     shadowEvery: QP.shadowEvery,
     dinoFine: QP.dinoFine, // an animal that spans less of the screen than this loses its eyes, teeth, horns and feet
     dinoHide: QP.dinoHide, // ...and below this one it is not drawn at all (only on Low; zooming in brings it straight back)
+    dinoFar: QP.dinoFar || 0, // (touch set) below this one it is a single silhouette mesh
     scale: 1,
     min: QP.minScale,
     ceil: 1,
@@ -3617,6 +3649,21 @@ window.__bootInner = async function () {
     POI.alpha = { x: ap.x, z: ap.z };
   }
 
+  let REACH = null; // the walking-reach flood of the last layout tried (see layoutReachability)
+  /* The extra places (placeExtras): where each is, how much ground it clears, and the zones in which nothing hostile goes. */
+  const EXTRA = []; // {kind, x, z, h, yaw, clear}
+  const SAFE = []; // {x, z, r}: a safehouse's ground. Nothing hostile comes in, nothing can hurt you in it, and a hunter that sees you go in loses you
+  const SAFE_R = 11;
+  function inExtra(x, z, pad) {
+    for (let i = 0; i < EXTRA.length; i++) {
+      const e = EXTRA[i],
+        dx = x - e.x,
+        dz = z - e.z,
+        r = e.clear + pad;
+      if (dx * dx + dz * dz < r * r) return true;
+    }
+    return false;
+  }
   const SITES = []; // {x,z,r}: ground the forest and understory keep clear
   const LAND = []; // landmarks, wells, statues (filled in by the structure builders)
   const BRIDGES = [];
@@ -3778,6 +3825,97 @@ window.__bootInner = async function () {
       }
     }
   }
+  /* ---------- more places ----------
+     Farmhouses, a safehouse, a wrecked plane and truck, a windmill, a graveyard, blinds, camps, scarecrow fields, arches, more wells and
+     statues. They are chosen once the layout is final, from a random stream of their own, on ground that is already level enough (the
+     terrain is not reshaped for them), well away from every older place and checked to be walkable to and from the camp. So the towers,
+     nests and landmarks of a seed stay where they were, and what the forest and rocks drew stays the same except under these. */
+  const XKIND = {
+    safehouse: { clear: 15, R: 12, tol: 1.7 },
+    house: { clear: 12, R: 8, tol: 1.5 },
+    plane: { clear: 11, R: 7, tol: 1.9 },
+    windmill: { clear: 6, R: 4, tol: 1.1 },
+    truck: { clear: 7, R: 5, tol: 1.3 },
+    graveyard: { clear: 9, R: 6, tol: 1.3 },
+    statue: { clear: 3.5, R: 2.5, tol: 0.9 },
+    well: { clear: 3.5, R: 2.5, tol: 0.9 },
+    blind: { clear: 5, R: 3, tol: 1.1 },
+    camp: { clear: 6, R: 4, tol: 1.1 },
+    field: { clear: 9, R: 6, tol: 1.1 },
+    arch: { clear: 5, R: 3.5, tol: 1.1 }
+  };
+  function placeExtras() {
+    EXTRA.length = 0;
+    SAFE.length = 0;
+    withRNG((SEED_NUM ^ 0x2f6e2b1d) >>> 0, () => {
+      const avoid = [{ x: 0, z: 0, r: 70 }];
+      POI.towers.forEach(t => avoid.push({ x: t.x, z: t.z, r: 55 }));
+      POI.nests.forEach(t => avoid.push({ x: t.x, z: t.z, r: 60 }));
+      if (POI.alpha) avoid.push({ x: POI.alpha.x, z: POI.alpha.z, r: 60 });
+      FEAT.sites.forEach(q => avoid.push({ x: q.x, z: q.z, r: 55 }));
+      if (FEAT.cave) avoid.push({ x: FEAT.cave.x, z: FEAT.cave.z, r: 60 });
+      if (CLIFF) avoid.push({ x: CLIFF.x + CLIFF.ux * 30, z: CLIFF.z + CLIFF.uz * 30, r: 100 });
+      BRIDGES.forEach(b => avoid.push({ x: b.ax, z: b.az, r: 45 }, { x: b.bx, z: b.bz, r: 45 }));
+      // the highest ground around a point if the ground there is level enough, else null (and null again if any of it is wet)
+      const level = (x, z, R, tol) => {
+        const h0 = heightAtRaw(x, z);
+        let top = h0,
+          lo = h0;
+        for (let k = 0; k < 8; k++) {
+          const a = (k / 8) * TAU,
+            hh = heightAtRaw(x + Math.sin(a) * R, z + Math.cos(a) * R);
+          if (hh < WATER + 0.8) return null;
+          top = Math.max(top, hh);
+          lo = Math.min(lo, hh);
+        }
+        return top - lo <= tol ? top : null;
+      };
+      const find = (kind, minSep, r0, r1, forest, ang) => {
+        const K = XKIND[kind];
+        for (let pass = 0; pass < 3; pass++)
+          for (let n = 0; n < 260; n++) {
+            const a = ang === undefined ? rand(0, TAU) : ang + rand(-0.7, 0.7),
+              r = rand(r0, r1),
+              x = Math.sin(a) * r,
+              z = Math.cos(a) * r;
+            if (Math.abs(x) > HALF - 170 || Math.abs(z) > HALF - 170) continue;
+            const hh = heightAtRaw(x, z);
+            if (hh < WATER + 2.2 || hh > 26) continue;
+            const fd = forestDens(x, z);
+            if (forest === true && pass < 2 && fd < 0.45) continue;
+            if (forest === false && pass < 1 && fd > 0.55) continue;
+            if (avoid.some(q => Math.hypot(q.x - x, q.z - z) < q.r + K.clear * 0.5)) continue;
+            if (EXTRA.some(q => Math.hypot(q.x - x, q.z - z) < minSep)) continue;
+            if (MOUNTS.some(q => Math.hypot(q.x - x, q.z - z) < q.r * 0.8 + K.clear)) continue;
+            const top = level(x, z, K.R, K.tol * (1 + pass * 0.4));
+            if (top === null) continue;
+            if (REACH) {
+              const c = REACH.cell(x, z);
+              if (!(REACH.fwd[c] && REACH.back[c])) continue;
+            }
+            const e = { kind, x, z, h: top, yaw: rand(0, TAU), clear: K.clear };
+            EXTRA.push(e);
+            return e;
+          }
+        return null;
+      };
+      const s1 = find('safehouse', 0, 140, 330, false);
+      if (s1) find('safehouse', 300, 340, 620, false, Math.atan2(s1.x, s1.z) + Math.PI) || find('safehouse', 300, 300, 640, null);
+      else find('safehouse', 0, 90, 640, null);
+      for (let i = 0; i < 3; i++) find('house', 150, 110, 640, i === 0 ? false : null);
+      find('plane', 140, 200, 640, false);
+      find('windmill', 140, 140, 600, false);
+      for (let i = 0; i < 2; i++) find('truck', 110, 100, 640, null);
+      find('graveyard', 140, 150, 620, true);
+      for (let i = 0; i < 4; i++) find('statue', 85, 80, 640, i % 2 ? true : null);
+      for (let i = 0; i < 3; i++) find('well', 100, 90, 640, null);
+      for (let i = 0; i < 2; i++) find('blind', 100, 120, 640, true);
+      for (let i = 0; i < 3; i++) find('camp', 100, 100, 640, null);
+      for (let i = 0; i < 2; i++) find('field', 110, 120, 620, false);
+      for (let i = 0; i < 2; i++) find('arch', 100, 100, 640, null);
+    });
+    for (const e of EXTRA) if (e.kind === 'safehouse') SAFE.push({ x: e.x, z: e.z, r: SAFE_R });
+  }
   /* the deck height at a point, or -1e9 when there is no bridge there */
   function bridgeH(x, z) {
     for (let i = 0; i < BRIDGES.length; i++) {
@@ -3876,6 +4014,7 @@ window.__bootInner = async function () {
       const c = cell(x, z);
       if (!(fwd[c] && back[c])) bad.push(n);
     }
+    REACH = { fwd, back, cell };
     return { ok: bad.length === 0, bad, total: targets.length };
   }
   let LAYOUT = { attempt: 0, seed: 0, report: null };
@@ -3906,6 +4045,7 @@ window.__bootInner = async function () {
   SYNC || (await tick('Choosing where everything goes…'));
   chooseLayout();
   RG = mulberry32((SEED_NUM ^ 0x51ed270b) >>> 0); // trees, grass, flowers and animals are drawn from their own seeded stream
+  placeExtras();
   SYNC || (await tick('Raising mountains and lakes…'));
   (function buildTerrain() {
     const SEG = TERR_SEG;
@@ -4153,12 +4293,22 @@ window.__bootInner = async function () {
       }
       cx /= arr.length;
       cz /= arr.length;
-      const m = new T.InstancedMesh(shareGeo(geo, CHS * 0.9 + 10, opts.cy || 12), mat, arr.length);
-      arr.forEach((it, i) => {
+      // (an item flagged skip is not built, but its place() still runs, so the random numbers every later thing draws do not move)
+      let live = 0;
+      for (const it of arr) if (!it.skip) live++;
+      if (!live) {
+        arr.forEach(it => place(it, d, col, cx, cz));
+        continue;
+      }
+      const m = new T.InstancedMesh(shareGeo(geo, CHS * 0.9 + 10, opts.cy || 12), mat, live);
+      let ii = 0;
+      arr.forEach(it => {
         place(it, d, col, cx, cz);
+        if (it.skip) return;
         d.updateMatrix();
-        m.setMatrixAt(i, d.matrix);
-        m.setColorAt(i, col);
+        m.setMatrixAt(ii, d.matrix);
+        m.setColorAt(ii, col);
+        ii++;
       });
       m.position.set(cx, 0, cz);
       m.matrixAutoUpdate = false;
@@ -4169,7 +4319,7 @@ window.__bootInner = async function () {
       // far away a simpler shape stands in: it shares the same instance buffers, so it costs no extra memory per plant
       let m2 = null;
       if (lodGeo) {
-        m2 = new T.InstancedMesh(shareGeo(lodGeo, CHS * 0.9 + 10, opts.cy || 12), mat, arr.length);
+        m2 = new T.InstancedMesh(shareGeo(lodGeo, CHS * 0.9 + 10, opts.cy || 12), mat, live);
         m2.instanceMatrix = m.instanceMatrix;
         m2.instanceColor = m.instanceColor;
         m2.userData.cat = (opts.cat || 'other') + ' far';
@@ -4804,7 +4954,52 @@ window.__bootInner = async function () {
       TH.push(H);
       TK.push(0);
       gridAdd(TX.length - 1);
-      lists[sp].push({ x, z, gy: hh, H, rot: rand(0, TAU), w: rand(0.92, 1.15), sp });
+      lists[sp].push({ x, z, gy: hh, H, rot: rand(0, TAU), w: rand(0.92, 1.15), sp, i: TX.length - 1 });
+    }
+    // ---- a fifth fewer trees. The most crowded go first (so thickets open up and clearings stay as they are), and none stands on a new
+    // place. Ties are broken by a fixed scramble, not the world's stream. The colliders are packed down to match.
+    {
+      const N = TX.length,
+        CEL = 6,
+        cells = new Map(),
+        key = (a, b) => a * 4096 + b;
+      for (let i = 0; i < N; i++) {
+        const k = key(Math.floor((TX[i] + HALF) / CEL), Math.floor((TZ[i] + HALF) / CEL));
+        let a = cells.get(k);
+        if (!a) cells.set(k, (a = []));
+        a.push(i);
+      }
+      const crowd = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        const cx = Math.floor((TX[i] + HALF) / CEL),
+          cz = Math.floor((TZ[i] + HALF) / CEL);
+        let c = 0;
+        for (let a = -1; a <= 1; a++)
+          for (let b = -1; b <= 1; b++) {
+            const arr = cells.get(key(cx + a, cz + b));
+            if (arr)
+              for (const j of arr) if (j !== i && (TX[j] - TX[i]) * (TX[j] - TX[i]) + (TZ[j] - TZ[i]) * (TZ[j] - TZ[i]) < 30) c++;
+          }
+        crowd[i] = c + ((i * 2654435761) % 1000) / 1000;
+      }
+      const order = Array.from({ length: N }, (_, i) => i).sort((a, b) => crowd[b] - crowd[a]),
+        cut = new Uint8Array(N);
+      for (let k = 0; k < Math.floor(N * CONFIG.density.treeCut); k++) cut[order[k]] = 1;
+      for (let i = 0; i < N; i++) if (inExtra(TX[i], TZ[i], TR[i] + 1)) cut[i] = 1;
+      for (const sp in lists) for (const it of lists[sp]) if (it.i !== undefined && cut[it.i]) it.skip = true;
+      let w = 0;
+      for (let i = 0; i < N; i++) {
+        if (cut[i]) continue;
+        TX[w] = TX[i];
+        TZ[w] = TZ[i];
+        TR[w] = TR[i];
+        TH[w] = TH[i];
+        TK[w] = TK[i];
+        w++;
+      }
+      TX.length = TZ.length = TR.length = TH.length = TK.length = w;
+      grid.clear();
+      for (let i = 0; i < w; i++) gridAdd(i);
     }
     const treeMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
     const placeTree = (it, d, col, cx, cz) => {
@@ -4832,10 +5027,15 @@ window.__bootInner = async function () {
         z = rand(-HALF + 8, HALF - 8),
         hh = heightAt(x, z);
       if (hh < WATER + 1 || hh > 34 || nearPOI(x, z, 3) || forestDens(x, z) < 0.42) continue;
-      lists.stump.push({ x, z, gy: hh, s: rand(0.8, 1.5), rot: rand(0, TAU) });
+      const stp = { x, z, gy: hh, s: rand(0.8, 1.5), rot: rand(0, TAU) };
+      lists.stump.push(stp);
+      if (inExtra(x, z, 2)) {
+        stp.skip = true;
+        continue;
+      }
       TX.push(x);
       TZ.push(z);
-      TR.push(0.5 * lists.stump[lists.stump.length - 1].s);
+      TR.push(0.5 * stp.s);
       TH.push(0.5);
       TK.push(1);
       gridAdd(TX.length - 1);
@@ -4859,7 +5059,12 @@ window.__bootInner = async function () {
     const rockMat = new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, flatShading: true });
     const addRock = (x, z, gy, s, v) => {
       const ys = [0.78, 0.42, 1.5, 0.55, 0.7, 1.0][v];
-      rocksV[v].push({ x, z, gy, s, rot: rand(0, TAU), tilt: [rand(-0.18, 0.18), rand(-0.18, 0.18)] });
+      const rk = { x, z, gy, s, rot: rand(0, TAU), tilt: [rand(-0.18, 0.18), rand(-0.18, 0.18)] };
+      rocksV[v].push(rk);
+      if (inExtra(x, z, s * 1.2)) {
+        rk.skip = true;
+        return;
+      }
       TX.push(x);
       TZ.push(z);
       TR.push(s * [1, 1.25, 0.6, 1.3, 1, 0.8][v] * 0.85);
@@ -4986,7 +5191,7 @@ window.__bootInner = async function () {
           pz = z + rand(-1.8, 1.8),
           ph = heightAt(px, pz);
         if (ph < WATER + 0.6) continue;
-        shrubs[kind].push({ x: px, z: pz, gy: ph, s: rand(0.75, 1.6), rot: rand(0, TAU) });
+        shrubs[kind].push({ x: px, z: pz, gy: ph, s: rand(0.75, 1.6), rot: rand(0, TAU), skip: inExtra(px, pz, 1.2) });
         nbush++;
       }
     }
@@ -5033,7 +5238,10 @@ window.__bootInner = async function () {
       const out = [];
       for (let n = 0; n < attempts && out.length < count; n++) {
         const it = fn(rand(-HALF + 12, HALF - 12), rand(-HALF + 12, HALF - 12));
-        if (it) out.push(it);
+        if (it) {
+          if (inExtra(it.x, it.z, 0.5)) it.skip = true; // nothing grows through a floor
+          out.push(it);
+        }
       }
       return out;
     };
@@ -5933,6 +6141,42 @@ window.__bootInner = async function () {
     });
     return { root, parts };
   }
+  /* The far silhouette (touch set only). An animal is ten to thirty small meshes with their joints, and most of them are in view at 200 m or
+     more, where it is a handful of pixels and nothing of its walk can be seen. Beyond RES.dinoFar of the screen's height it is drawn as ONE
+     mesh built from its rest pose (the same shapes and colours, merged and shared by every animal of its kind), its rig is taken off it and
+     it is not animated. It comes back whole as soon as it is bigger on screen, which is what the scope and binoculars do. */
+  const FARGEO = {};
+  function farGeo(sp) {
+    if (FARGEO[sp.key]) return FARGEO[sp.key];
+    const b = sp.fly ? buildFlyer(sp) : buildDino(sp);
+    b.root.updateMatrixWorld(true);
+    const Pp = [],
+      Nn = [],
+      Cc = [];
+    b.root.traverse(o => {
+      if (!o.isMesh) return;
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      g.applyMatrix4(o.matrixWorld);
+      const pa = g.attributes.position.array,
+        na = g.attributes.normal.array,
+        c = o.material.color;
+      for (let i = 0; i < pa.length; i++) {
+        Pp.push(pa[i]);
+        Nn.push(na[i]);
+      }
+      for (let i = 0; i < pa.length / 3; i++) Cc.push(c.r, c.g, c.b);
+      g.dispose();
+    });
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.Float32BufferAttribute(Pp, 3));
+    geo.setAttribute('normal', new T.Float32BufferAttribute(Nn, 3));
+    geo.setAttribute('color', new T.Float32BufferAttribute(Cc, 3));
+    geo.computeBoundingSphere();
+    b.root.traverse(o => {
+      if (o.isMesh && o.material && o.material.dispose) o.material.dispose();
+    });
+    return (FARGEO[sp.key] = geo);
+  }
   const dinos = [];
   function spawn(type, x, z, pack, opt) {
     const sp = SPECS[type],
@@ -6020,6 +6264,19 @@ window.__bootInner = async function () {
       lod: 0
     };
     tagHeat(d);
+    if (QP.dinoFar) {
+      const fm = new T.Mesh(farGeo(sp), vcMat);
+      fm.castShadow = false;
+      fm.visible = false;
+      fm.matrixAutoUpdate = false;
+      fm.layers.enable(1);
+      fm.userData.heat = 0.88;
+      fm.userData.dino = d;
+      fm.onBeforeRender = heatBefore;
+      d.g.add(fm);
+      d.far = fm;
+      d.parts.fine.forEach(m => (m.castShadow = false)); // (eyes, teeth, claws: too small to matter in the sun's shadow map)
+    }
     d.g.position.set(x, heightAt(x, z), z);
     d.y = d.g.position.y;
     if (sp.fly) {
@@ -6053,10 +6310,28 @@ window.__bootInner = async function () {
     return d;
   }
   const _v = new T.Vector3();
+  /* The hit volumes ride on a few joints (head, neck, body, wing tips). Their world positions used to come from updating every little mesh of the
+     animal's body, twice a frame (here and again when the scene is drawn); now only the chain of joints above each volume is brought up to
+     date. The renderer still does the full job once, for the picture. A rig taken off the animal for the far silhouette (see updateDinoLOD)
+     hangs off the root for this purpose. */
+  let _rsStamp = 0;
+  function upToRoot(o, g, st) {
+    if (o === g || o._st === st) return;
+    const par = o.parent || g;
+    upToRoot(par, g, st);
+    o._st = st;
+    if (o.matrixAutoUpdate) o.updateMatrix();
+    o.matrixWorld.multiplyMatrices(par.matrixWorld, o.matrix);
+  }
   function refreshSpheres(d) {
-    d.g.updateMatrixWorld(true);
+    const g = d.g,
+      st = ++_rsStamp;
+    g.updateMatrix();
+    g.matrixWorld.copy(g.matrix); // (an animal stands directly in the scene, which sits at the origin)
+    g._st = st;
     const S = d.parts.spheres;
     for (let i = 0; i < S.length; i++) {
+      upToRoot(S[i].o, g, st);
       _v.setFromMatrixPosition(S[i].o.matrixWorld);
       const w = d.wp[i];
       w.x = _v.x;
@@ -6251,7 +6526,8 @@ window.__bootInner = async function () {
       const bx = d.x,
         bz = d.z;
       pushOut(d, sp.rad);
-      if (Math.abs(d.x - bx) + Math.abs(d.z - bz) > 0.004) d.contacts = (d.contacts || 0) + 1; // how often it is shoved off a trunk or rock
+      // how often it is shoved off a trunk or rock (a far animal that moves a few times a second counts each move for the frames it covers)
+      if (Math.abs(d.x - bx) + Math.abs(d.z - bz) > 0.004) d.contacts = (d.contacts || 0) + (dt > 0.04 && dt < 0.2 ? dt * 60 : 1);
     }
     if (JEEP.g && !P.inJeep) {
       const jx = d.x - JEEP.x,
@@ -6276,6 +6552,19 @@ window.__bootInner = async function () {
         d.z += (pz / pd) * k;
       }
     } // solid against the player too
+    for (let i = 0; i < SAFE.length; i++) {
+      // a safehouse's ground is closed to them: held at its edge
+      const q = SAFE[i],
+        sx = d.x - q.x,
+        sz = d.z - q.z,
+        rr = q.r + sp.rad * 0.5,
+        s2 = sx * sx + sz * sz;
+      if (s2 < rr * rr) {
+        const sd = Math.sqrt(s2) || 0.001;
+        d.x = q.x + (sx / sd) * rr;
+        d.z = q.z + (sz / sd) * rr;
+      }
+    }
     d.y = heightAt(d.x, d.z);
     d.g.position.set(d.x, d.y, d.z);
     d.g.rotation.y = d.heading;
@@ -6302,6 +6591,7 @@ window.__bootInner = async function () {
     const sp = d.sp;
     d.cdT -= dt;
     d.stagger -= dt;
+    if (d.charge > 0 && P.safe) d.charge = 0;
     if (d.charge > 0) {
       d.charge -= dt;
       d.grazing = false;
@@ -6484,7 +6774,7 @@ window.__bootInner = async function () {
     if (d.guard) range *= 1.25;
     if (d.angryT > 0) d.angryT -= dt;
     // one that has just given up the chase ignores you for a while, unless you walk right up to it or fire
-    const calm = d.calmT > 0 && dist > 30 && game.time - P.lastShot > 4;
+    const calm = P.safe || (d.calmT > 0 && dist > 30 && game.time - P.lastShot > 4);
     if (d.calmT > 0) d.calmT -= dt;
     if (live && P.alive && !calm) {
       if (dist < range) d.awareness += dt * (0.3 + (1 - dist / range) * 1.5);
@@ -6498,6 +6788,7 @@ window.__bootInner = async function () {
     }
     if (d.awareness < 0.2) d.noticed = false;
     if (d.state !== 'hunt' && d.awareness >= 1 && live && P.alive && !calm) startHunt(d);
+    if (P.safe && d.state === 'hunt') giveUpHunt(d, false);
     if (d.state === 'hunt') {
       if (!live || !P.alive) {
         d.state = 'patrol';
@@ -6547,7 +6838,7 @@ window.__bootInner = async function () {
       }
       if (d.attackT > 0) {
         d.attackT += dt;
-        if (!d.dealt && d.attackT > 0.32) {
+        if (!d.dealt && d.attackT > ATK.hit) {
           d.dealt = true;
           if (dist < sp.melee * 1.45 && P.alive) {
             damagePlayer(sp.dmg, d);
@@ -6559,7 +6850,7 @@ window.__bootInner = async function () {
             d.circT = rand(2.2, 3.8);
           }
         }
-        if (d.attackT > 0.65) d.attackT = 0;
+        if (d.attackT > ATK.end) d.attackT = 0;
       }
       return;
     }
@@ -6610,6 +6901,123 @@ window.__bootInner = async function () {
     d.wantHead = Math.atan2(tx, tz);
     d.wantSpeed = sp.walk + (d.type === 'raptor' ? 0.6 : 0.2);
   }
+  /* ---- dying. A kill used to roll over about its feet with its centre on the ground, so half the body was under the turf from the first
+     moment and then it slumped further. Now the legs buckle, the body topples (a fall speeds up), meets the ground on its flank with a thud,
+     a puff of dust and a small rebound, throws a few last twitches and lies still. It rests ON the ground (lifted by however much a rolled
+     body would sag below it, looking at the ground under the body and not only under the feet), carries on a metre or two the way it was
+     running, and goes down the way the shot pushed it. A sedated animal lies down the same way, only gently. */
+  const DIE = { legs: 0.24, fall: 0.6, twitch: 2.4 };
+  const DIE_LAND = DIE.legs * 0.6 + DIE.fall; // seconds after the kill that the flank meets the ground
+  function lieLift(d, roll) {
+    const sp = d.sp,
+      rx = sp.bodyR[0],
+      ry = sp.bodyR[1],
+      hip = d.parts.hipY,
+      s = Math.sin(roll),
+      c = Math.cos(roll),
+      lx = -hip * s,
+      hx = d.x + Math.cos(d.heading) * lx,
+      hz = d.z - Math.sin(d.heading) * lx,
+      f = sp.bodyR[2] * 0.6,
+      fx = Math.sin(d.heading) * f,
+      fz = Math.cos(d.heading) * f;
+    const g = Math.max(heightAt(hx, hz), heightAt(hx + fx, hz + fz), heightAt(hx - fx, hz - fz)),
+      low = hip * c - Math.sqrt(rx * rx * s * s + ry * ry * c * c); // the lowest point of the rolled body, above the feet line
+    return clamp(g - d.y + 0.03 - low, 0, rx + ry + 1);
+  }
+  function landFx(d) {
+    const sp = d.sp,
+      k = clamp(sp.bodyR[2] / 2.4, 0.25, 1),
+      roll = d.fallDir * 1.5,
+      lx = -d.parts.hipY * Math.sin(roll),
+      px = d.x + Math.cos(d.heading) * lx,
+      pz = d.z - Math.sin(d.heading) * lx,
+      dist = Math.hypot(P.x - d.x, P.z - d.z);
+    puff(
+      new T.Vector3(px, heightAt(px, pz) + 0.25, pz),
+      0x8f8467,
+      5 + Math.round(7 * k),
+      1.3 + 1.5 * k,
+      0.5 + 0.9 * k,
+      0.9,
+      -0.4,
+      2.2,
+      0.4
+    );
+    Aud.thud(d, k);
+    if (dist < 70) P.shake = Math.max(P.shake, 0.6 * k * (1 - dist / 70));
+  }
+  function deathPose(d, dt) {
+    const sp = d.sp,
+      P_ = d.parts;
+    if (d.lied) return; // it has finished moving
+    let roll = 0,
+      buckle = 0,
+      tw = 0,
+      t = 0;
+    if (d.dead) {
+      t = d.corpseT;
+      buckle = smooth(0, DIE.legs, t);
+      const f = clamp((t - DIE.legs * 0.6) / DIE.fall, 0, 1);
+      roll = 1.5 * f * f;
+      if (t >= DIE_LAND) {
+        if (!d.landed) {
+          d.landed = true;
+          landFx(d);
+        }
+        const q = t - DIE_LAND;
+        roll = 1.5 - 0.11 * Math.abs(Math.sin(q * 13)) * Math.exp(-q * 6.5); // it settles with a little bounce
+        tw = Math.exp(-q * 1.2) * smooth(0, 0.1, q);
+      }
+      if (t > DIE_LAND + DIE.twitch + 0.4) d.lied = true;
+      if (d.slideV) {
+        // the way it was going carries it on a little
+        const v = d.slideV,
+          nx = d.x + Math.sin(d.slideH) * v * dt,
+          nz = d.z + Math.cos(d.slideH) * v * dt;
+        d.slideV *= Math.exp(-4.2 * dt);
+        if (Math.abs(d.slideV) < 0.05) d.slideV = 0;
+        if (heightAt(nx, nz) > WATER + 0.15 && Math.abs(nx) < HALF - 8 && Math.abs(nz) < HALF - 8) {
+          d.x = nx;
+          d.z = nz;
+          pushOut(d, sp.rad);
+        } else d.slideV = 0;
+        d.y = heightAt(d.x, d.z);
+        d.g.position.set(d.x, d.y, d.z);
+      }
+    } else {
+      const e = smooth(0, 1, d.deadT);
+      roll = 1.45 * e;
+      buckle = e;
+    }
+    const sgn = d.fallDir,
+      fallK = clamp(roll / 1.5, 0, 1);
+    d.g.rotation.z = sgn * roll;
+    d.lieLift = lieLift(d, sgn * roll);
+    d.g.position.y = d.y + d.lieLift;
+    P_.rig.position.y = -0.3 * sp.legLen * buckle * (1 - fallK);
+    P_.rig.position.z = 0;
+    P_.rig.rotation.set(0, 0, 0);
+    if (!d.dead) P_.rig.scale.y = 1 + 0.014 * Math.sin(game.time * 1.7 + d.weave); // a slow breath
+    let nT = sp.neck.a + 0.5 * smooth(0.1, 0.7, d.dead ? t : d.deadT);
+    if (d.dead) nT += -0.4 * smooth(0, 0.14, t) * (1 - smooth(0.14, 0.42, t)) + tw * Math.sin(t * 5.2) * 0.2; // the head jerks up, then drops
+    P_.neck.rotation.x = lerp(P_.neck.rotation.x, nT, Math.min(1, dt * (d.dead ? 9 : 3)));
+    if (P_.jaw) {
+      const open = d.dead ? 0.55 * smooth(0, 0.12, t) + tw * 0.14 * Math.sin(t * 7) : 0.45 * smooth(0, 1, d.deadT);
+      P_.jaw.rotation.x = lerp(P_.jaw.rotation.x, open, Math.min(1, dt * 12));
+    }
+    P_.tail.rotation.y = lerp(P_.tail.rotation.y, tw * Math.sin(t * 3.3) * 0.32, Math.min(1, dt * 6));
+    P_.legs.forEach((l, i) => {
+      const side = i % 2 ? 1 : -1;
+      let target = side * 0.6 * buckle * (1 - fallK * 0.5);
+      if (d.dead) target += tw * Math.sin(t * (8 + i * 1.7) + i) * 0.55; // the last kicks
+      l.rotation.x = lerp(l.rotation.x, target, Math.min(1, dt * 10));
+    });
+  }
+  /* A bite lands at ATK.hit seconds into the attack and the attack is over at ATK.end. Before it the animal gathers (head back, jaws open,
+     body coiled); at the bite the head and shoulders drive forward and the jaws snap shut; then it holds and recovers. A raptor leaves the
+     ground for it. */
+  const ATK = { hit: 0.38, end: 0.72 };
   function animateDino(d, dt) {
     const sp = d.sp,
       P_ = d.parts;
@@ -6617,38 +7025,65 @@ window.__bootInner = async function () {
     if (!d.dead) d.deadT = d.asleep ? Math.min(1, d.deadT + dt / 1.4) : Math.max(0, d.deadT - dt / 1.6);
     if (d.dead || d.asleep || d.deadT > 0) {
       if (d.dead) d.deadT = Math.min(1, d.deadT + dt / 0.9);
-      const e = d.deadT * d.deadT * (3 - 2 * d.deadT);
-      d.g.rotation.z = d.fallDir * 1.5 * e;
-      P_.rig.position.y = -0.15 * e;
-      if (P_.jaw) P_.jaw.rotation.x = 0.45 * e;
-      P_.neck.rotation.x = lerp(P_.neck.rotation.x, sp.neck.a + 0.5, dt * 3);
-      P_.legs.forEach(l => {
-        l.rotation.x = lerp(l.rotation.x, 0, dt * 4);
-      });
+      deathPose(d, dt);
       return;
     }
+    d.landed = false;
+    if (P_.rig.scale.y !== 1) P_.rig.scale.y = 1;
     const spd = d.speed;
     d.phase += ((dt * spd) / sp.stride) * Math.PI;
     const amp = spd > 0.15 ? Math.min(0.85, 0.2 + spd * 0.075) : 0;
+    // ---- the bite
+    const atk = d.attackT,
+      len = sp.bodyR[2],
+      cr = d.type === 'raptor' && d.state === 'hunt' && d.rush !== 2 && atk <= 0 ? 1 : 0; // a raptor closing in keeps low
+    let wind = 0,
+      snap = 0,
+      hop = 0;
+    if (atk > 0 && sp.pred) {
+      const hit = ATK.hit;
+      wind = smooth(0, hit * 0.85, atk) * (1 - smooth(hit * 0.85, hit, atk));
+      snap = smooth(hit * 0.85, hit + 0.05, atk) * (1 - smooth(hit + 0.1, ATK.end, atk));
+      if (d.type === 'raptor') hop = Math.sin(clamp((atk - hit * 0.45) / (ATK.end - hit * 0.45), 0, 1) * Math.PI);
+    } else if (atk > 0) {
+      // a charging plant-eater lowers its head and drives it up and forward
+      wind = smooth(0, 0.22, atk) * (1 - smooth(0.22, 0.3, atk));
+      snap = smooth(0.22, 0.34, atk) * (1 - smooth(0.4, 0.7, atk));
+    }
+    d.atkSnap = snap;
+    // ---- legs, body sway
     P_.legs.forEach(l => {
-      l.rotation.x = lerp(l.rotation.x, Math.sin(d.phase + l.userData.ph) * amp, Math.min(1, dt * 14));
+      const base = Math.sin(d.phase + l.userData.ph) * amp;
+      l.rotation.x = lerp(l.rotation.x, base * (1 - hop) - 0.95 * hop, Math.min(1, dt * 14));
     });
+    const gait = Math.min(1, spd / 6);
     P_.rig.position.y =
-      Math.abs(Math.sin(d.phase)) * 0.06 * sp.legLen * Math.min(1, spd / 5) + Math.sin(d.t * 1.6) * 0.01;
+      Math.abs(Math.sin(d.phase)) * 0.06 * sp.legLen * Math.min(1, spd / 5) +
+      Math.sin(d.t * 1.6) * 0.01 +
+      hop * sp.legLen * 0.7 -
+      cr * sp.legLen * 0.2 -
+      wind * sp.legLen * 0.1;
+    P_.rig.position.z = snap * len * 0.34 - wind * len * 0.12;
+    P_.rig.rotation.set(
+      snap * 0.2 - wind * 0.1 + Math.sin(d.phase * 2) * 0.015 * gait,
+      0,
+      Math.sin(d.phase) * (sp.key === 'rex' ? 0.05 : 0.03) * gait
+    );
     P_.tail.rotation.y =
       Math.sin(d.t * 1.7 + d.weave) * 0.14 + clamp(wrapAng(d.wantHead - d.heading), -0.6, 0.6) * -0.4;
     let nT = sp.neck.a;
     if (d.grazing) nT = sp.neck.a + 1.25;
     else if (d.state === 'hunt') {
-      nT = sp.neck.a - 0.2;
+      nT = sp.neck.a - 0.2 - cr * 0.12;
       if (d.roarT > 0) nT = sp.neck.a - 0.55;
     }
-    P_.neck.rotation.x = lerp(P_.neck.rotation.x, nT, Math.min(1, dt * 4));
+    if (atk > 0) nT = sp.neck.a - 0.55 * wind + 0.7 * snap; // head up and back, then down and forward
+    P_.neck.rotation.x = lerp(P_.neck.rotation.x, nT, Math.min(1, dt * (atk > 0 ? 16 : 4)));
     if (P_.jaw) {
       let open = 0;
       if (d.roarT > 0) open = 0.6;
-      else if (d.attackT > 0) open = 0.75 * Math.sin(Math.min(1, d.attackT / 0.65) * Math.PI);
-      P_.jaw.rotation.x = lerp(P_.jaw.rotation.x, open, Math.min(1, dt * 12));
+      if (atk > 0 && sp.pred) open = 0.85 * smooth(0, ATK.hit * 0.8, atk) * (1 - smooth(ATK.hit * 0.92, ATK.hit + 0.04, atk));
+      P_.jaw.rotation.x = lerp(P_.jaw.rotation.x, open, Math.min(1, dt * (atk > 0 ? 24 : 12)));
     }
     if (d.flash > 0) {
       d.flash = Math.max(0, d.flash - dt * 3);
@@ -6660,6 +7095,25 @@ window.__bootInner = async function () {
       if (k !== d.stepK) {
         d.stepK = k;
         if (spd > 2) {
+          const dist = Math.hypot(P.x - d.x, P.z - d.z);
+          if (dist < 170) {
+            Aud.thump(d);
+            P.shake = Math.max(P.shake, 0.5 * (1 - dist / 170));
+          }
+        }
+      }
+    }
+  }
+  /* what an animal does while it is only a silhouette (or not drawn): its stride clock runs, its flash fades, and a tyrannosaur's feet still shake the ground */
+  function animateFar(d, dt) {
+    const sp = d.sp;
+    d.phase += ((dt * d.speed) / sp.stride) * Math.PI;
+    if (d.flash > 0) d.flash = Math.max(0, d.flash - dt * 3);
+    if (sp.key === 'rex') {
+      const k = Math.floor(d.phase / Math.PI);
+      if (k !== d.stepK) {
+        d.stepK = k;
+        if (d.speed > 2) {
           const dist = Math.hypot(P.x - d.x, P.z - d.z);
           if (dist < 170) {
             Aud.thump(d);
@@ -6703,6 +7157,12 @@ window.__bootInner = async function () {
       dxp = P.x - d.x,
       dzp = P.z - d.z,
       dist = Math.hypot(dxp, dzp);
+    if (QP.mob && !d.dead && dist > 220 && d.state !== 'hunt' && d.fleeT <= 0) {
+      d.accum += dt; // far and unbothered: about 15 updates a second
+      if (d.accum < 0.066) return;
+      dt = d.accum;
+      d.accum = 0;
+    }
     d.t += dt;
     if (d.dead) {
       d.vy -= 14 * dt;
@@ -6710,7 +7170,13 @@ window.__bootInner = async function () {
       d.x += Math.sin(d.heading) * d.speed * dt;
       d.z += Math.cos(d.heading) * d.speed * dt;
       d.speed *= Math.exp(-0.8 * dt);
-      const gh = Math.max(WATER, heightAt(d.x, d.z)) + 0.3;
+      const gh = Math.max(WATER, heightAt(d.x, d.z)) + 0.3,
+        air = d.y > gh + 0.05;
+      if (!air && d.vy < -4 && !d.landed) {
+        d.landed = true;
+        puff(new T.Vector3(d.x, gh, d.z), 0x8f8467, 6, 1.6, 0.6, 0.8, -0.4, 2, 0.35);
+        Aud.thud(d, 0.2);
+      }
       if (d.y <= gh) {
         d.y = gh;
         d.vy = 0;
@@ -6718,9 +7184,13 @@ window.__bootInner = async function () {
       }
       d.deadT = Math.min(1, d.deadT + dt / 0.7);
       d.g.position.set(d.x, d.y, d.z);
-      d.g.rotation.set(-0.5 * d.deadT, d.heading, d.fallDir * 1.5 * d.deadT);
+      // in the air it tumbles and its wings flail; on the ground it settles on its back with the wings splayed
+      if (air) d.spin = (d.spin || 0) + dt * (4 + Math.min(6, -d.vy * 0.5)) * d.fallDir;
+      const land = air ? 0 : smooth(0, 0.4, d.corpseT);
+      d.g.rotation.set(-0.5 * d.deadT * land + (air ? 0.4 * Math.sin(d.spin * 0.7) : 0), d.heading, air ? d.spin : lerp(d.spin % TAU, d.fallDir * 1.5, land));
       for (const w of P_.wings) {
-        w.rotation.z = w.userData.side * lerp(0.2, -1.2, d.deadT);
+        const s = w.userData.side;
+        w.rotation.z = air ? s * (0.3 + 0.9 * Math.sin(d.t * 17 + s)) : s * lerp(0.2, -1.2, d.deadT);
       }
       return;
     }
@@ -6728,7 +7198,7 @@ window.__bootInner = async function () {
       if (d.g.parent) scene.remove(d.g);
     } else if (!d.g.parent) scene.add(d.g);
     if (sp.pred) {
-      if (live && P.alive) {
+      if (live && P.alive && !P.safe) {
         if (d.state !== 'hunt') {
           let range = sp.detect * STEALTH.visFly * (P.moving ? 1.25 : 1);
           if (ENV.night > 0.8 || ENV.storm > 0.7) range *= 0.25; // they roost in the dark and keep out of storms
@@ -6778,6 +7248,7 @@ window.__bootInner = async function () {
       const L = Math.hypot(d.x - ex, d.y - ey, d.z - ez);
       if (d.diveT > 0.8 && L < 2.6) {
         damagePlayer(sp.dmg, d);
+        d.strikeT = 0.55;
         journalNote(d.type, 'hunt');
         d.state = 'patrol';
         d.awareness = 0;
@@ -6848,14 +7319,24 @@ window.__bootInner = async function () {
       beat = stoop ? 0.8 : d.climb > 0 || d.fleeT > 0 ? 5 : 1.4,
       amp = stoop ? 0.12 : d.climb > 0 || d.fleeT > 0 ? 0.7 : 0.2;
     d.flap += dt * beat * TAU;
+    if (d.lod >= 2 && d.far) {
+      refreshSpheres(d); // a silhouette does not flap
+      if (d.tag > 0) d.tag -= dt;
+      if (d.strikeT > 0) d.strikeT -= dt;
+      return;
+    }
     const f = Math.sin(d.flap);
+    // the instant of a strike: the wings snap open to brake and the neck whips forward, then it beats away
+    const st = d.strikeT > 0 ? (d.strikeT -= dt, smooth(0, 0.25, 0.55 - d.strikeT) * (1 - smooth(0.25, 0.55, 0.55 - d.strikeT) * 0.7)) : 0;
+    // closing in on a stoop, the head comes forward and the wings tuck, ready to flare
+    const closing = stoop ? smooth(22, 4, Math.hypot(d.x - ex, d.y - ey, d.z - ez)) : 0;
     for (const w of P_.wings) {
       const s = w.userData.side;
-      w.rotation.z = s * (f * amp + 0.06);
-      w.userData.o.rotation.z = s * f * amp * 0.7;
-      w.userData.o.rotation.y = s * (0.55 + (stoop ? 0.55 : 0));
+      w.rotation.z = s * (f * amp * (1 - st) + 0.06 + st * 0.95 - closing * 0.1);
+      w.userData.o.rotation.z = s * f * amp * 0.7 * (1 - st);
+      w.userData.o.rotation.y = s * (0.55 + (stoop ? 0.55 : 0) * (1 - st * 0.8));
     }
-    P_.neck.rotation.x = 1.15 + (stoop ? -0.4 : 0) + Math.sin(d.t * 0.7 + d.weave) * 0.05;
+    P_.neck.rotation.x = 1.15 + (stoop ? -0.4 - closing * 0.35 : 0) + st * -0.3 + Math.sin(d.t * 0.7 + d.weave) * 0.05;
     refreshSpheres(d);
     if (d.tag > 0) d.tag -= dt;
   }
@@ -6888,6 +7369,13 @@ window.__bootInner = async function () {
       refreshSpheres(d);
       return; // out of the scene entirely, so the renderer never walks it
     }
+    if (QP.mob && dist > 160 && d.state !== 'hunt' && d.charge <= 0 && !d.hatchling) {
+      // far off and not after you: it thinks and moves about 15 times a second (a step of a few centimetres at that range is under a pixel)
+      d.accum += dt;
+      if (d.accum < 0.066) return;
+      dt = d.accum;
+      d.accum = 0;
+    }
     if (!d.g.parent) scene.add(d.g);
     d.t += dt;
     if (d.hatchling) hatchlingAI(d, dt);
@@ -6895,7 +7383,8 @@ window.__bootInner = async function () {
     else aiHerb(d, dt);
     postAI(d, dt);
     moveDino(d, dt);
-    animateDino(d, dt);
+    if (d.lod >= 2 && d.far) animateFar(d, dt);
+    else animateDino(d, dt);
     leaveTrack(d, dt, dist);
     refreshSpheres(d);
     if (d.tag > 0) d.tag -= dt;
@@ -7143,9 +7632,9 @@ window.__bootInner = async function () {
       }
     }
     const fl = 1 - 0.8 * sink;
-    d.g.scale.set(k.s.x * (1 + 0.05 * rot) * fl, k.s.y * (1 - 0.42 * rot) * fl, k.s.z * (1 + 0.05 * rot) * fl);
-    if (d.sp.fly) d.g.position.y -= 0.7 * sink;
-    else d.g.position.y = k.y0 - 0.9 * sink;
+    d.g.scale.set(k.s.x * (1 + 0.04 * rot) * fl, k.s.y * (1 - 0.1 * rot) * fl, k.s.z * (1 + 0.04 * rot) * fl);
+    if (d.sp.fly) d.g.position.y -= 0.45 * sink;
+    else d.g.position.y = d.y + (d.lieLift || 0) - 0.3 * sink; // (it is the last of the flesh going, not a body sinking into the ground)
     d.decayRot = rot;
     d.decaySink = sink;
   }
@@ -7185,8 +7674,9 @@ window.__bootInner = async function () {
      screen, the scope and binoculars bring the full animal back at once. A small margin stops it flickering at the edge. */
   function updateDinoLOD() {
     const fine = RES.dinoFine,
-      hide = RES.dinoHide;
-    if (!fine && !hide) return;
+      hide = RES.dinoHide,
+      far = RES.dinoFar;
+    if (!fine && !hide && !far) return;
     const k = 1 / (2 * Math.tan((cam.fov * Math.PI) / 360)),
       cx = cam.position.x,
       cy = cam.position.y,
@@ -7198,13 +7688,23 @@ window.__bootInner = async function () {
         dy = p.y - cy,
         dz = p.z - cz,
         ss = (d.lodSize * k) / (Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.01);
-      const lvl =
+      let lvl =
         hide && ss / (d.lod === 2 ? 1.15 : 1) < hide ? 2 : fine && ss / (d.lod >= 1 ? 1.15 : 1) < fine ? 1 : 0;
+      // (a dead or sleeping animal keeps its rig: it is lying down, rotting or waking up)
+      if (far && d.far && lvl < 2 && !d.dead && !d.asleep && ss / (d.lod === 3 ? 1.15 : 1) < far) lvl = 3;
       if (lvl === d.lod) continue;
       d.lod = lvl;
-      d.g.visible = lvl < 2;
+      d.g.visible = lvl !== 2; // (level 3 is the silhouette: still drawn)
       const f = d.parts.fine;
       for (let i = 0; i < f.length; i++) f[i].visible = lvl === 0;
+      if (d.far) {
+        d.far.visible = lvl === 3;
+        const rig = d.parts.rig,
+          wantRig = lvl < 2;
+        if (wantRig && !rig.parent) d.g.add(rig);
+        else if (!wantRig && rig.parent) d.g.remove(rig);
+        if (lvl === 3) d.far.updateMatrix();
+      }
     }
   }
   function updateDinos(dt, live) {
@@ -7568,6 +8068,11 @@ window.__bootInner = async function () {
       this.noise({ dur: 0.18, gain: 0.5 * (k || 1), type: 'lowpass', f0: 420, f1: 90 });
       this.tone({ type: 'sine', f0: 70, f1: 36, dur: 0.25, gain: 0.45 * (k || 1) });
     },
+    thud(d, k) {
+      const p = { x: d.x, y: d.y, z: d.z };
+      this.noise({ dur: 0.16 + 0.16 * k, gain: 0.3 + 0.55 * k, type: 'lowpass', f0: 280 - 120 * k, f1: 70, pos: p });
+      this.tone({ type: 'sine', f0: 96 - 36 * k, f1: 38, dur: 0.2 + 0.16 * k, gain: 0.28 + 0.45 * k, pos: p });
+    },
     thump(d) {
       const p = { x: d.x, y: d.y, z: d.z };
       this.noise({ dur: 0.3, gain: 0.9, type: 'lowpass', f0: 130, f1: 50, pos: p });
@@ -7719,6 +8224,7 @@ window.__bootInner = async function () {
     },
     listener() {
       if (!this.c) return;
+      if (COARSE && !TEST && (this._lt = (this._lt || 0) + 1) & 1) return; // a touch device: every other frame is plenty for where sound comes from
       const L = this.c.listener,
         p = cam.position,
         f = _f.set(0, 0, -1).applyQuaternion(cam.quaternion),
@@ -7910,7 +8416,7 @@ window.__bootInner = async function () {
   const RIFLE = { name: '.338 Lapua Mag', mass: 0.0162, v0: 900, vsd: 3, bc: 0.337, sightH: 0.06, sigmaMil: 0.07 };
   /* Three weapons. The rifle is the long gun with the turret and the range card. The pistol is a .50 AE Desert Eagle: seven rounds,
      fast, a sight picture rather than a scope, and a heavy bullet that sheds speed quickly, so it is a 60 m weapon, not a 300 m one.
-     The machete does no shooting at all. Darts fly from the rifle at a fraction of a bullet's speed and drop like a thrown object. */
+     The axe does no shooting at all. Darts fly from the rifle at a fraction of a bullet's speed and drop like a thrown object. */
   const WEAPONS = Object.freeze({
     rifle: Object.freeze({
       key: 'rifle',
@@ -7946,7 +8452,7 @@ window.__bootInner = async function () {
       spread: 1.8,
       kick: 1.6
     }),
-    machete: Object.freeze({ key: 'machete', name: 'Machete', melee: true, reach: 2.4, swing: 0.5, dmg: 42 }),
+    axe: Object.freeze({ key: 'axe', name: 'Axe', melee: true, reach: 2.6, swing: 0.62, hitAt: 0.46, slack: 0.34, dmg: 54 }),
     dart: Object.freeze({
       key: 'dart',
       mass: 0.004,
@@ -8615,8 +9121,8 @@ window.__bootInner = async function () {
       return;
     }
     if (P.cycle > 0) return;
-    if (P.weapon === 'machete') {
-      swingMachete();
+    if (P.weapon === 'axe') {
+      swingAxe();
       return;
     }
     if (P.weapon === 'deagle') {
@@ -8825,55 +9331,74 @@ window.__bootInner = async function () {
     }
     return (lo + hi) / 2;
   })();
-  function swingMachete() {
-    const W = WEAPONS.machete;
+  /* The axe is a chop, not a slash: slower than the machete it replaced and a good deal harder. It also finds what you aim at. The blow is
+     judged against each animal's hit volumes with a hand's breadth of slack, so a raptor you are looking at is hit even if the line only
+     grazes its edge (a touch more with aim assist on), and the part it meets is the part the line passes through, so a head is a head.
+     Ground and trunks in the way still stop it. */
+  function swingAxe() {
+    const W = WEAPONS.axe;
     if (P.swingT > 0) return;
     P.swingT = W.swing;
     P.cycle = W.swing;
     P.swingHit = false;
     Aud.whoosh();
   }
-  function macheteTick(rdt) {
+  const _axAim = new T.Vector3();
+  function axeTarget(o, aim, W, wall) {
+    const slack = W.slack * (SET.assist ? 1.3 : 1);
+    let best = null,
+      bestS = 1e9;
+    for (const d of dinos) {
+      if (d.dead) continue;
+      if (Math.abs(d.x - o.x) > W.reach + 7 || Math.abs(d.z - o.z) > W.reach + 7) continue;
+      for (const sp of d.wp) {
+        const ox = sp.x - o.x,
+          oy = sp.y - o.y,
+          oz = sp.z - o.z,
+          tca = ox * aim.x + oy * aim.y + oz * aim.z;
+        if (tca < -sp.r || tca > W.reach + sp.r) continue;
+        const d2 = Math.max(0, ox * ox + oy * oy + oz * oz - tca * tca),
+          lim = sp.r + slack;
+        if (d2 > lim * lim) continue;
+        const t = Math.max(0, tca - Math.sqrt(Math.max(0, sp.r * sp.r - d2))),
+          miss = Math.max(0, Math.sqrt(d2) - sp.r), // 0 when the line goes through the volume itself
+          score = t + miss * 4;
+        if (t > W.reach + 0.25 || t > wall + 0.3 || score >= bestS) continue;
+        bestS = score;
+        best = { d, zone: sp.zone, t, tca };
+      }
+    }
+    return best;
+  }
+  function axeTick(rdt) {
     if (!(P.swingT > 0)) return;
     P.swingT -= rdt;
-    const W = WEAPONS.machete,
+    const W = WEAPONS.axe,
       t = W.swing - P.swingT;
-    if (!P.swingHit && t > 0.18) {
+    if (!P.swingHit && t >= W.swing * W.hitAt) {
       P.swingHit = true;
-      const aim = new T.Vector3();
-      cam.getWorldDirection(aim);
-      const rr = rayWorld(cam.position, aim, W.reach);
-      if (rr.dino) {
-        // which part did the blade meet: the nearest hit sphere along the aim
-        let zone = 'body',
-          bd = 1e9;
-        for (const s of rr.dino.wp) {
-          const dd = Math.hypot(s.x - cam.position.x, s.y - cam.position.y, s.z - cam.position.z);
-          if (dd < bd) {
-            bd = dd;
-            zone = s.zone;
-          }
-        }
-        const hp = cam.position.clone().addScaledVector(aim, Math.min(rr.d, W.reach));
-        hitDino(
-          rr.dino,
-          zone,
-          { melee: true, w: W, v: aim.clone().multiplyScalar(8), dist0: cam.position.clone() },
-          hp
-        );
-        rr.dino.stagger = Math.max(rr.dino.stagger, rr.dino.maxHp > 300 ? 0.3 : 0.8);
+      const aim = cam.getWorldDirection(_axAim).clone(),
+        o = cam.position,
+        rr = rayWorld(o, aim, W.reach), // what the line meets first, ground and trunks included (rr.d is the reach when it meets nothing)
+        hit = axeTarget(o, aim, W, rr.dino ? 1e9 : rr.d);
+      if (hit) {
+        const hp = o.clone().addScaledVector(aim, clamp(hit.tca, 0.3, W.reach));
+        hitDino(hit.d, hit.zone, { melee: true, w: W, v: aim.clone().multiplyScalar(8), dist0: o.clone() }, hp);
+        hit.d.stagger = Math.max(hit.d.stagger, hit.d.maxHp > 300 ? 0.35 : 1.0);
         Aud.hit({ x: hp.x, y: hp.y, z: hp.z }, 'body');
+        P.shake = Math.max(P.shake, 0.3); // the blade bites and the handle kicks
+        P.kickP += 0.012;
         makeNoise(P.x, P.z, 40, { x: P.x, z: P.z });
       } else if (rr.d < W.reach) {
         Aud.tree({
-          x: cam.position.x + aim.x * rr.d,
-          y: cam.position.y + aim.y * rr.d,
-          z: cam.position.z + aim.z * rr.d
+          x: o.x + aim.x * rr.d,
+          y: o.y + aim.y * rr.d,
+          z: o.z + aim.z * rr.d
         });
       }
     }
   }
-  const WEAPON_ORDER = ['rifle', 'deagle', 'machete'];
+  const WEAPON_ORDER = ['rifle', 'deagle', 'axe'];
   function setWeapon(w) {
     if (!P.alive || P.weapon === w || !WEAPONS[w]) return;
     if (P.inJeep) return;
@@ -8884,7 +9409,7 @@ window.__bootInner = async function () {
     P.swingT = 0;
     P.optOn = false;
     if (w === 'deagle' && P.pRounds === 0 && P.pReserve > 0) startReload();
-    Aud.click(0, w === 'machete' ? 0.6 : 1.1);
+    Aud.click(0, w === 'axe' ? 0.6 : 1.1);
     updateAmmoHud();
     updateGunModel();
     weaponShown();
@@ -9125,6 +9650,7 @@ window.__bootInner = async function () {
     makeNoise(d.x, d.z, 90, { x: P.x, z: P.z });
   }
   function killDino(d, zone, range, b) {
+    const sp0 = d.sp;
     journalNote(d.type, 'kill');
     if (
       b &&
@@ -9144,6 +9670,19 @@ window.__bootInner = async function () {
     d.dead = true;
     d.deadT = 0;
     d.hp = 0;
+    d.slideV = sp0.fly ? 0 : d.speed;
+    d.slideH = d.heading;
+    d.lied = false;
+    d.landed = false;
+    d.lieLift = 0;
+    if (b && b.v && !sp0.fly) {
+      // it goes down the way the blow was going
+      const vx = b.v.x,
+        vz = b.v.z,
+        vl = Math.hypot(vx, vz),
+        side = vx * Math.cos(d.heading) - vz * Math.sin(d.heading);
+      if (vl > 1e-3 && Math.abs(side) / vl > 0.25) d.fallDir = side > 0 ? -1 : 1;
+    }
     d.speed = 0;
     d.tag = 0;
     d.corpseT = 0;
@@ -9196,7 +9735,7 @@ window.__bootInner = async function () {
   // what hurt you, kept for the death sheet: when, by what, and what you were doing
   const LIFE = { hits: [], last: null };
   function damagePlayer(amount, src) {
-    if (!P.alive || game.state !== STATE.PLAY || P.invuln > 0) return;
+    if (!P.alive || game.state !== STATE.PLAY || P.invuln > 0 || P.safe) return;
     if (SET.assist) amount *= 0.7; // aim assist: a bite does 30 per cent less
     amount *= DIFF().dmg;
     if (P.inJeep) {
@@ -9322,10 +9861,10 @@ window.__bootInner = async function () {
       setText($('ammo'), String(P.pRounds));
       setText($('ammoRes'), '/ ' + P.pReserve);
       setText($('zeroLbl'), WEAPONS.deagle.name + '  ·  sighted 25 m');
-    } else if (P.weapon === 'machete') {
+    } else if (P.weapon === 'axe') {
       setText($('ammo'), '—');
       setText($('ammoRes'), '');
-      setText($('zeroLbl'), 'Machete  ·  rifle 1, pistol 2');
+      setText($('zeroLbl'), 'Axe  ·  rifle 1, pistol 2');
     } else {
       setText($('ammo'), String(P.rounds));
       setText($('ammoRes'), '/ ' + P.reserve);
@@ -9459,7 +9998,7 @@ window.__bootInner = async function () {
     if (e.button === 0 && locked) fire();
     else if (e.button === 2) {
       // tap to toggle the optic, or hold to look through it only while the button is down. It goes through toggleOptic, like F, so the pistol
-      // gets its sights and the machete gets nothing (neither has the rifle's scope).
+      // gets its sights and the axe gets nothing (neither has the rifle's scope).
       if (P.optOn && (P.optKind === 'scope' || P.optKind === 'sights')) {
         P.optOn = false;
         P.reScope = null;
@@ -9590,7 +10129,7 @@ window.__bootInner = async function () {
         setWeapon('deagle');
         break;
       case 'Digit3':
-        setWeapon('machete');
+        setWeapon('axe');
         break;
       case 'KeyU':
         toggleAmmo();
@@ -9649,14 +10188,14 @@ window.__bootInner = async function () {
   /* =====================================================================
    CHANGING WEAPON: 1 / 2 / 3, the mouse wheel on a PC, and a wheel on a touch screen.
    The wheel key shows what you hold. Touch it and the wheel opens around it with the three weapons as sectors (rifle up left, pistol up
-   right, machete below): slide into one and let go, or lift and tap one. Touching anywhere else, or its middle, closes it.
+   right, axe below): slide into one and let go, or lift and tap one. Touching anywhere else, or its middle, closes it.
    ===================================================================== */
   const WPN = {
     rifle: { name: 'Rifle', key: '1', icon: '<path d="M2.5 13.5h13.5l2-2.5h3.5v3.2l-3 1.8h-4.2l-1 3.5h-3.3l-1.2-3.5H2.5z"/><path d="M8 11V9.5h5V11"/>' },
     deagle: { name: 'Pistol', key: '2', icon: '<path d="M3 7.5h15.5v4H12.5l-1.3 6.2H7.4l1.3-6.2H3z"/><path d="M14.5 7.5V6h3v1.5"/>' },
-    machete: { name: 'Machete', key: '3', icon: '<path d="M20 4C15 4.5 10 8 7.5 13l3.5 3.5C16 14 19.5 9 20 4z"/><path d="M6.2 13.8l4 4M8.2 15.8L4 20"/>' }
+    axe: { name: 'Axe', key: '3', icon: '<path d="M4.5 20.5L16.5 8.5"/><path d="M13 4.6C16.4 3.4 20 5.4 21 9.2L17.4 12.8C16.8 10 14.8 7.8 12.2 6.6z"/><path d="M9.4 8.6l3.6-4 1.5 1.5-4 3.6z"/>' }
   };
-  const WHEEL_AT = { rifle: 300, deagle: 60, machete: 180 }; // where each sector is centred, in degrees clockwise from straight up
+  const WHEEL_AT = { rifle: 300, deagle: 60, axe: 180 }; // where each sector is centred, in degrees clockwise from straight up
   const WHEEL = { open: false, cx: 0, cy: 0, R: 100, hot: null, cur: null, timer: 0, last: 0, acc: 0, stripT: 0 };
   (function buildWeaponUi() {
     const icon = (cls, w) => `<svg class="ic ${cls}" viewBox="0 0 24 24">${WPN[w].icon}</svg>`;
@@ -9729,7 +10268,7 @@ window.__bootInner = async function () {
       r = Math.hypot(dx, dy);
     if (r < WHEEL.R * 0.3 || r > WHEEL.R * 1.4) return null;
     const a = ((Math.atan2(dx, -dy) * 180) / Math.PI + 360) % 360;
-    return a < 120 ? 'deagle' : a < 240 ? 'machete' : 'rifle';
+    return a < 120 ? 'deagle' : a < 240 ? 'axe' : 'rifle';
   }
   function wheelHover(x, y) {
     const w = WHEEL.open ? wheelSector(x, y) : null;
@@ -9751,7 +10290,7 @@ window.__bootInner = async function () {
     if (WHEEL.hot) wheelPick(WHEEL.hot);
     else if (WHEEL.open) WHEEL.timer = setTimeout(wheelClose, 5000); // a tap: it stays open for the second tap, but not for ever
   }
-  // the mouse wheel: scoped it zooms; otherwise it steps through rifle, pistol, machete (down = the next one). One step per notch, however
+  // the mouse wheel: scoped it zooms; otherwise it steps through rifle, pistol, axe (down = the next one). One step per notch, however
   // hard it is spun, and a finger on a trackpad has to travel a little before it counts.
   addEventListener(
     'wheel',
@@ -9911,7 +10450,7 @@ window.__bootInner = async function () {
       if (b) {
         // the fire key is also a look pad: keep the thumb on it and slide to aim (a tap that wobbles a few pixels does not turn the view)
         // scoped, the bullet key waits for you to lift your thumb: you slide it to settle the crosshair, then let go (touch-down used to spend the round first)
-        const holdFire = el.id === 'tFire' && SET.fireUp && P.optAmt > 0.5 && P.weapon !== 'machete' && game.state === STATE.PLAY;
+        const holdFire = el.id === 'tFire' && SET.fireUp && P.optAmt > 0.5 && P.weapon !== 'axe' && game.state === STATE.PLAY;
         fingers.set(
           id,
           el.id === 'tFire'
@@ -10302,7 +10841,7 @@ window.__bootInner = async function () {
     if (whereOf('tUse') === 'auto') autoSet('tUse', !!P.act || P.inJeep);
     if (whereOf('tReload') === 'auto') {
       const need =
-        P.weapon === 'machete'
+        P.weapon === 'axe'
           ? false
           : P.weapon === 'deagle'
             ? P.pRounds < 7 && P.pReserve > 0
@@ -10566,7 +11105,7 @@ window.__bootInner = async function () {
   }
   function toggleOptic(kind) {
     P.reScope = null; // what you do with the optic yourself wins over the automatic one
-    if (kind === 'scope' && P.weapon === 'machete') return;
+    if (kind === 'scope' && P.weapon === 'axe') return;
     if (kind === 'scope' && P.weapon === 'deagle') kind = 'sights';
     if (P.swimming) {
       toast("You can't aim while treading water.");
@@ -10650,7 +11189,7 @@ window.__bootInner = async function () {
   }
   const RELOAD_T = CONFIG.weapon.reloadSeconds;
   function startReload() {
-    if (P.weapon === 'machete') return;
+    if (P.weapon === 'axe') return;
     if (P.weapon === 'deagle') {
       // (the rifle's dart mode is not the pistol's business: it always carries live rounds)
       if (P.reloading || P.pRounds >= WEAPONS.deagle.mag || P.pReserve <= 0 || !P.alive) return;
@@ -11009,9 +11548,9 @@ window.__bootInner = async function () {
             label: L.t > 0 ? 'The bucket is still filling' : 'Drink from the well'
           });
       }
-      if (L.kind === 'statue' || L.kind === 'altar') {
+      if (L.kind === 'statue' || L.kind === 'altar' || L.inspect) {
         const d = Math.hypot(P.x - L.x, P.z - L.z);
-        if (d < 3.4)
+        if (d < (L.inspect ? 7 : 3.4))
           out.push({ k: 'inspect', o: L, d, hold: 0, label: 'Inspect the ' + (L.name || 'statue').toLowerCase() });
       }
     }
@@ -11355,7 +11894,7 @@ window.__bootInner = async function () {
     P.kickY *= Math.exp(-3.6 * rdt);
     // weapon cycle / reload
     if (P.cycle > 0) P.cycle -= rdt;
-    macheteTick(rdt);
+    axeTick(rdt);
     if (P.reloading) {
       P.reloadT -= rdt;
       if (P.reloadT <= 0) {
@@ -11369,7 +11908,7 @@ window.__bootInner = async function () {
           P.reserve -= take;
         }
         P.reloading = false;
-        if (P.reScope && !P.optOn && !P.inJeep && !P.swimming && (P.reScope === 'sights') === (P.weapon === 'deagle') && P.weapon !== 'machete') {
+        if (P.reScope && !P.optOn && !P.inJeep && !P.swimming && (P.reScope === 'sights') === (P.weapon === 'deagle') && P.weapon !== 'axe') {
           P.optOn = true;
           P.optKind = P.reScope;
         }
@@ -11728,6 +12267,46 @@ window.__bootInner = async function () {
     return coverAt(P.x, P.z) > 0.3 ? 'grass' : 'dirt';
   }
   const STEALTH = { vis: 1, visFly: 1, hidden: 0, hiddenS: 0, cover: 0, noiseK: 1, surface: 'grass', _t: 0 };
+  /* A safehouse is the one place you are safe. Inside its ground nothing hostile comes in (animals are held at the edge), nothing can hurt
+     you, flyers break off, and a hunter that was after you loses your trail the moment you go in: it casts about away from the place and
+     ignores you for a good while after you come out (the same "calm" a predator has after it gives up, only longer). */
+  function onSafeEnter(z) {
+    Aud.chime();
+    toast('Safehouse. Nothing can reach you in here, and whatever was hunting you has lost your trail.');
+    for (const d of dinos) {
+      if (d.dead || !d.sp.pred || d.hatchling) continue;
+      const dist = Math.hypot(d.x - P.x, d.z - P.z);
+      if (dist > 300) continue;
+      const wasHunting = d.state === 'hunt';
+      if (wasHunting) giveUpHunt(d, false);
+      d.awareness = 0;
+      d.noticed = false;
+      d.angryT = 0;
+      d.calmT = Math.max(d.calmT, rand(40, 60));
+      if (wasHunting || d.invT > 0) {
+        const a = Math.atan2(d.x - z.x, d.z - z.z) + rand(-0.6, 0.6); // it wanders off the way it came
+        d.invX = d.x + Math.sin(a) * 70;
+        d.invZ = d.z + Math.cos(a) * 70;
+        d.invT = rand(7, 10);
+        d.hasT = false;
+      }
+    }
+  }
+  function updateSafe() {
+    let z = null;
+    if (P.alive && game.state === STATE.PLAY)
+      for (const q of SAFE) {
+        if (Math.hypot(P.x - q.x, P.z - q.z) < q.r) {
+          z = q;
+          break;
+        }
+      }
+    if (!!z === !!P.safe) return;
+    P.safe = !!z;
+    const tag = $('safeTag');
+    if (tag) tag.classList.toggle('on', !!z);
+    if (z) onSafeEnter(z);
+  }
   function updateStealth(dt) {
     STEALTH._t -= dt;
     if (STEALTH._t <= 0) {
@@ -14267,7 +14846,7 @@ window.__bootInner = async function () {
     if (muzzleLight.intensity > 0) muzzleLight.intensity = Math.max(0, muzzleLight.intensity - rdt * 60);
     gunModel.visible = P.weapon === 'rifle' && P.optAmt < 0.25 && P.alive && !P.inJeep;
     pistolModel.visible = P.weapon === 'deagle' && P.alive && !P.inJeep && (P.optKind !== 'bino' || P.optAmt < 0.25);
-    macheteModel.visible = P.weapon === 'machete' && P.alive && !P.inJeep && (P.optKind !== 'bino' || P.optAmt < 0.25);
+    axeModel.visible = P.weapon === 'axe' && P.alive && !P.inJeep && (P.optKind !== 'bino' || P.optAmt < 0.25);
     if (pistolModel.visible) {
       // from the hip to the sight picture as the sights come up; the slide runs back with the recoil
       const s = P.optKind === 'sights' ? P.optAmt : 0,
@@ -14280,16 +14859,15 @@ window.__bootInner = async function () {
       pistolModel.rotation.set(P.kickP * 5 - P.sprintK * 0.3, lerp(0.08, 0, s) + P.sprintK * 0.5, 0);
       pistolModel.userData.slide.position.z = -0.05 + Math.min(0.03, P.kickP * 1.2);
     }
-    if (macheteModel.visible) {
-      const sw = P.swingT > 0 ? 1 - P.swingT / WEAPONS.machete.swing : 0,
-        arc = Math.sin(sw * Math.PI); // raised, then swept down and across
-      macheteModel.position.set(
-        0.3 - arc * 0.35,
-        -0.36 + arc * 0.08 + Math.sin(P.bob) * 0.005 * (P.moving ? 1 : 0),
-        -0.58
+    if (axeModel.visible) {
+      const sw = P.swingT > 0 ? 1 - P.swingT / WEAPONS.axe.swing : 0,
+        k = axePose(sw);
+      axeModel.position.set(
+        k[0],
+        k[1] + Math.sin(P.bob) * 0.005 * (P.moving ? 1 : 0) - P.sprintK * 0.1,
+        k[2]
       );
-      macheteModel.rotation.order = 'ZYX'; // turn the blade across the view first, then tilt the tip up: the flat faces you
-      macheteModel.rotation.set(0.15 + arc * 0.5, 1.25 - arc * 1.1, -0.85 + arc * 1.7); // held tip-up at the ready, swept down and across
+      axeModel.rotation.set(k[3] - P.sprintK * 0.25, k[4], k[5]);
     }
     {
       const u = gunModel.userData,
@@ -14897,6 +15475,8 @@ window.__bootInner = async function () {
     OBJ.explore = (OBJ.explore || 0) + 1;
     game.score += 100;
     feed(`Discovered: ${L.name}  +100`, 'spot');
+    if (L.lore && L.kind !== 'statue' && L.kind !== 'altar') journalLore(L.name, L.lore);
+    if (L.kind === 'safehouse') toast('A ranger safehouse: stone walls and a barred gate. Inside, nothing can reach you, and a hunter loses your trail.');
     Aud.chime();
     revealMap(L.x, L.z, 130);
     if (OBJ.explore >= EXPLORE_N && !OBJ.exploreDone) {
@@ -15008,8 +15588,9 @@ window.__bootInner = async function () {
         g.stroke();
       });
     for (const L of LAND) {
-      if (!L.discover || !L.found) continue;
+      if (!L.discover || (!L.found && L.kind !== 'safehouse')) continue;
       icon(L.x, L.z, () => {
+        if (!L.found) g.globalAlpha = 0.7;
         g.fillStyle = '#2b2210';
         g.strokeStyle = '#f1ecd2';
         g.lineWidth = 2;
@@ -15035,6 +15616,21 @@ window.__bootInner = async function () {
           g.beginPath();
           g.arc(0, 0, 2.5, 0, TAU);
           g.fill();
+        } else if (L.kind === 'safehouse') {
+          g.fillStyle = '#3f8a4a';
+          g.beginPath();
+          g.moveTo(0, -11);
+          g.lineTo(10, -6);
+          g.lineTo(8, 6);
+          g.lineTo(0, 11);
+          g.lineTo(-8, 6);
+          g.lineTo(-10, -6);
+          g.closePath();
+          g.fill();
+          g.stroke();
+          g.fillStyle = '#f1ecd2';
+          g.fillRect(-1.8, -6, 3.6, 12);
+          g.fillRect(-6, -1.8, 12, 3.6);
         } else if (L.kind === 'outpost') {
           g.fillStyle = '#6f7a50';
           g.beginPath();
@@ -15184,12 +15780,14 @@ window.__bootInner = async function () {
       if (!OBJ.alpha) consider(POI.alpha.x, POI.alpha.z, 'Alpha territory');
     } else if (P.track === 4) {
       if (JEEP.g && !P.inJeep) consider(JEEP.x, JEEP.z, 'The jeep');
+    } else if (P.track === 5) {
+      for (const q of SAFE) consider(q.x, q.z, 'Nearest safehouse');
     }
     return best;
   }
   function cycleTrack() {
-    for (let i = 0; i < 5; i++) {
-      P.track = (P.track + 1) % 5;
+    for (let i = 0; i < 6; i++) {
+      P.track = (P.track + 1) % 6;
       if (trackTarget()) break;
     }
     const t = trackTarget();
@@ -15529,6 +16127,8 @@ window.__bootInner = async function () {
     const m = b.mesh();
     m.position.set(x, gy === undefined ? heightAt(x, z) : gy, z);
     m.rotation.y = yaw || 0;
+    m.updateMatrix();
+    m.matrixAutoUpdate = false; // it never moves again: the scene need not recompose it every frame
     scene.add(m);
     return m;
   }
@@ -15832,15 +16432,17 @@ window.__bootInner = async function () {
   function buildStatue(s, type, idx) {
     const b = new Bld(),
       yaw = rand(0, TAU),
-      gy = heightAt(s.x, s.z),
+      gy = s.h !== undefined ? s.h : heightAt(s.x, s.z),
       st = C(0.55, 0.55, 0.5);
+    if (s.skirt) b.box(2.0, 1.5, 2.0, 0, -0.65, 0, C(0.42, 0.41, 0.38), 0, 0, 0, 0.2);
     b.box(1.6, 0.9, 1.6, 0, 0.45, 0, C(0.5, 0.5, 0.46), 0, 0, 0, 0.2);
     b.box(1.8, 0.14, 1.8, 0, 0.05, 0, C(0.45, 0.45, 0.42), 0, 0, 0, 0.2);
     for (let i = 0; i < 4; i++) {
       const a = i * 1.6 + 0.4;
       b.sph(0.4, 0.12, 0.3, Math.cos(a) * 0.8, 0.16, Math.sin(a) * 0.8, MOSS, 0.25);
     }
-    if (type === 'ranger') {
+    if (type === 'raptor' || type === 'obelisk') statueExtra(b, type, st, MOSS);
+    else if (type === 'ranger') {
       for (const sx of [-1, 1]) b.cyl(0.17, 0.14, 0.95, sx * 0.2, 1.38, 0, st, 0, 0, 0, 7, 0.15);
       b.box(0.62, 0.78, 0.36, 0, 2.2, 0, st, 0, 0, 0, 0.15);
       b.between([-0.34, 2.5, 0], [-0.4, 1.7, 0.1], 0.09, 0.07, st, 6, 0.15);
@@ -15870,21 +16472,628 @@ window.__bootInner = async function () {
       b.between([1.8, 0.2, 0.2], [2.4, 0.14, -0.2], 0.09, 0.07, st, 6, 0.15);
       b.sph(0.5, 0.1, 0.4, 1.5, 0.1, 0.8, MOSS, 0.3);
     }
-    placeMesh(b, s.x, s.z, yaw, gy);
-    addCollider(s.x, s.z, 1.1, type === 'totem' ? 4 : 3);
+    {
+      const m = placeMesh(b, s.x, s.z, yaw, gy);
+      if (s.skirt) propFar(m, s.x, s.z, 320);
+    }
+    addCollider(s.x, s.z, 1.1, type === 'totem' ? 4 : type === 'obelisk' ? 5 : 3);
     landmark(
       'statue',
       s.x,
       s.z,
-      type === 'totem' ? 'carved totem' : type === 'ranger' ? 'ranger statue' : 'broken statue',
+      type === 'totem'
+        ? 'carved totem'
+        : type === 'ranger'
+          ? 'ranger statue'
+          : type === 'raptor'
+            ? 'stone raptor'
+            : type === 'obelisk'
+              ? 'weathered obelisk'
+              : 'broken statue',
       0,
       {
         lore:
           type === 'totem'
             ? 'A tyrannosaur skull carved in stone, mouth open. Offerings of teeth have been left in the grass around it.'
-            : LORE[idx % LORE.length]
+            : type === 'raptor'
+              ? 'A raptor in grey stone, crouched to spring. Someone has chipped the claws off, and someone else has put them back in clay.'
+              : type === 'obelisk'
+                ? 'Names are cut into it in columns, the last few fresh enough that the dust is still white in the letters.'
+                : LORE[idx % LORE.length]
       }
     );
+  }
+
+  /* ---------- the extra places: builders ----------
+     Every place is ONE merged mesh (two where something glows), in the same hand-built style as the cabin. Local coordinates run with x to
+     the right and z toward the front of the place; frameOf() turns them into world positions for colliders and stashes. */
+  const PLASTER = C(0.66, 0.62, 0.54),
+    TILE = C(0.5, 0.24, 0.17),
+    IRON = C(0.22, 0.23, 0.25),
+    SOOT = C(0.1, 0.09, 0.08),
+    CANV = C(0.46, 0.5, 0.34),
+    PLINTH = C(0.42, 0.41, 0.38);
+  const WINDMILLS = [];
+  // a straight wall between two points (x1,z1)-(x2,z2) with openings: gaps = [[from, to, bottom, top], ...] measured along the wall
+  function wallRun(b, x1, z1, x2, z2, h, th, col, gaps, y0) {
+    const L = Math.hypot(x2 - x1, z2 - z1),
+      ux = (x2 - x1) / L,
+      uz = (z2 - z1) / L,
+      ry = Math.atan2(-uz, ux);
+    const seg = (a, c, ya, yb) => {
+      if (c - a < 0.02 || yb - ya < 0.02) return;
+      const m = (a + c) / 2;
+      b.box(c - a, yb - ya, th, x1 + ux * m, (y0 || 0) + (ya + yb) / 2, z1 + uz * m, col, ry, 0, 0, 0.18);
+    };
+    let cur = 0;
+    for (const g of (gaps || []).slice().sort((p, q) => p[0] - q[0])) {
+      seg(cur, g[0], 0, h);
+      seg(g[0], g[1], 0, g[2]);
+      seg(g[0], g[1], g[3], h);
+      cur = g[1];
+    }
+    seg(cur, L, 0, h);
+  }
+  // one collider per step along a wall, none across a doorway (a gap that starts at the floor)
+  function wallColliders(F, x1, z1, x2, z2, h, gaps, r) {
+    const L = Math.hypot(x2 - x1, z2 - z1),
+      ux = (x2 - x1) / L,
+      uz = (z2 - z1) / L,
+      step = r * 1.8;
+    for (let t = step / 2; t < L; t += step) {
+      if (gaps && gaps.some(g => g[2] <= 0.01 && t > g[0] - r * 0.5 && t < g[1] + r * 0.5)) continue;
+      const q = F(x1 + ux * t, z1 + uz * t);
+      addCollider(q.x, q.z, r, h);
+    }
+  }
+  function labelPlane(text, w, h, fg, bg) {
+    const c = document.createElement('canvas');
+    c.width = 256;
+    c.height = Math.round(256 * (h / w));
+    const g = c.getContext('2d');
+    g.fillStyle = bg;
+    g.fillRect(0, 0, c.width, c.height);
+    g.strokeStyle = fg;
+    g.lineWidth = 6;
+    g.strokeRect(5, 5, c.width - 10, c.height - 10);
+    g.fillStyle = fg;
+    g.font = '700 ' + Math.round(c.height * 0.5) + 'px "Barlow Condensed",Arial Narrow,Arial,sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(text, c.width / 2, c.height / 2 + 2);
+    const tex = new T.CanvasTexture(c);
+    return new T.Mesh(new T.PlaneGeometry(w, h), new T.MeshBasicMaterial({ map: tex }));
+  }
+  function placeProp(b, e, reach) {
+    const m = placeMesh(b, e.x, e.z, e.yaw, e.h);
+    propFar(m, e.x, e.z, reach || 420);
+    return m;
+  }
+
+  const HOUSE_NAME = ['Abandoned farmhouse', 'Deserted homestead', 'Ruined cottage'];
+  const HOUSE_LORE = [
+    'A child\'s drawing is pinned over the table: a big green animal behind a fence. Under it, in careful capitals: "DADDY SAYS IT WON\'T COME NEAR".',
+    'The calendar stops in the middle of a month. Every day after it is crossed out in the same hand, and then not.',
+    'Three plates are laid and nobody came to eat. The back door is wedged shut with a chair, from the inside.'
+  ];
+  function buildHouse(e, v) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw),
+      W = 9,
+      D = 6,
+      hw = W / 2,
+      hd = D / 2,
+      WH = 2.8,
+      y0 = 0.15;
+    // a stone plinth that runs down to the ground at the low corners, and the floor boards
+    b.box(W + 0.7, 1.7, D + 0.7, 0, -0.7, 0, PLINTH, 0, 0, 0, 0.2);
+    b.box(W - 0.3, 0.07, D - 0.3, 0, y0 + 0.02, 0, WOODD, 0, 0, 0, 0.25);
+    const front = [[3.1, 4.3, 0, 2.15], [0.9, 2.0, 0.9, 2.0], [6.6, 7.7, 0.9, 2.0]],
+      back = [[3.6, 4.8, 0.9, 2.0]],
+      left = [[2.2, 3.6, 0.9, 2.0]],
+      right = [[2.0, 3.2, 0.9, 2.0]];
+    const wc = v === 1 ? C(0.6, 0.57, 0.5) : v === 2 ? C(0.52, 0.45, 0.36) : PLASTER;
+    wallRun(b, -hw, hd, hw, hd, WH, 0.3, wc, front, y0);
+    wallRun(b, hw, -hd, -hw, -hd, WH, 0.3, wc, back, y0);
+    wallRun(b, -hw, -hd, -hw, hd, WH, 0.3, wc, left, y0);
+    wallRun(b, hw, hd, hw, -hd, WH, 0.3, wc, right, y0);
+    wallColliders(F, -hw, hd, hw, hd, WH, front, 0.5);
+    wallColliders(F, hw, -hd, -hw, -hd, WH, back, 0.5);
+    wallColliders(F, -hw, -hd, -hw, hd, WH, left, 0.5);
+    wallColliders(F, hw, hd, hw, -hd, WH, right, 0.5);
+    // gable ends
+    for (let k = 0; k < 4; k++)
+      for (const sx of [-1, 1]) {
+        if (RG() < 0.1) continue;
+        b.box(0.3, 0.52, D * (1 - k / 4.2) - 0.6, sx * hw, y0 + WH + 0.26 + k * 0.52, 0, wc, 0, 0, 0, 0.2);
+      }
+    // the roof: rafters all along, and tiles over about half of them
+    const ridge = y0 + WH + 1.95;
+    for (let x = -hw - 0.4; x <= hw + 0.45; x += 1.15) {
+      for (const sz of [-1, 1]) {
+        b.between([x, y0 + WH, sz * (hd + 0.45)], [x, ridge, 0], 0.07, 0.07, WOODD, 5, 0.2);
+      }
+    }
+    b.between([-hw - 0.5, ridge, 0], [hw + 0.5, ridge, 0], 0.09, 0.09, WOODD, 6, 0.2);
+    const pitch = Math.atan2(1.95, hd + 0.45),
+      plen = Math.hypot(1.95, hd + 0.45);
+    for (let k = 0; k < 8; k++) {
+      const x = -hw - 0.3 + (k + 0.5) * ((W + 0.8) / 8);
+      for (const sz of [-1, 1]) {
+        if (RG() < (sz > 0 ? 0.55 : 0.4)) continue; // a missing tile section
+        b.box((W + 0.8) / 8 - 0.04, 0.07, plen, x, y0 + WH + 0.97, sz * (hd + 0.45) * 0.5, TILE, 0, 0, -sz * pitch, 0.25);
+      }
+    }
+    // chimney
+    b.box(1.0, 5.0, 1.0, hw - 1.2, y0 + 2.5, -hd + 1.0, C(0.5, 0.46, 0.42), 0, 0, 0, 0.22);
+    b.box(1.2, 0.2, 1.2, hw - 1.2, y0 + 5.1, -hd + 1.0, C(0.4, 0.38, 0.35), 0, 0, 0, 0.2);
+    {
+      const q = F(hw - 1.2, -hd + 1.0);
+      addCollider(q.x, q.z, 0.75, 5);
+    }
+    // porch: a deck with two posts, steps and a half roof
+    b.box(3.9, 0.18, 1.9, -1.2, y0 - 0.05, hd + 1.0, WOOD, 0, 0, 0, 0.25);
+    for (const sx of [-1, 1]) b.box(0.14, 2.6, 0.14, -1.2 + sx * 1.8, y0 + 1.3, hd + 1.8, WOODD, 0, 0, 0, 0.2);
+    b.box(4.0, 0.12, 0.16, -1.2, y0 + 2.6, hd + 1.8, WOODD, 0, 0, 0, 0.2);
+    for (let k = 0; k < 3; k++) {
+      if (RG() < 0.4) continue;
+      b.box(1.3, 0.05, 1.9, -2.5 + k * 1.3, y0 + 2.7, hd + 1.0, C(0.38, 0.28, 0.18), 0, 0, 0.15, 0.25);
+    }
+    b.box(1.4, 0.16, 0.5, -1.2, y0 - 0.2, hd + 2.2, WOODD, 0, 0, 0, 0.2);
+    // inside: a bed, a table, a toppled chair, a stove, a cupboard
+    b.box(2.0, 0.3, 1.0, -2.9, y0 + 0.3, -1.9, WOODD, 0, 0, 0, 0.2);
+    b.box(1.9, 0.14, 0.9, -2.9, y0 + 0.5, -1.9, C(0.58, 0.52, 0.42), 0, 0, 0, 0.3);
+    b.box(1.3, 0.07, 0.8, 1.5, y0 + 0.75, 0.2, WOOD, 0.2, 0, 0, 0.2);
+    for (const [dx, dz] of [[-0.55, -0.32], [0.55, -0.32], [-0.55, 0.32], [0.55, 0.32]]) b.box(0.07, 0.72, 0.07, 1.5 + dx, y0 + 0.38, 0.2 + dz, WOODD);
+    b.box(0.45, 0.07, 0.45, 0.2, y0 + 0.28, 0.9, WOOD, 0.6, 0, 1.4);
+    b.box(0.8, 1.05, 0.6, -hw + 0.7, y0 + 0.55, 1.2, IRON, 0, 0, 0, 0.1);
+    b.between([-hw + 0.7, y0 + 1.1, 1.2], [-hw + 0.7, y0 + WH + 1.0, 1.2], 0.08, 0.08, IRON, 6, 0.1);
+    b.box(1.5, 1.9, 0.5, 2.9, y0 + 0.96, -hd + 0.4, WOODD, 0, 0, 0, 0.2);
+    // outside: a woodpile, a barrel, a wheelbarrow, a picket fence with gaps, a mailbox
+    for (let r = 0; r < 3; r++)
+      for (let i = 0; i < 5 - r; i++) b.cyl(0.13, 0.13, 1.3, hw + 1.6, 0.14 + r * 0.24, -1.2 + i * 0.3 + r * 0.15, WOOD, Math.PI / 2, 0.1, 0, 7, 0.2);
+    b.cyl(0.38, 0.34, 0.9, -hw - 1.3, 0.45, -1.4, C(0.3, 0.2, 0.12), 0, 0, 0, 9, 0.2);
+    b.box(0.9, 0.3, 0.6, -hw - 2.2, 0.55, 1.7, RUST, 0.4, 0, 0, 0.2);
+    b.cyl(0.26, 0.26, 0.08, -hw - 2.7, 0.27, 1.7, C(0.1, 0.1, 0.1), 0, 0, Math.PI / 2, 8, 0);
+    for (let x = -6.5; x <= 4.6; x += 1.15) {
+      if (RG() < 0.28) continue;
+      b.box(0.1, 0.95, 0.06, x, 0.48, hd + 4.2, C(0.7, 0.68, 0.6), 0, RG() < 0.2 ? 0.25 : 0, 0, 0.15);
+    }
+    b.box(11.4, 0.06, 0.05, -0.9, 0.7, hd + 4.2, C(0.62, 0.6, 0.52), 0, 0, 0, 0.2);
+    b.box(0.5, 0.36, 0.3, -3.2, 1.0, hd + 4.4, RUST, 0, 0, 0, 0.1);
+    b.box(0.07, 1.0, 0.07, -3.2, 0.5, hd + 4.4, WOODD);
+    {
+      const q = F(-hw - 1.3, -1.4);
+      addCollider(q.x, q.z, 0.4, 0.9, true);
+      const w2 = F(hw + 1.6, -0.6);
+      addCollider(w2.x, w2.z, 0.8, 0.7, true);
+    }
+    placeProp(b, e, 430);
+    landmark('house', e.x, e.z, HOUSE_NAME[v % 3], 24, {
+      stash: F(2.9, -hd + 1.2),
+      stashName: 'the cupboard',
+      lore: HOUSE_LORE[v % 3]
+    });
+  }
+
+  function buildSafehouse(e) {
+    const b = new Bld(),
+      glow = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw),
+      S = 8,
+      WH = 2.7,
+      th = 0.8,
+      y0 = 0.17,
+      SW = C(0.6, 0.59, 0.54);
+    // a plinth, flagstones, and a wall all round with a gate in the front
+    b.box(2 * S + 2.4, 1.9, 2 * S + 2.4, 0, -0.8, 0, PLINTH, 0, 0, 0, 0.15);
+    b.box(2 * S, 0.08, 2 * S, 0, y0 + 0.02, 0, C(0.56, 0.55, 0.5), 0, 0, 0, 0.3);
+    const gate = [[S - 1.9, S + 1.9, 0, 3.4]];
+    wallRun(b, -S, S, S, S, WH, th, SW, gate, y0);
+    wallRun(b, S, -S, -S, -S, WH, th, SW, [], y0);
+    wallRun(b, -S, -S, -S, S, WH, th, SW, [], y0);
+    wallRun(b, S, S, S, -S, WH, th, SW, [], y0);
+    wallColliders(F, -S, S, S, S, WH, gate, 0.55);
+    wallColliders(F, S, -S, -S, -S, WH, null, 0.55);
+    wallColliders(F, -S, -S, -S, S, WH, null, 0.55);
+    wallColliders(F, S, S, S, -S, WH, null, 0.55);
+    for (let k = -S; k <= S; k += 1.6)
+      for (const side of [[k, S], [k, -S], [S, k], [-S, k]]) {
+        if (side[1] === S && Math.abs(side[0]) < 2.3) continue;
+        b.box(0.7, 0.45, 0.9, side[0], y0 + WH + 0.22, side[1], SW, 0, 0, 0, 0.2);
+      }
+    // gate: two pillars, a lintel, and iron leaves swung open
+    for (const sx of [-1, 1]) {
+      b.box(1.4, 4.0, 1.4, sx * 2.55, y0 + 2.0, S, SW, 0, 0, 0, 0.18);
+      b.box(1.7, 0.3, 1.7, sx * 2.55, y0 + 4.1, S, C(0.44, 0.43, 0.4), 0, 0, 0, 0.2);
+      b.box(1.5, 2.4, 0.09, sx * 3.3, y0 + 1.3, S + 1.2, IRON, sx * 1.15, 0, 0, 0.1);
+    }
+    b.box(6.6, 0.7, 1.5, 0, y0 + 4.0, S, C(0.46, 0.45, 0.42), 0, 0, 0, 0.18);
+    {
+      const q = F(-2.55, S),
+        r2 = F(2.55, S);
+      addCollider(q.x, q.z, 0.85, 4);
+      addCollider(r2.x, r2.z, 0.85, 4);
+    }
+    // the lodge at the back: walls, a door, a sloped solid roof, a chimney, and a painted cross
+    const lg = [[3.7, 4.9, 0, 2.1]];
+    wallRun(b, -4.2, -2.2, 4.2, -2.2, 2.5, 0.35, C(0.62, 0.6, 0.54), lg, y0);
+    wallRun(b, 4.2, -6.6, -4.2, -6.6, 2.5, 0.35, C(0.62, 0.6, 0.54), [], y0);
+    wallRun(b, -4.2, -6.6, -4.2, -2.2, 2.5, 0.35, C(0.62, 0.6, 0.54), [[1.4, 2.6, 0.9, 1.9]], y0);
+    wallRun(b, 4.2, -2.2, 4.2, -6.6, 2.5, 0.35, C(0.62, 0.6, 0.54), [[1.4, 2.6, 0.9, 1.9]], y0);
+    wallColliders(F, -4.2, -2.2, 4.2, -2.2, 2.5, lg, 0.5);
+    wallColliders(F, 4.2, -6.6, -4.2, -6.6, 2.5, null, 0.5);
+    wallColliders(F, -4.2, -6.6, -4.2, -2.2, 2.5, null, 0.5);
+    wallColliders(F, 4.2, -2.2, 4.2, -6.6, 2.5, null, 0.5);
+    b.box(9.6, 0.3, 5.6, 0, y0 + 2.75, -4.5, TILE, 0, 0, 0.12, 0.2);
+    b.box(1.0, 3.6, 1.0, 3.2, y0 + 3.4, -5.8, C(0.5, 0.46, 0.42), 0, 0, 0, 0.2);
+    b.box(0.95, 0.95, 0.06, -2.0, y0 + 1.7, -2.0, C(0.92, 0.92, 0.9), 0, 0, 0, 0);
+    b.box(0.22, 0.75, 0.07, -2.0, y0 + 1.7, -1.97, C(0.75, 0.1, 0.08), 0, 0, 0, 0);
+    b.box(0.75, 0.22, 0.07, -2.0, y0 + 1.7, -1.97, C(0.75, 0.1, 0.08), 0, 0, 0, 0);
+    // inside the lodge: bunks and a table
+    for (const z of [-5.8, -4.6]) {
+      b.box(2.0, 0.26, 0.9, -3.0, y0 + 0.35, z, WOODD, 0, 0, 0, 0.2);
+      b.box(1.9, 0.14, 0.8, -3.0, y0 + 0.55, z, C(0.35, 0.42, 0.32), 0, 0, 0, 0.3);
+    }
+    b.box(1.6, 0.07, 0.9, 0.4, y0 + 0.78, -4.6, WOOD, 0, 0, 0, 0.2);
+    // the courtyard: sandbags along the walls, a cargo locker and crates
+    for (const [x, z, ry] of [[-6.2, 6.4, 0.1], [-5.0, 6.5, -0.1], [6.0, 6.4, 0.2], [-7.0, 0.5, 1.5], [7.0, -1.0, 1.55]])
+      for (let i = 0; i < 3; i++) b.sph(0.55, 0.22, 0.32, x + Math.cos(ry) * i * 0.8, y0 + 0.25 + (i === 1 ? 0.28 : 0), z + Math.sin(ry) * i * 0.8, C(0.55, 0.5, 0.36), 0.25);
+    b.box(1.6, 1.1, 0.8, -6.0, y0 + 0.6, -0.5, C(0.3, 0.38, 0.3), 0.2, 0, 0, 0.1);
+    b.box(1.7, 0.1, 0.9, -6.0, y0 + 1.2, -0.5, C(0.24, 0.3, 0.24), 0.2, 0, 0, 0.1);
+    b.box(0.9, 0.8, 0.9, -5.0, y0 + 0.45, 1.8, WOOD, 0.4, 0, 0, 0.2);
+    b.box(0.8, 0.7, 0.8, -4.1, y0 + 0.4, 2.3, WOODD, -0.2, 0, 0, 0.2);
+    {
+      const q = F(-6.0, -0.5);
+      addCollider(q.x, q.z, 1.0, 1.2, true);
+    }
+    // lamps on posts at the four inner corners: the bulbs are drawn bright (no real light is added)
+    for (const [x, z] of [[-6.2, -6.2], [6.2, -6.2], [-6.2, 6.2], [6.2, 6.2]]) {
+      b.cyl(0.07, 0.09, 3.0, x, y0 + 1.5, z, IRON, 0, 0, 0, 6, 0.1);
+      b.box(0.34, 0.08, 0.34, x, y0 + 3.1, z, IRON, 0, 0, 0, 0.1);
+      glow.sph(0.2, 0.26, 0.2, x, y0 + 2.88, z, C(1.0, 0.78, 0.38), 0);
+      const q = F(x, z);
+      addCollider(q.x, q.z, 0.25, 3);
+    }
+    const m = placeProp(b, e, 560);
+    const gm = new T.Mesh(glow.geo(), new T.MeshBasicMaterial({ vertexColors: true }));
+    gm.position.copy(m.position);
+    gm.rotation.y = e.yaw;
+    scene.add(gm);
+    propFar(gm, e.x, e.z, 560);
+    {
+      const sign = labelPlane('SAFEHOUSE', 4.6, 1.0, '#e9f2d8', '#23361f');
+      const q = F(0, S + 0.85);
+      sign.position.set(q.x, e.h + y0 + 4.0, q.z);
+      sign.rotation.y = e.yaw;
+      scene.add(sign);
+      propFar(sign, e.x, e.z, 420);
+    }
+    landmark('safehouse', e.x, e.z, 'Ranger safehouse', 30, {
+      stash: F(-6.0, -0.5),
+      stashName: 'the safehouse locker',
+      rich: true,
+      lore: 'Stone walls, a barred gate and a lamp at every corner. Whatever hunts you cannot come in here, and a hunter that sees you go in will lose your trail.'
+    });
+  }
+
+  function buildPlane(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw),
+      HULL = C(0.6, 0.62, 0.64),
+      TAIL = C(0.74, 0.3, 0.16);
+    b.cyl(1.2, 0.7, 9.0, 0, 1.45, 0, HULL, Math.PI / 2, 0, 0.07, 10, 0.12);
+    b.cone(1.2, 2.0, 0, 1.52, 5.4, C(0.35, 0.37, 0.4), Math.PI / 2, 0, 0, 10, 0.1);
+    b.box(11.5, 0.2, 2.3, 0.2, 1.2, 0.9, C(0.66, 0.67, 0.68), 0, 0.12, 0, 0.1);
+    b.box(5.0, 0.2, 2.1, 7.4, 0.5, 1.0, C(0.62, 0.63, 0.64), 0.2, -0.45, 0, 0.1); // the broken-off wing
+    b.box(0.16, 2.3, 1.9, 0, 3.0, -4.3, TAIL, 0, 0.15, 0, 0.1);
+    b.box(4.0, 0.14, 1.3, 0, 2.0, -4.5, HULL, 0, 0, 0, 0.1);
+    b.cyl(0.4, 0.4, 1.2, 0, 1.45, 5.9, IRON, Math.PI / 2, 0, 0, 8, 0.1);
+    for (const a of [0.5, 1.9]) b.box(0.18, 3.2, 0.05, 0, 1.45, 6.5, C(0.2, 0.2, 0.22), 0, a, 0, 0.1);
+    b.cyl(4.6, 4.2, 0.05, 0.6, 0.03, 0.4, C(0.17, 0.14, 0.1), 0, 0, 0, 12, 0.25);
+    for (let i = 0; i < 9; i++) {
+      const a = RG() * TAU,
+        r = 3 + RG() * 5;
+      b.box(0.5 + RG() * 0.9, 0.08, 0.4 + RG() * 0.6, Math.cos(a) * r, 0.2, Math.sin(a) * r, i % 2 ? HULL : C(0.5, 0.52, 0.55), RG() * TAU, 0, 0, 0.2);
+    }
+    b.box(0.9, 0.7, 0.7, 2.6, 0.4, 2.8, WOODD, 0.4, 0, 0, 0.1);
+    b.box(0.8, 0.6, 0.8, 3.4, 0.35, 3.6, C(0.3, 0.36, 0.26), -0.3, 0, 0, 0.1);
+    b.sph(1.4, 0.15, 0.5, -1.2, 2.45, -0.5, MOSS, 0.3);
+    for (let t = -3.6; t <= 4.2; t += 1.7) {
+      const q = F(0, t);
+      addCollider(q.x, q.z, 1.25, 2.3);
+    }
+    {
+      const q = F(-0.8, -4.3);
+      addCollider(q.x, q.z, 0.6, 3);
+    }
+    placeProp(b, e, 480);
+    landmark('plane', e.x, e.z, 'Crashed survey plane', 22, {
+      stash: F(3.0, 3.2),
+      stashName: 'the cargo hold',
+      rich: true,
+      lore: 'The registration is half burned away. The survey was meant to count the reserve\'s predators. It counted at least one.'
+    });
+  }
+
+  function buildTruck(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw);
+    const GREEN = C(0.3, 0.36, 0.26);
+    b.box(2.3, 0.3, 6.2, 0, 0.8, 0, IRON, 0, 0, 0, 0.1);
+    b.box(2.2, 1.9, 1.9, 0, 1.9, 2.3, GREEN, 0, 0, 0, 0.15);
+    b.box(2.0, 0.55, 0.12, 0, 2.5, 3.28, C(0.55, 0.6, 0.62), 0, 0, 0, 0.1);
+    b.box(2.2, 0.8, 1.2, 0, 1.4, 3.4, GREEN, 0, 0, 0, 0.15);
+    b.box(2.3, 0.14, 4.0, 0, 1.0, -1.4, WOODD, 0, 0, 0, 0.2);
+    for (const sx of [-1, 1]) b.box(0.1, 0.9, 4.0, sx * 1.12, 1.45, -1.4, WOOD, 0, 0, 0, 0.2);
+    for (const z of [2.4, -1.2, -2.6]) for (const sx of [-1, 1]) b.cyl(0.55, 0.55, 0.45, sx * 1.15, 0.55, z, C(0.1, 0.1, 0.1), 0, 0, Math.PI / 2, 10, 0.1);
+    for (const x of [-1.0, 0, 1.0]) b.between([x, 1.9, -3.3], [x, 2.4, 0.6], 0.04, 0.04, IRON, 5, 0.1); // the canvas frame
+    b.box(2.0, 0.05, 1.4, 0.2, 2.35, -0.8, CANV, 0, 0, 0.1, 0.25);
+    b.box(0.9, 0.5, 0.7, 0.2, 1.4, -2.6, WOODD, 0.3, 0, 0, 0.2);
+    b.sph(0.9, 0.12, 0.5, 0, 2.9, 2.3, MOSS, 0.3);
+    for (const z of [3.0, 1.3, -0.4, -2.1, -3.0]) {
+      const q = F(0, z);
+      addCollider(q.x, q.z, 1.2, 2.2);
+    }
+    placeProp(b, e, 380);
+    landmark('truck', e.x, e.z, 'Rusted supply truck', 0, { stash: F(1.9, -2.6), stashName: 'the truck bed' });
+  }
+
+  function buildWindmill(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw);
+    b.box(7.2, 1.0, 7.2, 0, -0.35, 0, PLINTH, 0, 0, 0, 0.15);
+    b.cyl(2.7, 1.8, 8.2, 0, 4.1, 0, C(0.62, 0.59, 0.52), 0, 0, 0, 10, 0.2);
+    for (let k = 0; k < 3; k++) b.box(0.55, 0.65, 0.12, 0, 3.0 + k * 2.2, 2.6 - k * 0.45, WOODD, 0, 0, 0, 0.1);
+    b.box(1.2, 2.3, 0.2, 0, 1.15, 2.7, WOODD, 0, 0, 0, 0.15);
+    b.cone(2.4, 2.5, 0, 9.4, 0, C(0.38, 0.28, 0.18), 0, 0, 0, 10, 0.2);
+    b.cyl(0.35, 0.35, 1.0, 0, 8.4, 2.2, IRON, Math.PI / 2, 0, 0, 8, 0.1);
+    b.sph(1.6, 0.12, 0.8, 0.8, 0.3, 2.4, MOSS, 0.3);
+    const q = F(0, 0);
+    addCollider(q.x, q.z, 2.5, 8);
+    const g = new T.Group();
+    const m = placeMesh(b, e.x, e.z, e.yaw, e.h);
+    // the sails: four arms with cross-bars on a hub, turned by the wind
+    const sb = new Bld();
+    for (let k = 0; k < 4; k++) {
+      const a = (k * Math.PI) / 2 + 0.4,
+        ux = -Math.sin(a),
+        uy = Math.cos(a);
+      sb.box(0.34, 7.4, 0.12, ux * 3.8, uy * 3.8, 0, C(0.5, 0.38, 0.24), 0, a, 0, 0.2);
+      for (let j = 1; j <= 5; j++)
+        sb.box(1.5, 0.08, 0.1, ux * (0.7 + j * 1.15) - uy * 0.5, uy * (0.7 + j * 1.15) + ux * 0.5, 0.02, C(0.64, 0.58, 0.46), 0, a, 0, 0.2);
+    }
+    sb.cyl(0.4, 0.4, 0.5, 0, 0, 0.1, IRON, Math.PI / 2, 0, 0, 8, 0.1);
+    const sails = sb.mesh();
+    const c = Math.cos(e.yaw),
+      sn = Math.sin(e.yaw);
+    g.position.set(e.x + 2.55 * sn, e.h + 8.4, e.z + 2.55 * c);
+    g.rotation.y = e.yaw;
+    g.add(sails);
+    scene.add(g);
+    propFar(m, e.x, e.z, 520);
+    propFar(g, e.x, e.z, 520);
+    WINDMILLS.push({ g: sails, a: 0.4, t: game.time });
+    landmark('windmill', e.x, e.z, 'Old windmill', 0, { lore: 'The sails still turn, grinding nothing. Flour has dried in the cracks of the floor, and so has something darker.', inspect: true });
+  }
+
+  function buildGraveyard(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw),
+      GR = C(0.5, 0.5, 0.47);
+    b.box(10.5, 0.08, 8.5, 0, 0.04, 0, C(0.3, 0.3, 0.22), 0, 0, 0, 0.3);
+    // iron fence with a gap, spear points on the posts
+    for (let t = -5; t <= 5; t += 1.0)
+      for (const z of [-4.2, 4.2]) {
+        if (z > 0 && Math.abs(t) < 0.9) continue;
+        b.box(0.07, 1.4, 0.07, t, 0.7, z, IRON, 0, 0, 0, 0.15);
+        b.cone(0.07, 0.2, t, 1.5, z, IRON, 0, 0, 0, 4, 0.1);
+      }
+    for (let t = -4; t <= 4; t += 1.0)
+      for (const x of [-5.2, 5.2]) {
+        b.box(0.07, 1.4, 0.07, x, 0.7, t, IRON, 0, 0, 0, 0.15);
+        b.cone(0.07, 0.2, x, 1.5, t, IRON, 0, 0, 0, 4, 0.1);
+      }
+    for (const z of [-4.2, 4.2]) b.box(10.4, 0.05, 0.05, 0, 1.1, z, IRON, 0, 0, 0, 0.1);
+    for (const x of [-5.2, 5.2]) b.box(0.05, 0.05, 8.4, x, 1.1, 0, IRON, 0, 0, 0, 0.1);
+    // headstones in two rows, some leaning, and a cross
+    for (let r = 0; r < 2; r++)
+      for (let i = 0; i < 4; i++) {
+        const x = -3.6 + i * 2.4 + RG() * 0.5,
+          z = -2.2 + r * 2.6;
+        if (r === 1 && i === 2) {
+          b.box(0.12, 1.3, 0.12, x, 0.65, z, WOOD, 0, 0, 0, 0.2);
+          b.box(0.7, 0.12, 0.12, x, 1.0, z, WOOD, 0, 0, 0, 0.2);
+          continue;
+        }
+        b.box(0.6, 0.95, 0.14, x, 0.48, z, GR, 0, (RG() - 0.5) * 0.25, 0, 0.25);
+        b.cyl(0.3, 0.3, 0.14, x, 0.95, z, GR, Math.PI / 2, 0, 0, 8, 0.25);
+        b.box(0.7, 0.05, 1.4, x, 0.05, z + 0.8, C(0.34, 0.3, 0.2), 0, 0, 0, 0.3);
+        const q = F(x, z);
+        addCollider(q.x, q.z, 0.35, 1.0);
+      }
+    // a dead tree in the corner
+    b.cyl(0.3, 0.14, 4.2, 3.6, 2.1, 2.6, C(0.34, 0.3, 0.26), 0, 0, 0.05, 6, 0.1);
+    for (const [a, h2, l] of [[0.6, 3.2, 1.6], [2.4, 3.6, 1.3], [4.0, 2.6, 1.0]])
+      b.between([3.6, h2, 2.6], [3.6 + Math.cos(a) * l, h2 + 0.8, 2.6 + Math.sin(a) * l], 0.07, 0.03, C(0.34, 0.3, 0.26), 5, 0.1);
+    {
+      const q = F(3.6, 2.6);
+      addCollider(q.x, q.z, 0.4, 4);
+    }
+    placeProp(b, e, 380);
+    landmark('graveyard', e.x, e.z, 'Ranger graves', 20, {
+      lore: 'Eight stones and a wooden cross. The newest has no name yet, only a date, and under it: "the ridge pack, again".',
+      inspect: true
+    });
+  }
+
+  function buildBlind(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw);
+    for (const [x, z] of [[-1.0, -1.0], [1.0, -1.0], [-1.0, 1.0], [1.0, 1.0]]) {
+      b.between([x * 1.15, 0, z * 1.15], [x, 2.5, z], 0.11, 0.09, WOODD, 6, 0.15);
+      const q = F(x * 1.1, z * 1.1);
+      addCollider(q.x, q.z, 0.22, 2.5);
+    }
+    b.box(2.5, 0.14, 2.5, 0, 2.5, 0, WOOD, 0, 0, 0, 0.2);
+    for (const [x, z, w, d] of [[0, -1.2, 2.5, 0.1], [-1.2, 0, 0.1, 2.5], [1.2, 0, 0.1, 2.5]]) b.box(w, 0.9, d, x, 3.05, z, C(0.34, 0.3, 0.2), 0, 0, 0, 0.25);
+    for (const x of [-1.2, 1.2]) b.box(0.1, 1.8, 0.1, x, 3.4, 1.2, WOODD, 0, 0, 0, 0.2);
+    b.box(2.9, 0.08, 2.9, 0, 4.3, 0, C(0.3, 0.34, 0.22), 0, 0, 0.04, 0.3);
+    for (let i = 0; i < 7; i++) b.box(0.7, 0.06, 0.08, 1.4, 0.25 + i * 0.36, 1.35, WOOD, 0, 0, 0, 0.2);
+    for (const x of [1.05, 1.75]) b.box(0.07, 2.6, 0.07, x, 1.3, 1.35, WOODD, 0, 0, 0.03, 0.2);
+    b.box(0.5, 0.3, 0.3, -1.6, 0.18, 1.6, C(0.32, 0.36, 0.28), 0.4, 0, 0, 0.1);
+    placeProp(b, e, 340);
+    landmark('blind', e.x, e.z, 'Hunting blind', 0, { stash: F(-1.6, 1.6), stashName: 'the ammunition tin' });
+  }
+
+  const CAMP_LORE = [
+    'The ash is cold and rain-packed. Three bedrolls, one backpack, and a map with a ring drawn round the nest: someone planned this trip.',
+    'A tin cup, still on the stones, and a pair of binoculars hung on the tent pole. They were not left; they were dropped.',
+    'The fire ring is neat, the way a ranger leaves it. The tent is slashed from the top down, in three long cuts.'
+  ];
+  function buildCamp(e, v) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw);
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * TAU;
+      b.sph(0.2, 0.15, 0.2, Math.cos(a) * 0.75, 0.12, Math.sin(a) * 0.75, C(0.42, 0.4, 0.37), 0.25);
+    }
+    b.cyl(0.6, 0.6, 0.04, 0, 0.03, 0, SOOT, 0, 0, 0, 10, 0);
+    for (let i = 0; i < 3; i++)
+      b.between([Math.cos(i * 2) * 0.45, 0.12, Math.sin(i * 2) * 0.45], [Math.cos(i * 2 + 3) * 0.1, 0.18, Math.sin(i * 2 + 3) * 0.1], 0.07, 0.06, C(0.1, 0.09, 0.08), 6, 0.1);
+    for (let i = 0; i < 3; i++) {
+      const a = i * 2.1 + 0.5;
+      b.cyl(0.17, 0.17, 1.5, Math.cos(a) * 1.9, 0.18, Math.sin(a) * 1.9, WOODD, Math.PI / 2, -a + Math.PI / 2, 0, 7, 0.2);
+    }
+    // a tent with its side slashed open, a pack, a pot on a tripod
+    b.box(2.5, 0.05, 1.7, -3.2 + 0.28, 0.62, -1.0 - 0.3, CANV, 0.3, 0, 0.95, 0.25);
+    b.box(2.5, 0.05, 1.7, -3.2 - 0.28, 0.62, -1.0 + 0.3, CANV, 0.3, 0, -0.95, 0.25);
+    b.box(0.07, 1.3, 0.07, -3.2 + 1.2 * Math.cos(0.3), 0.65, -1.0 - 1.2 * Math.sin(0.3), WOODD, 0, 0, 0, 0.1);
+    b.box(0.07, 1.3, 0.07, -3.2 - 1.2 * Math.cos(0.3), 0.65, -1.0 + 1.2 * Math.sin(0.3), WOODD, 0, 0, 0, 0.1);
+    b.box(0.5, 0.4, 0.3, 2.5, 0.25, -1.0, C(0.4, 0.3, 0.18), 0.6, 0, 0, 0.1);
+    for (const a of [0, 2.1, 4.2]) b.between([Math.cos(a) * 0.6 + 2.4, 0, Math.sin(a) * 0.6 + 2.0], [2.4, 1.2, 2.0], 0.025, 0.025, IRON, 4, 0.1);
+    b.cyl(0.18, 0.15, 0.22, 2.4, 0.95, 2.0, IRON, 0, 0, 0, 8, 0.1);
+    {
+      const q = F(-3.2, -1.0);
+      addCollider(q.x, q.z, 0.9, 0.9, true);
+    }
+    placeProp(b, e, 300);
+    landmark('camp', e.x, e.z, 'Abandoned camp', 0, { lore: CAMP_LORE[v % 3], inspect: true, stash: v % 3 === 1 ? F(2.5, -1.0) : undefined, stashName: 'the pack' });
+  }
+
+  function buildField(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw);
+    b.box(10.5, 0.1, 8.5, 0, 0.0, 0, C(0.26, 0.2, 0.12), 0, 0, 0, 0.2);
+    for (let r = 0; r < 6; r++) {
+      b.box(10, 0.1, 0.5, 0, 0.1, -3.3 + r * 1.3, C(0.2, 0.15, 0.09), 0, 0, 0, 0.15);
+      for (let i = 0; i < 11; i++) {
+        if (RG() < 0.15) continue;
+        b.cone(0.18, 0.55 + RG() * 0.5, -4.6 + i * 0.92, 0.35, -3.3 + r * 1.3, C(0.46 + RG() * 0.2, 0.52, 0.2), 0, 0, 0, 5, 0.2);
+      }
+    }
+    for (let t = -5; t <= 5; t += 1.25) {
+      for (const z of [-4.4, 4.4]) {
+        if (z > 0 && Math.abs(t) < 1.3) continue;
+        b.box(0.1, 1.1, 0.1, t, 0.55, z, WOODD, 0, 0, 0, 0.2);
+      }
+    }
+    for (let t = -4; t <= 4; t += 1.25)
+      for (const x of [-5.3, 5.3]) b.box(0.1, 1.1, 0.1, x, 0.55, t, WOODD, 0, 0, 0, 0.2);
+    for (const z of [-4.4, 4.4]) b.box(10.5, 0.06, 0.06, 0, 0.85, z, WOOD, 0, 0, 0, 0.2);
+    for (const x of [-5.3, 5.3]) b.box(0.06, 0.06, 8.8, x, 0.85, 0, WOOD, 0, 0, 0, 0.2);
+    // the scarecrow
+    b.box(0.1, 2.2, 0.1, 0.4, 1.1, 0.3, WOODD, 0, 0.08, 0, 0.1);
+    b.box(1.6, 0.08, 0.08, 0.4, 1.7, 0.3, WOODD, 0, 0, 0.12, 0.1);
+    b.sph(0.24, 0.27, 0.24, 0.4, 2.3, 0.3, C(0.66, 0.58, 0.4), 0.2);
+    b.cyl(0.42, 0.42, 0.06, 0.4, 2.55, 0.3, C(0.3, 0.22, 0.14), 0, 0, 0, 9, 0.2);
+    b.cyl(0.24, 0.24, 0.28, 0.4, 2.7, 0.3, C(0.3, 0.22, 0.14), 0, 0, 0, 9, 0.2);
+    b.box(0.5, 0.8, 0.22, 0.4, 1.3, 0.3, C(0.5, 0.36, 0.22), 0, 0, 0.05, 0.25);
+    {
+      const q = F(0.4, 0.3);
+      addCollider(q.x, q.z, 0.3, 2.4);
+    }
+    placeProp(b, e, 340);
+  }
+
+  function buildArch(e) {
+    const b = new Bld(),
+      F = frameOf(e.x, e.z, e.yaw),
+      ST = C(0.5, 0.49, 0.45);
+    for (const sx of [-1, 1]) {
+      b.box(0.9, 3.6, 0.9, sx * 2.2, 1.8, 0, ST, 0, 0, 0, 0.22);
+      b.box(1.2, 0.35, 1.2, sx * 2.2, 0.18, 0, C(0.44, 0.43, 0.4), 0, 0, 0, 0.2);
+      const q = F(sx * 2.2, 0);
+      addCollider(q.x, q.z, 0.6, 3.6);
+    }
+    // the arch itself, a ring of blocks with the top two fallen
+    for (let i = 0; i < 9; i++) {
+      const a = Math.PI * (i / 8);
+      if (i === 3 || i === 4) continue;
+      b.box(0.78, 0.7, 0.95, Math.cos(a) * 2.2, 3.7 + Math.sin(a) * 1.7, 0, ST, 0, a - Math.PI / 2, 0, 0.2);
+    }
+    b.box(0.8, 0.9, 1.1, -1.0, 0.4, 2.0, ST, 0.5, 0.3, 0, 0.2);
+    b.box(0.8, 0.9, 1.1, 0.7, 0.35, 1.6, ST, -0.3, -0.2, 0.3, 0.2);
+    b.sph(0.8, 0.12, 0.5, 2.2, 3.75, 0, MOSS, 0.3);
+    placeProp(b, e, 320);
+    landmark('arch', e.x, e.z, 'Ruined gateway', 0, {
+      lore: 'An arch with nothing on either side of it. The reserve is older than the rangers, and the rangers knew it.',
+      inspect: true
+    });
+  }
+
+  // the new statue shapes
+  function statueExtra(b, type, st, MOSSC) {
+    if (type === 'raptor') {
+      // a stone raptor, crouched on its plinth with its jaws open
+      b.sph(0.5, 0.42, 0.95, 0, 1.75, 0, st, 0.15);
+      b.between([0, 1.95, 0.7], [0, 2.3, 1.2], 0.26, 0.2, st, 6, 0.15);
+      b.sph(0.26, 0.22, 0.52, 0, 2.38, 1.5, st, 0.15);
+      b.sph(0.2, 0.1, 0.42, 0, 2.12, 1.6, C(0.5, 0.5, 0.46), 0.15);
+      for (let k = 0; k < 4; k++) b.cone(0.035, 0.12, -0.12 + k * 0.08, 2.2, 1.8, C(0.86, 0.84, 0.78), Math.PI, 0, 0, 4, 0.1);
+      b.between([0, 1.8, -0.8], [0, 2.1, -2.4], 0.34, 0.05, st, 6, 0.15);
+      for (const sx of [-1, 1]) {
+        b.between([sx * 0.38, 1.5, -0.1], [sx * 0.42, 0.95, 0.15], 0.16, 0.1, st, 5, 0.15);
+        b.between([sx * 0.45, 1.9, 0.75], [sx * 0.5, 1.5, 1.1], 0.07, 0.05, st, 4, 0.15);
+        b.cone(0.06, 0.3, sx * 0.43, 0.98, 0.45, C(0.84, 0.82, 0.74), Math.PI / 2 + 0.4, 0, 0, 4, 0.1);
+      }
+      b.sph(0.34, 0.1, 0.28, 0.1, 2.15, 0, MOSSC, 0.3);
+    } else if (type === 'obelisk') {
+      b.box(1.0, 3.8, 1.0, 0, 2.8, 0, st, 0.1, 0, 0, 0.18);
+      b.cone(0.7, 0.9, 0, 5.15, 0, C(0.56, 0.55, 0.5), 0, 0.8, 0, 4, 0.15);
+      for (let i = 0; i < 5; i++) b.box(0.5, 0.05, 0.03, 0, 1.6 + i * 0.5, 0.52, C(0.3, 0.3, 0.28), 0.1, 0, 0, 0.1);
+      b.sph(0.4, 0.12, 0.3, 0.3, 1.2, 0.3, MOSSC, 0.3);
+    }
+  }
+
+  /* All the extra places, built in one go from a random stream of their own (so nothing else the seed draws moves). */
+  function buildExtras() {
+    withRNG((SEED_NUM ^ 0x5bd1e995) >>> 0, () => {
+      let hi = 0,
+        ci = 0,
+        ki = 0,
+        ca = 0;
+      for (const e of EXTRA) {
+        if (e.kind === 'safehouse') buildSafehouse(e);
+        else if (e.kind === 'house') buildHouse(e, hi++);
+        else if (e.kind === 'plane') buildPlane(e);
+        else if (e.kind === 'truck') buildTruck(e);
+        else if (e.kind === 'windmill') buildWindmill(e);
+        else if (e.kind === 'graveyard') buildGraveyard(e);
+        else if (e.kind === 'blind') buildBlind(e);
+        else if (e.kind === 'camp') buildCamp(e, ca++);
+        else if (e.kind === 'field') buildField(e);
+        else if (e.kind === 'arch') buildArch(e);
+        else if (e.kind === 'well') {
+          buildWell(e.x, e.z, e.yaw);
+          landmark('well', e.x, e.z, 'Well', 0);
+        } else if (e.kind === 'statue') {
+          buildStatue({ x: e.x, z: e.z, h: e.h, skirt: true }, ['raptor', 'obelisk', 'ranger', 'totem'][ci % 4], 3 + ci);
+          ci++;
+        }
+        ki++;
+      }
+    });
   }
   function treeNear(x, z, r) {
     const ix = Math.floor(x / CELL),
@@ -16346,11 +17555,12 @@ window.__bootInner = async function () {
       const x = rand(-HALF + 120, HALF - 120),
         z = rand(-HALF + 120, HALF - 120),
         hh = heightAt(x, z);
-      if (hh < WATER + 2 || hh > 28 || forestDens(x, z) < 0.5 || nearPOI(x, z, 12)) continue;
+      if (hh < WATER + 2 || hh > 28 || forestDens(x, z) < 0.5 || nearPOI(x, z, 12) || inExtra(x, z, 16)) continue;
       if (treeNear(x, z, 7)) continue;
       buildLog(x, z);
       made++;
     }
+    buildExtras();
     EXPLORE_N = LAND.filter(l => l.discover).length;
   }
 
@@ -16396,7 +17606,16 @@ window.__bootInner = async function () {
       }
     }
   }
+  function updateWindmills() {
+    for (const w of WINDMILLS) {
+      const dt = clamp(game.time - w.t, 0, 0.1);
+      w.t = game.time;
+      w.a += dt * (0.25 + wind.speed * 0.05);
+      w.g.rotation.z = w.a;
+    }
+  }
   function updateFlags() {
+    updateWindmills();
     const t = game.time;
     for (const f of flags) {
       windAt(f.x, f.z, _wf);
@@ -16508,40 +17727,60 @@ window.__bootInner = async function () {
     cam.add(g);
     return g;
   })();
-  const macheteModel = (() => {
+  /* The axe: a long ash handle with a grip wrap, a poll and eye block, and a flared steel bit. Built with the handle along +Y from the hand
+     and the cutting edge facing -Z, so "held up" is the natural pose and a chop is a turn about X. */
+  const axeModel = (() => {
     const g = new T.Group();
-    const steel = new T.MeshStandardMaterial({ color: 0xbfc4c8, roughness: 0.45, metalness: 0.35 }),
-      wood = new T.MeshStandardMaterial({ color: 0x4a3420, roughness: 0.9 });
-    const bladeGeo = new T.BufferGeometry();
-    // a flat blade: wide, slightly swept, tapering to the tip
-    const pts = [0, 0, 0, 0, 0.035, 0, 0, 0.05, -0.3, 0, 0.03, -0.46, 0, 0, -0.48, 0, 0, 0];
-    const P2 = [],
-      N = [];
-    for (let s = 0; s < 2; s++) {
-      const x = s ? -0.002 : 0.002;
-      for (let i = 1; i < 5; i++) {
-        const a = [x, pts[0 * 3 + 1], pts[0 * 3 + 2]],
-          b2 = [x, pts[i * 3 + 1], pts[i * 3 + 2]],
-          c = [x, pts[(i + 1) * 3 + 1], pts[(i + 1) * 3 + 2]];
-        const tri = s ? [a, c, b2] : [a, b2, c];
-        for (const q of tri) {
-          P2.push(q[0], q[1], q[2]);
-          N.push(s ? -1 : 1, 0, 0);
-        }
-      }
-    }
-    bladeGeo.setAttribute('position', new T.Float32BufferAttribute(P2, 3));
-    bladeGeo.setAttribute('normal', new T.Float32BufferAttribute(N, 3));
-    const blade = new T.Mesh(bladeGeo, steel);
-    blade.material.side = T.DoubleSide;
-    g.add(blade);
-    const spine = new T.Mesh(new T.BoxGeometry(0.006, 0.006, 0.46), steel);
-    spine.position.set(0, 0.048, -0.23);
-    g.add(spine);
-    const handle = new T.Mesh(new T.CylinderGeometry(0.014, 0.016, 0.14, 8), wood);
-    handle.rotation.x = Math.PI / 2;
-    handle.position.set(0, 0.012, 0.08);
+    const steel = new T.MeshStandardMaterial({ color: 0x8f989e, roughness: 0.5, metalness: 0.12, flatShading: true }),
+      iron = new T.MeshStandardMaterial({ color: 0x6a6e72, roughness: 0.6, metalness: 0.15 }),
+      wood = new T.MeshStandardMaterial({ color: 0x6b4a2a, roughness: 0.9 }),
+      wrap = new T.MeshStandardMaterial({ color: 0x2a2016, roughness: 1 });
+    const handle = new T.Mesh(new T.CylinderGeometry(0.017, 0.021, 0.8, 8), wood);
+    handle.position.set(0, 0.3, 0);
     g.add(handle);
+    const grip = new T.Mesh(new T.CylinderGeometry(0.0225, 0.0225, 0.2, 8), wrap);
+    grip.position.set(0, -0.03, 0);
+    g.add(grip);
+    const knob = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), wood);
+    knob.position.set(0, -0.11, 0);
+    g.add(knob);
+    const eye = new T.Mesh(new T.BoxGeometry(0.04, 0.125, 0.085), iron);
+    eye.position.set(0, 0.64, 0.005);
+    g.add(eye);
+    // the bit: a flat profile in (y, z), thin, flaring forward from the eye to a curved edge
+    const prof = [
+      [0.585, -0.02],
+      [0.5, -0.095],
+      [0.515, -0.13],
+      [0.575, -0.152],
+      [0.64, -0.158],
+      [0.705, -0.152],
+      [0.765, -0.13],
+      [0.78, -0.095],
+      [0.695, -0.02]
+    ];
+    const P2 = [];
+    const th = 0.007;
+    const tri = (a, b2, c) => P2.push(...a, ...b2, ...c);
+    const cy = 0.64,
+      cz = -0.085;
+    for (let i = 0; i < prof.length; i++) {
+      const A = prof[i],
+        B = prof[(i + 1) % prof.length];
+      tri([th, cy, cz], [th, A[0], A[1]], [th, B[0], B[1]]);
+      tri([-th, cy, cz], [-th, B[0], B[1]], [-th, A[0], A[1]]);
+      tri([th, A[0], A[1]], [-th, A[0], A[1]], [th, B[0], B[1]]);
+      tri([th, B[0], B[1]], [-th, A[0], A[1]], [-th, B[0], B[1]]);
+    }
+    const bg = new T.BufferGeometry();
+    bg.setAttribute('position', new T.Float32BufferAttribute(P2, 3));
+    bg.computeVertexNormals();
+    g.add(new T.Mesh(bg, steel));
+    const poll = new T.Mesh(new T.BoxGeometry(0.036, 0.1, 0.05), iron);
+    poll.position.set(0, 0.64, 0.055);
+    g.add(poll);
+    g.rotation.order = 'ZXY'; // turn the flat of the blade to the player first, then tip it forward, then lean it
+    g.scale.setScalar(0.72);
     g.visible = false;
     g.traverse(o => {
       o.frustumCulled = false;
@@ -16549,10 +17788,29 @@ window.__bootInner = async function () {
     cam.add(g);
     return g;
   })();
+  /* the viewmodel along a swing: [progress, x, y, z, pitch, yaw, roll]. Held up and angled at the ready, drawn back over the shoulder, then
+     chopped down and across, held for a beat, and brought back. */
+  const AXE_KEYS = [
+    [0, 0.34, -0.5, -0.62, -0.55, 1.2, 0.2],
+    [0.3, 0.4, -0.3, -0.42, 0.35, 1.25, 0.35],
+    [0.46, 0.12, -0.4, -0.7, -1.35, 1.0, 0.05],
+    [0.66, 0.1, -0.52, -0.72, -1.5, 1.0, 0.05],
+    [1, 0.34, -0.5, -0.62, -0.55, 1.2, 0.2]
+  ];
+  const _axePose = new Array(6);
+  function axePose(sw) {
+    let i = 0;
+    while (i < AXE_KEYS.length - 2 && sw > AXE_KEYS[i + 1][0]) i++;
+    const a = AXE_KEYS[i],
+      b = AXE_KEYS[i + 1],
+      k = (t => t * t * (3 - 2 * t))(clamp((sw - a[0]) / (b[0] - a[0]), 0, 1));
+    for (let j = 0; j < 6; j++) _axePose[j] = lerp(a[j + 1], b[j + 1], k);
+    return _axePose;
+  }
   function updateGunModel() {
     gunModel.visible = P.weapon === 'rifle';
     pistolModel.visible = P.weapon === 'deagle';
-    macheteModel.visible = P.weapon === 'machete';
+    axeModel.visible = P.weapon === 'axe';
   }
 
   /* =====================================================================
@@ -16601,10 +17859,10 @@ window.__bootInner = async function () {
   <div>Pause / mute<b>P / N</b></div><div>Thermal (scope or binoculars up; comes on by itself at night)<b>Y</b></div>
   <div>Read the ground: tracks, blood<b>Hold V</b></div><div>Throw flare or bait / switch<b>G / X</b></div>
   <div>Tranquilizer darts / live rounds<b>U</b></div><div>Field journal<b>J</b></div>
-  <div>Photo mode<b>K</b></div><div>Rifle / pistol / machete<b>1 / 2 / 3, or the mouse wheel</b></div>
+  <div>Photo mode<b>K</b></div><div>Rifle / pistol / axe<b>1 / 2 / 3, or the mouse wheel</b></div>
   <div>Jeep: get in / out, drive, brake<b>E / W A S D / S</b></div><div>Torch on foot, headlights in the jeep<b>L</b></div>
   <div>Jeep: refuel (jerry can) / repair<b>4 / 5</b></div><div>Pistol sights<b>F or right click</b></div>
-  <div>Swing the machete<b>Fire</b></div><div>Jeep: handbrake<b>Space</b></div>
+  <div>Swing the axe<b>Fire</b></div><div>Jeep: handbrake<b>Space</b></div>
 </div>`;
   // the death sheet: what happened, what to try, what you keep
   function deathLine(rp) {
@@ -16866,7 +18124,7 @@ window.__bootInner = async function () {
       if (!sv || sv.v !== 1 || sv.seed !== seedText || typeof sv.fog !== 'string') return null;
       if (!Array.isArray(sv.towers) || sv.towers.length !== POI.towers.length) return null;
       if (!Array.isArray(sv.nests) || sv.nests.length !== POI.nests.length) return null;
-      if (!Array.isArray(sv.land) || sv.land.length !== LAND.length) return null;
+      if (!Array.isArray(sv.land) || sv.land.length > LAND.length || sv.land.length < 8) return null;
       if (!sv.p || !sv.obj || !sv.jeep || typeof sv.p.x !== 'number' || typeof sv.p.z !== 'number') return null;
       if (!(Date.now() - num(sv.at, 0) < 14 * 86400000)) return null;
       return sv;
@@ -17012,7 +18270,7 @@ window.__bootInner = async function () {
       }
     }, 900);
     if (game.stats.shots === 0 && (first || game.time < 1)) {
-      setTimeout(() => toast(TOUCH.on ? 'The four-squares button holds the map, binoculars, objectives and supplies. Keys appear when you need them.' : 'O opens your objectives and I your supplies. M is the map, Q cycles the tracked objective.'), 1300);
+      setTimeout(() => toast(TOUCH.on ? 'The four-squares button holds the map, binoculars, objectives and supplies. Keys appear when you need them.' : 'O opens your objectives and I your supplies. M is the map, Q cycles the tracked objective (the safehouse is one of them).'), 1300);
       setTimeout(() => toast('Raise the binoculars with B and glass the reserve.'), 7500);
     }
   }
@@ -17504,6 +18762,7 @@ window.__bootInner = async function () {
       game.time += dt;
       updateWind(dt);
       if (st === STATE.PLAY) updatePlayer(rdt, dt);
+      updateSafe();
       updateStealth(rdt);
       updateEcology(rdt);
       updateThermal(rdt);
@@ -17623,7 +18882,17 @@ window.__bootInner = async function () {
       }
     }
   }
+  let moteAcc = 0,
+    moteFlip = false;
   function animateMotes(dt) {
+    if (QP.mob && !TEST) {
+      // a speck of pollen: every other frame is plenty on a phone
+      moteAcc += dt;
+      moteFlip = !moteFlip;
+      if (moteFlip) return;
+      dt = moteAcc;
+      moteAcc = 0;
+    }
     const a = motes.geometry.attributes.position;
     for (let i = 0; i < a.count; i++) {
       let x = a.getX(i) + (wind.x * 0.15 + Math.sin(game.time + i) * 0.2) * dt,
@@ -18926,12 +20195,15 @@ window.__bootInner = async function () {
           });
           note('   landmarks', JSON.stringify(kinds));
           ok(
-            kinds.cabin === 3 && kinds.outpost === 2 && kinds.circle === 1 && kinds.statue === 3 && kinds.cave === 1,
+            kinds.cabin === 3 && kinds.outpost === 2 && kinds.circle === 1 && kinds.statue >= 3 && kinds.cave === 1,
             'all places built: ' + JSON.stringify(kinds)
           );
           ok(kinds.well >= 4, 'wells: ' + kinds.well);
           ok(!!A.CLIFF && kinds.waterfall === 1, 'waterfall exists');
-          ok(A.EXPLORE_N === 8, '8 places to explore (' + A.EXPLORE_N + ')');
+          ok(
+            A.EXPLORE_N >= 8 && A.EXPLORE_N === A.LAND.filter(l => l.discover).length,
+            'places to explore: the eight old ones and the new ' + (A.EXPLORE_N - 8) + ' (' + A.EXPLORE_N + ')'
+          );
           ok(
             A.LAND.every(l => A.heightAt(l.x, l.z) > A.WATER - 0.5 || l.kind === 'waterfall'),
             'places are on dry land'
@@ -18996,7 +20268,7 @@ window.__bootInner = async function () {
           }
           // ---------- rocks, logs and trees: solid
           ok(
-            A.TX.length > 9000 * (A.QP.density.trees / 7600) * 0.95,
+            A.TX.length > (9000 - 0.2 * A.QP.density.trees) * (A.QP.density.trees / 7600) * 0.95,
             'colliders: ' + A.TX.length + ' (trees, stumps, rocks, logs, ruins)'
           );
           // ---------- bridges
@@ -19534,19 +20806,20 @@ window.__bootInner = async function () {
           vic.x = 25;
           vic.z = 15;
           vic.y = A.heightAt(25, 15);
+          vic.g.position.set(25, vic.y, 15);
           kill(vic, 'head');
           const n0 = A.dinos.length,
-            y0 = vic.g.position.y,
             col0 = vic.parts.mats[0].color.r;
           sec(2);
-          const early = vic.g.scale.y;
+          const early = vic.g.scale.y,
+            rest = vic.g.position.y;
           sec(10);
           const mid = { sy: vic.g.scale.y, r: vic.parts.mats[0].color.r };
           sec(10);
-          const late = { sink: y0 - vic.g.position.y, op: vic.parts.mats[0].opacity };
+          const late = { sink: rest - vic.g.position.y, op: vic.parts.mats[0].opacity };
           ok(early > 0.97, 'for the first seconds the kill is intact');
           ok(
-            mid.sy < 0.85 && mid.r < col0 - 0.02,
+            mid.sy < 0.96 && mid.r < col0 - 0.02,
             'then it darkens and deflates (height ' +
               mid.sy.toFixed(2) +
               ', colour ' +
@@ -20214,7 +21487,7 @@ window.__bootInner = async function () {
         }
       ],
       [
-        'Steering, bones, thermal depth, pistol, machete and the jeep',
+        'Steering, bones, thermal depth, pistol, axe and the jeep',
         function () {
           const P = A.P,
             E = A.ENV,
@@ -20382,7 +21655,7 @@ window.__bootInner = async function () {
             kill(find('rex'), 'body', W.deagle, 455) >= 10,
             'a tyrannosaur laughs at it (' + kill(find('rex'), 'body', W.deagle, 455) + ' hits)'
           );
-          ok(kill(find('raptor'), 'body', W.machete, 0) === 4, 'the machete kills a raptor in 4 swings');
+          ok(kill(find('raptor'), 'body', W.axe, 0) === 3, 'the axe kills a raptor in 3 swings');
           A.setWeapon('deagle');
           ok(
             P.weapon === 'deagle' && document.getElementById('ammo').textContent === '7',
@@ -20399,22 +21672,23 @@ window.__bootInner = async function () {
           ok(P.reloading, 'the pistol reloads from its own pool');
           sec(2);
           ok(P.pRounds === 7 && P.pReserve === 13, 'seven rounds in, from the pool');
-          A.setWeapon('machete');
+          A.setWeapon('axe');
           sec(0.5);
           {
             const r = A.dinos.filter(d => d.type === 'raptor' && !d.dead && !d.alpha)[1];
             r.hp = r.maxHp;
             r.x = P.x;
-            r.z = P.z - 1.8;
+            r.z = P.z - 0.9; // (a sleeper lies on its side, its body a metre to one side of where its feet were)
             r.y = A.heightAt(r.x, r.z);
             r.g.position.set(r.x, r.y, r.z);
             r.asleep = true;
             r.asleepT = 99;
-            r.deadT = 0;
+            r.deadT = 1;
             P.yaw = 0;
             P.pitch = 0;
             run(2);
             const bs = r.wp.find(s => s.zone === 'body');
+            P.yaw = Math.atan2(-(bs.x - A.cam.position.x), -(bs.z - A.cam.position.z));
             P.pitch = Math.atan2(bs.y - A.cam.position.y, Math.hypot(bs.x - A.cam.position.x, bs.z - A.cam.position.z));
             run(1);
             const h0 = r.hp;
@@ -20425,7 +21699,7 @@ window.__bootInner = async function () {
           {
             const o0 = P.optOn;
             A.toggleOptic('scope');
-            ok(!P.optOn, 'the machete has no scope');
+            ok(!P.optOn, 'the axe has no scope');
             A.setWeapon('deagle');
             A.toggleOptic('scope');
             ok(P.optOn && P.optKind === 'sights', 'the pistol raises its sights instead');
@@ -21320,7 +22594,7 @@ window.__bootInner = async function () {
             );
             const rex = A.dinos.find(d => d.type === 'rex');
             const heats = [];
-            rex.g.traverse(o => {
+            rex.parts.rig.traverse(o => {
               if (o.isMesh) heats.push(o.userData.heat);
             });
             ok(Math.max(...heats) === 1 && Math.min(...heats) < 0.4, 'heads and eyes run hot, horns and teeth cold (' + Math.min(...heats) + ' to ' + Math.max(...heats) + ')');
@@ -22604,12 +23878,12 @@ window.__bootInner = async function () {
             roll(100);
             ok(P.weapon === 'deagle', 'scrolling down goes to the next weapon: the pistol');
             roll(100);
-            ok(P.weapon === 'machete', 'and the machete');
+            ok(P.weapon === 'axe', 'and the axe');
             roll(100);
             ok(P.weapon === 'rifle', 'and round to the rifle again');
             roll(-100);
-            ok(P.weapon === 'machete', 'scrolling up goes back');
-            ok(/Machete/.test(document.querySelector('#wpnStrip .cur').textContent), 'the strip on the screen shows where you are in the list');
+            ok(P.weapon === 'axe', 'scrolling up goes back');
+            ok(/Axe/.test(document.querySelector('#wpnStrip .cur').textContent), 'the strip on the screen shows where you are in the list');
             ok(document.getElementById('wpnStrip').classList.contains('on'), 'for a moment after each change');
             A.setWeapon('rifle');
             // one step per notch, however hard it is spun
@@ -22654,7 +23928,7 @@ window.__bootInner = async function () {
             // 1, 2 and 3 still work and show the strip too
             window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit3', bubbles: true }));
             window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit3', bubbles: true }));
-            ok(P.weapon === 'machete' && /Machete/.test(document.querySelector('#wpnStrip .cur').textContent), '3 still selects the machete');
+            ok(P.weapon === 'axe' && /Axe/.test(document.querySelector('#wpnStrip .cur').textContent), '3 still selects the axe');
             A.setWeapon('rifle');
             // not in the jeep, not when dead, not in a menu
             A.enterJeep();
@@ -22695,7 +23969,7 @@ window.__bootInner = async function () {
             const mid = r => [r.left + r.width / 2, r.top + r.height / 2];
             // where a sector's middle is, for a finger
             const at = w => {
-              const a = (A.WPN && { rifle: 300, deagle: 60, machete: 180 }[w]) * (Math.PI / 180);
+              const a = (A.WPN && { rifle: 300, deagle: 60, axe: 180 }[w]) * (Math.PI / 180);
               return [W.cx + Math.sin(a) * W.R * 0.66, W.cy - Math.cos(a) * W.R * 0.66];
             };
             ok(shown('tWeap') && !document.querySelector('#hubGrid #tWeap'), 'the weapon key is out on the screen by default, not in the menu');
@@ -22721,12 +23995,12 @@ window.__bootInner = async function () {
             pe('pointerdown', 82, x, y, key);
             pe('pointerup', 82, x, y, key);
             ok(W.open && P.weapon === 'deagle', 'a plain tap leaves the wheel open');
-            let [mx, my] = at('machete');
+            let [mx, my] = at('axe');
             pe('pointerdown', 83, mx, my, wheel);
             pe('pointerup', 83, mx, my, wheel);
-            ok(P.weapon === 'machete' && !W.open, 'a second tap on the machete sector picks it');
+            ok(P.weapon === 'axe' && !W.open, 'a second tap on the axe sector picks it');
             // every sector
-            for (const w of ['rifle', 'deagle', 'machete']) {
+            for (const w of ['rifle', 'deagle', 'axe']) {
               A.setWeapon(w === 'rifle' ? 'deagle' : 'rifle');
               [x, y] = mid(kr());
               pe('pointerdown', 84, x, y, key);
@@ -22772,10 +24046,10 @@ window.__bootInner = async function () {
             [x, y] = mid(kr());
             pe('pointerdown', 92, x, y, key);
             ok(W.open, 'and opens the wheel from there');
-            [px, py] = at('machete');
+            [px, py] = at('axe');
             pe('pointermove', 92, px, py, key);
             pe('pointerup', 92, px, py, key);
-            ok(P.weapon === 'machete' && !W.open && !A.HUB.open, 'sliding out of it picks, and the menu closes behind');
+            ok(P.weapon === 'axe' && !W.open && !A.HUB.open, 'sliding out of it picks, and the menu closes behind');
             // the wheel does not stay over a menu
             A.setWeapon('rifle');
             A.wheelOpen(Wd * 0.5, H * 0.5);
@@ -22920,10 +24194,10 @@ window.__bootInner = async function () {
             rmb(true);
             rmb(false);
             ok(!P.optOn, 'and a second tap lowers them');
-            A.setWeapon('machete');
+            A.setWeapon('axe');
             rmb(true);
             rmb(false);
-            ok(!P.optOn, 'with the machete it does nothing');
+            ok(!P.optOn, 'with the axe it does nothing');
             A.setWeapon('rifle');
             rmb(true);
             rmb(false);
@@ -23885,6 +25159,410 @@ window.__bootInner = async function () {
         }
       ],
       [
+        'More to find: the axe, deaths that land, bites you can see coming, a thinner forest, new places and a safehouse',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            keys = A.keys,
+            SET = A.SET;
+          const sec = s => run(Math.round(s * 60));
+          const away = () =>
+            A.dinos.forEach(d => {
+              if (!d.dead) {
+                d.x = 9999;
+                d.z = 9999;
+                if (d.sp.fly) {
+                  d.hx = 9999;
+                  d.hz = 9999;
+                } else d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+                d.calmT = 0;
+                d.invT = 0;
+              }
+            });
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.alive = true;
+            A.setStance(0);
+            A.setWeapon('rifle');
+            away();
+            for (const k in keys) keys[k] = false;
+          };
+          const keepDiff = SET.diff;
+          SET.diff = 'standard';
+          const put = (d, x, z, h) => {
+            d.x = x;
+            d.z = z;
+            d.heading = h || 0;
+            d.y = A.heightAt(x, z);
+            d.g.position.set(x, d.y, z);
+            d.g.rotation.set(0, d.heading, 0);
+            d.speed = 0;
+            d.hp = d.maxHp;
+            d.dead = false;
+            d.deadT = 0;
+            d.asleep = false;
+            d.lied = false;
+            d.landed = false;
+          };
+          const shot = (vx, vz) => ({ w: A.WEAPONS.rifle, v: new T3.Vector3(vx, 0, vz), dist0: new T3.Vector3() });
+          const killNow = (d, vx, vz) => {
+            d.hp = 1;
+            A.hitDino(d, 'body', shot(vx, vz), { x: d.x, y: d.y + 1, z: d.z });
+          };
+          fresh();
+
+          // ---- the axe
+          {
+            const W = A.WEAPONS.axe;
+            ok(W && W.melee && W.name === 'Axe' && !A.WEAPONS.machete, 'an axe stands where the machete was');
+            ok(W.dmg > 42 && W.swing > 0.5, 'a heavier, slower blow than the machete had (' + W.dmg + ' for ' + W.swing + ' s)');
+            ok(
+              document.querySelector('#wpnStrip') && /Axe/.test(document.body.innerHTML) && !/Machete/.test(document.getElementById('hud').innerHTML),
+              'the strip, the wheel and the help say axe'
+            );
+            // a raptor lies in reach; the crosshair is a little to one side of it
+            const r = A.dinos.find(d => d.type === 'raptor' && !d.guard && !d.dead && !d.alpha);
+            P.x = 0;
+            P.z = 0;
+            P.invuln = 999;
+            put(r, 0.2, -2.0, 0);
+            r.asleep = true;
+            r.asleepT = 99;
+            r.deadT = 1;
+            P.yaw = 0;
+            P.pitch = 0;
+            run(2);
+            const bs = r.wp.find(s => s.zone === 'body'),
+              hs = r.wp.find(s => s.zone === 'head');
+            const aimAt = (x, y, z) => {
+              const o = A.cam.position,
+                v = new T3.Vector3(x - o.x, y - o.y, z - o.z).normalize();
+              return v;
+            };
+            const o = A.cam.position;
+            const toBody = aimAt(bs.x, bs.y, bs.z),
+              toHead = aimAt(hs.x, hs.y, hs.z);
+            const hitB = A.axeTarget(o, toBody, W, 1e9),
+              hitH = A.axeTarget(o, toHead, W, 1e9);
+            ok(hitB && hitB.d === r && hitB.zone === 'body', 'aimed at its body, the blow finds the body');
+            ok(hitH && hitH.d === r && hitH.zone === 'head', 'aimed at its head, it finds the head (a head is a head)');
+            // a line that passes a hand's breadth outside the volume still lands; one well outside does not
+            const lateral = (v, m) => {
+              const side = new T3.Vector3(1, 0, 0);
+              return v.clone().addScaledVector(side, m).normalize();
+            };
+            const dist = Math.hypot(bs.x - o.x, bs.y - o.y, bs.z - o.z);
+            ok(A.axeTarget(o, lateral(toBody, (bs.r + 0.2) / dist), W, 1e9), 'a line that just grazes it still lands');
+            ok(!A.axeTarget(o, lateral(toBody, (bs.r + 4) / dist), W, 1e9), 'one that is well off to the side does not');
+            ok(!A.axeTarget(o, toBody, W, 0.4), 'and a trunk or the ground in the way stops it');
+            // and a real swing, from the fire key
+            A.setWeapon('axe');
+            sec(0.5);
+            P.pitch = Math.atan2(bs.y - o.y, Math.hypot(bs.x - o.x, bs.z - o.z));
+            P.yaw = Math.atan2(-(bs.x - o.x), -(bs.z - o.z)) + 0.04;
+            run(1);
+            const h0 = r.hp;
+            A.fire();
+            sec(0.15);
+            ok(r.hp === h0, 'the blade has not landed yet while the axe is still coming round (' + h0 + ')');
+            sec(0.35);
+            ok(r.hp < h0, 'it lands about half-way through the swing (' + h0 + ' -> ' + r.hp.toFixed(0) + ')');
+            A.setWeapon('rifle');
+            r.asleep = false;
+            r.deadT = 0;
+            put(r, 9999, 9999, 0);
+          }
+
+          // ---- a kill goes down on its flank and lies ON the ground
+          fresh();
+          {
+            const lowest = d => {
+              d.g.updateMatrixWorld(true);
+              let low = 1e9;
+              const v = new T3.Vector3();
+              for (const sp of d.parts.spheres) {
+                if (sp.zone !== 'body') continue;
+                v.setFromMatrixPosition(sp.o.matrixWorld);
+                low = Math.min(low, v.y - sp.r - A.heightAt(v.x, v.z));
+              }
+              return low;
+            };
+            for (const type of ['raptor', 'rex']) {
+              const d = A.dinos.find(q => q.type === type && !q.alpha && !q.hatchling && !q.dead);
+              put(d, 30, -20, 0.7);
+              d.fallDir = 1;
+              killNow(d, 0, -800);
+              sec(0.3);
+              const mid = Math.abs(d.g.rotation.z);
+              sec(3.6);
+              const lie = Math.abs(d.g.rotation.z);
+              ok(mid > 0.05 && mid < lie, type + ': it topples (' + mid.toFixed(2) + ' rad at 0.3 s, ' + lie.toFixed(2) + ' at 3 s)');
+              ok(lie > 1.35 && lie < 1.6, type + ': it ends on its side (' + lie.toFixed(2) + ' rad)');
+              ok(d.lieLift > 0.05 && d.g.position.y > d.y + 0.05, type + ': it is lifted so it rests on the ground (' + d.lieLift.toFixed(2) + ' m)');
+              const low = lowest(d);
+              ok(low > -0.12, type + ': no part of the body is under the turf (' + low.toFixed(2) + ' m clear)');
+              ok(d.landed && d.lied, type + ': it has landed and gone still');
+              d.dead = false;
+              put(d, 9999, 9999, 0);
+            }
+            // it is not sunk into the ground half-way through rotting either
+            const d = A.dinos.find(q => q.type === 'raptor' && !q.alpha && !q.hatchling && !q.dead);
+            put(d, 30, -20, 0.7);
+            killNow(d, 0, -800);
+            sec(12);
+            const rotLow = lowest(d);
+            ok(rotLow > -0.2, 'a rotting kill still lies on the ground rather than in it (' + rotLow.toFixed(2) + ' m)');
+            d.dead = false;
+            put(d, 9999, 9999, 0);
+            // a runner carries on a little and does not stop dead
+            const run1 = A.dinos.find(q => q.type === 'raptor' && !q.alpha && !q.hatchling && !q.dead);
+            put(run1, 30, -20, Math.PI / 2);
+            run1.speed = 9;
+            const x0 = run1.x;
+            killNow(run1, 0, -800);
+            sec(1.2);
+            ok(Math.abs(run1.x - x0) > 0.8, 'a runner slides on a couple of metres (' + (run1.x - x0).toFixed(1) + ' m)');
+            run1.dead = false;
+            put(run1, 9999, 9999, 0);
+            // it falls the way the shot pushed it
+            const sd = [];
+            for (const vx of [800, -800]) {
+              const q = A.dinos.find(z => z.type === 'raptor' && !z.alpha && !z.hatchling && !z.dead);
+              put(q, 30, -20, 0);
+              q.fallDir = 1;
+              killNow(q, vx, 0);
+              sd.push(q.fallDir);
+              q.dead = false;
+              put(q, 9999, 9999, 0);
+            }
+            ok(sd[0] !== sd[1], 'a shot from one side drops it the other way than a shot from the opposite side (' + sd.join(' / ') + ')');
+          }
+
+          // ---- a bite: the animal gathers, lunges and snaps, then recovers
+          fresh();
+          {
+            const d = A.dinos.find(q => q.type === 'raptor' && !q.alpha && !q.hatchling && !q.dead);
+            put(d, 40, -40, 0);
+            d.state = 'patrol';
+            d.calmT = 9999;
+            d.awareness = 0;
+            run(90);
+            const rest = { n: d.parts.neck.rotation.x, z: d.parts.rig.position.z, jaw: d.parts.jaw.rotation.x };
+            d.attackT = A.ATK.hit * 0.8;
+            run(10);
+            const wind = { n: d.parts.neck.rotation.x, jaw: d.parts.jaw.rotation.x, rx: d.parts.rig.rotation.x };
+            d.attackT = A.ATK.hit + 0.05;
+            run(8);
+            const snap = { n: d.parts.neck.rotation.x, z: d.parts.rig.position.z };
+            d.attackT = 0;
+            run(90);
+            const after = { n: d.parts.neck.rotation.x, z: d.parts.rig.position.z, jaw: d.parts.jaw.rotation.x };
+            ok(wind.n < rest.n - 0.15 && wind.jaw > rest.jaw + 0.3, 'it draws its head back and opens its jaws before the bite (' + wind.n.toFixed(2) + ' / ' + wind.jaw.toFixed(2) + ')');
+            ok(snap.n > rest.n + 0.2 && snap.z > rest.z + 0.1, 'then drives the head down and the body forward (' + snap.n.toFixed(2) + ', ' + snap.z.toFixed(2) + ' m)');
+            ok(Math.abs(after.n - rest.n) < 0.12 && Math.abs(after.z - rest.z) < 0.05, 'and goes back to how it stood');
+            ok(A.ATK.hit >= 0.34 && A.ATK.end > A.ATK.hit + 0.25, 'the bite lands ' + A.ATK.hit.toFixed(2) + ' s after the wind-up starts: time to see it coming');
+            // the damage still comes at that moment
+            put(d, P.x, P.z - 1.5, 0);
+            d.state = 'hunt';
+            d.awareness = 1.5;
+            d.huntT = 1;
+            d.patience = 40;
+            d.lastX = P.x;
+            d.lastZ = P.z;
+            d.cdT = 0;
+            d.attackT = 0;
+            d.calmT = 0;
+            P.invuln = 0;
+            P.hp = 100;
+            let landed = -1;
+            for (let i = 0; i < 90 && landed < 0; i++) {
+              run(1);
+              if (P.hp < 100) landed = d.attackT;
+            }
+            ok(landed >= A.ATK.hit && landed < A.ATK.hit + 0.1, 'the damage lands at the moment of the snap (attack clock ' + landed.toFixed(2) + ' s)');
+            P.invuln = 999;
+            P.hp = 100;
+            put(d, 9999, 9999, 0);
+            d.state = 'patrol';
+          }
+
+          // ---- a thinner forest
+          {
+            const dens = A.QP.density;
+            let trees = 0;
+            for (let i = 0; i < A.TX.length; i++) if (A.TH[i] >= 8 && !A.TK[i] && A.TR[i] < 1.2) trees++;
+            ok(
+              trees > dens.trees * 0.55 && trees < dens.trees * 0.84,
+              'about a fifth fewer trees than the target of ' + dens.trees + ': ' + trees + ' stand'
+            );
+          }
+
+          // ---- the new places
+          fresh();
+          {
+            const kinds = {};
+            A.EXTRA.forEach(e => (kinds[e.kind] = (kinds[e.kind] || 0) + 1));
+            ok(kinds.safehouse >= 1, 'there is at least one safehouse (' + (kinds.safehouse || 0) + ')');
+            ok(kinds.house >= 2 && kinds.well >= 2 && kinds.statue >= 3, 'farmhouses, more wells and more statues: ' + JSON.stringify(kinds));
+            ok(
+              (kinds.plane || 0) + (kinds.truck || 0) + (kinds.windmill || 0) + (kinds.graveyard || 0) + (kinds.camp || 0) + (kinds.blind || 0) + (kinds.field || 0) + (kinds.arch || 0) >= 8,
+              'and plenty of odd things besides (planes, trucks, a windmill, graves, camps, blinds, fields, arches)'
+            );
+            let bad = [];
+            for (const e of A.EXTRA) {
+              if (A.heightAt(e.x, e.z) < A.WATER + 1) bad.push(e.kind + ' wet');
+              if (Math.hypot(e.x, e.z) < 60) bad.push(e.kind + ' at the camp');
+              for (const t of A.POI.towers) if (Math.hypot(e.x - t.x, e.z - t.z) < 40) bad.push(e.kind + ' by a tower');
+              for (const q of A.EXTRA) if (q !== e && Math.hypot(e.x - q.x, e.z - q.z) < 60) bad.push(e.kind + ' by ' + q.kind);
+            }
+            ok(bad.length === 0, 'every one is on dry ground, clear of the camp, the towers and each other ' + bad.slice(0, 3).join(', '));
+            const L = k => A.LAND.filter(l => l.kind === k);
+            ok(L('house').length === kinds.house && L('house').every(l => l.stash && l.lore && l.discover), 'each farmhouse can be searched and found');
+            ok(L('safehouse').length === kinds.safehouse && L('safehouse').every(l => l.rich), 'each safehouse has a rich locker');
+            ok(A.LAND.some(l => l.kind === 'statue' && /stone raptor/.test(l.name)) && A.LAND.some(l => /obelisk/.test(l.name || '')), 'the new statue shapes are there');
+            // walking up to a farmhouse cupboard offers to search it
+            const h = L('house')[0];
+            P.x = h.stash.x;
+            P.z = h.stash.z + 0.4;
+            P.yaw = 0;
+            run(3);
+            ok(P.act && P.act.k === 'stash' && /cupboard/.test(P.act.label), 'at the cupboard: ' + (P.act && P.act.label));
+            // a windmill's sails turn
+            if (A.WINDMILLS.length) {
+              const a0 = A.WINDMILLS[0].g.rotation.z;
+              sec(2);
+              ok(Math.abs(A.WINDMILLS[0].g.rotation.z - a0) > 0.2, 'the windmill turns in the wind');
+            }
+            // a farmhouse has walls you cannot walk through, and a door you can
+            const e = A.EXTRA.find(q => q.kind === 'house');
+            const c = Math.cos(e.yaw),
+              s = Math.sin(e.yaw);
+            const W2 = (lx, lz) => ({ x: e.x + lx * c + lz * s, z: e.z - lx * s + lz * c });
+            const wall = W2(-3.2, 3.0),
+              door = W2(-0.7, 3.0);
+            let stuck = false;
+            {
+              const st = W2(-3.2, 6),
+                en = W2(-3.2, -1);
+              P.x = st.x;
+              P.z = st.z;
+              const dx = en.x - st.x,
+                dz = en.z - st.z,
+                dl = Math.hypot(dx, dz);
+              for (let i = 0; i < 90; i++) {
+                A.movePlayer((dx / dl) * 3, (dz / dl) * 3, 1 / 60);
+              }
+              stuck = Math.hypot(P.x - en.x, P.z - en.z) > 2.5;
+              P.x = W2(-0.7, 6).x;
+              P.z = W2(-0.7, 6).z;
+              const d2 = W2(-0.7, -1);
+              const ex = d2.x - P.x,
+                ez = d2.z - P.z,
+                el = Math.hypot(ex, ez);
+              for (let i = 0; i < 120; i++) A.movePlayer((ex / el) * 3, (ez / el) * 3, 1 / 60);
+              ok(stuck && Math.hypot(P.x - d2.x, P.z - d2.z) < 2.0, 'the wall stops you and the doorway lets you in');
+            }
+            void wall;
+            void door;
+          }
+
+          // ---- the safehouse
+          fresh();
+          {
+            const S = A.SAFE[0];
+            ok(S && A.SAFE_R > 8, 'a safehouse zone of ' + A.SAFE_R + ' m');
+            if (S) {
+              const rex = A.dinos.find(d => d.type === 'rex' && !d.alpha && !d.hatchling && !d.dead);
+              const ptera = A.dinos.find(d => d.type === 'ptera' && !d.dead);
+              // outside, a rex that has you in its sights keeps hunting
+              P.x = S.x + 60;
+              P.z = S.z;
+              P.alt = 0;
+              P.grounded = true;
+              P.invuln = 999;
+              put(rex, S.x + 60, S.z + 50, 0);
+              rex.state = 'hunt';
+              rex.awareness = 1.5;
+              rex.huntT = 1;
+              rex.patience = 40;
+              rex.lastX = P.x;
+              rex.lastZ = P.z;
+              rex.angryT = 20;
+              run(30);
+              ok(!P.safe && rex.state === 'hunt', 'outside the walls it hunts you');
+              // in the courtyard: it loses the trail and goes off
+              P.x = S.x + 1;
+              P.z = S.z + 1;
+              run(2);
+              ok(P.safe && document.getElementById('safeTag').classList.contains('on'), 'inside, you are safe and the tag says so');
+              ok(rex.state !== 'hunt' && rex.calmT > 20 && rex.angryT === 0, 'the rex has lost your trail and is calm for ' + rex.calmT.toFixed(0) + ' s');
+              // nothing can hurt you
+              P.hp = 100;
+              P.invuln = 0;
+              A.damagePlayer(40, rex);
+              ok(P.hp === 100, 'a bite does nothing in there');
+              // it is held at the edge: put one in the middle and it is moved out
+              put(rex, S.x, S.z + 1, 0);
+              run(20);
+              const rr = Math.hypot(rex.x - S.x, rex.z - S.z);
+              ok(rr >= A.SAFE_R - 0.5, 'animals are held at the edge of the ground (' + rr.toFixed(1) + ' m from the centre)');
+              // a pteranodon that was stooping on you breaks off
+              if (ptera) {
+                ptera.x = S.x + 30;
+                ptera.z = S.z;
+                ptera.hx = ptera.x;
+                ptera.hz = ptera.z;
+                ptera.y = A.heightAt(ptera.x, ptera.z) + 25;
+                ptera.state = 'hunt';
+                ptera.diveT = 0;
+                ptera.awareness = 1.5;
+                run(30);
+                ok(ptera.state !== 'hunt', 'a stooping flyer breaks off');
+              }
+              // leaving does not bring it straight back: it stays calm, and does not notice you at range
+              put(rex, S.x + A.SAFE_R + 1, S.z, 0);
+              rex.calmT = 45;
+              P.x = S.x - 60;
+              P.z = S.z;
+              run(2);
+              ok(!P.safe && !document.getElementById('safeTag').classList.contains('on'), 'outside again, the tag is gone');
+              sec(8);
+              ok(rex.state !== 'hunt', 'and it does not take up the hunt again for a good while (' + rex.state + ')');
+            }
+          }
+
+          // ---- a save from before these places existed still loads
+          {
+            fresh();
+            P.invuln = 999;
+            A.saveGame(true);
+            const key = 'apexRidgeSave';
+            const sv = JSON.parse(localStorage.getItem(key));
+            const had = sv.land.length;
+            sv.land = sv.land.slice(0, 8);
+            localStorage.setItem(key, JSON.stringify(sv));
+            ok(had > 8 && A.readSave() !== null, 'an older save with eight landmarks still loads (now ' + had + ')');
+            sv.land = sv.land.slice(0, 3);
+            localStorage.setItem(key, JSON.stringify(sv));
+            ok(A.readSave() === null, 'but a damaged one does not');
+            localStorage.removeItem(key);
+          }
+          SET.diff = keepDiff;
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
         'Graphics: tiers, simplified distance shapes, terrain tiles, shadows and the frame-rate controller',
         function () {
           const P = A.P,
@@ -23937,7 +25615,8 @@ window.__bootInner = async function () {
               pr.phone.density === A.DENSITY.desktop &&
                 pr.phone.mob &&
                 pr.phone.shadow === pr.high.shadow &&
-                pr.phone.soft &&
+                !pr.phone.soft &&
+                pr.phone.shadowHalf < pr.high.shadowHalf &&
                 pr.phone.aa &&
                 pr.phone.treeCull < pr.high.treeCull &&
                 pr.phone.treeCull >= 500 &&
@@ -24331,7 +26010,7 @@ window.__bootInner = async function () {
                 at(hide * 1.05, 60);
                 ok(d.lod === 2 && !d.g.visible, 'a hidden animal stays hidden until it is clearly bigger');
                 at(hide * 1.4, 60);
-                ok(d.lod === 1 && d.g.visible, 'and then comes back, without its smallest parts');
+                ok((d.lod === 1 || d.lod === 3) && d.g.visible, 'and then comes back, without its smallest parts');
               } else {
                 at(0.00005, 60);
                 ok(d.g.visible && d.lod <= 1, 'a speck is still drawn (' + A.QNAME + ' never hides animals)');
@@ -24549,6 +26228,38 @@ window.__bootInner = async function () {
             }. F3 shows the frame rate.`
           : 'F3 shows the frame rate.';
   }
+  /* A shader program is built the first time something that needs it is drawn. Each kind of plant has a wind shader of its own, so walking
+     into view of a new kind of flower, reed or fern meant a stall of tens of milliseconds on a phone, in the middle of play. So every material
+     in use is brought up once here, while the loading screen is still showing: the plant batches not yet in the scene are put in for the
+     moment of the compile (their own meshes and materials, so the programs match exactly), then taken out again. */
+  function prewarmShaders() {
+    const added = [];
+    const seen = new Set();
+    const want = m => {
+      if (m && m.material && !seen.has(m.material.uuid) && !m.parent) {
+        seen.add(m.material.uuid);
+        scene.add(m);
+        added.push(m);
+      }
+    };
+    for (const c of NAT.chunks) {
+      if (!c.on) want(c.m);
+      if (c.m2) want(c.m2);
+    }
+    try {
+      renderer.compile(scene, cam);
+    } catch (e) {
+      console.warn('shader pre-compile skipped', e);
+    }
+    for (const m of added) scene.remove(m);
+    return added.length;
+  }
+  if (!TEST) {
+    SYNC || (await tick('Preparing the graphics…'));
+    try {
+      prewarmShaders();
+    } catch (e) {}
+  }
   showMenu('start');
   requestAnimationFrame(frame);
 
@@ -24638,7 +26349,7 @@ window.__bootInner = async function () {
     clearSave,
     continueGame,
     toggleMute,
-    swingMachete,
+    swingAxe,
     fireDeagle,
     PISTOL_ZERO,
     dragK,
@@ -24764,6 +26475,17 @@ window.__bootInner = async function () {
     FEAT,
     SITES,
     LAND,
+    ATK,
+    DIE,
+    lieLift,
+    axeTarget,
+    swingAxe,
+    EXTRA,
+    SAFE,
+    SAFE_R,
+    inExtra,
+    updateSafe,
+    WINDMILLS,
     bridgeH,
     get CLIFF() {
       return CLIFF;
