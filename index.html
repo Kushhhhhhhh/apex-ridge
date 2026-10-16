@@ -1314,6 +1314,15 @@ body.replay #replayBars {
 body.jeep #jeepHud {
   display: block;
 }
+/* nothing can be fired from the seat, so no aiming marks over the road (or over the car, in the chase view); and while you drive, the
+   "get out" prompt gives way to the line under the speedometer, which says the same */
+body.jeep #dot,
+body.jeep #spreadRing {
+  display: none;
+}
+body.jmove #prompt {
+  opacity: 0 !important;
+}
 #jeepHud .spd {
   font-size: 34px;
   font-weight: 700;
@@ -1321,6 +1330,29 @@ body.jeep #jeepHud {
 }
 #jeepHud .spd span {
   font-size: 52px;
+}
+#jeepHud .gear {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: -2px 0 3px;
+}
+#jeepHud .gear b {
+  font-size: 18px;
+  min-width: 16px;
+}
+#jeepHud .rpm {
+  width: 120px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.16);
+}
+#jeepHud .rpm i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #8fd27a 0 62%, #e6c75a 62% 84%, #e0623a 84%);
+  background-size: 120px 100%;
 }
 #jeepHud .bars {
   display: flex;
@@ -1797,6 +1829,16 @@ body.assist #tAuto {
   border-color: rgba(255, 170, 150, 0.7);
 }
 body.jeep #tBrake {
+  display: flex;
+}
+#tCam {
+  display: none;
+  right: calc(12vmin + env(safe-area-inset-right, 0px));
+  bottom: calc(10vmin + env(safe-area-inset-bottom, 0px));
+  width: 10vmin;
+  height: 10vmin;
+}
+body.jeep #tCam {
   display: flex;
 }
 body.jeep #tJump,
@@ -2799,7 +2841,7 @@ button#btn2:hover {
   <div id="toast"></div>
   <div id="safeTag">SAFEHOUSE · nothing can reach you here</div>
   <div id="wpnStrip"></div>
-  <div id="jeepHud"><div class="spd"><span id="jSpd">0</span> km/h</div><div class="bars"><div class="lbl" id="jFuelLbl">FUEL</div><div class="bar"><i id="jFuel"></i></div><div class="lbl">BODY</div><div class="bar"><i id="jHp"></i></div></div><div class="hint" id="jHint"></div></div>
+  <div id="jeepHud"><div class="spd"><span id="jSpd">0</span> km/h</div><div class="gear"><b id="jGear">N</b><span class="rpm"><i id="jRpm"></i></span></div><div class="bars"><div class="lbl" id="jFuelLbl">FUEL</div><div class="bar"><i id="jFuel"></i></div><div class="lbl">BODY</div><div class="bar"><i id="jHp"></i></div></div><div class="hint" id="jHint"></div></div>
   <div id="thermalTint"></div><div id="thermalLbl">THERMAL</div>
   <div id="seedTag"></div>
   <div id="perf"></div>
@@ -2866,6 +2908,7 @@ button#btn2:hover {
   </button>
   <button class="tb" id="tUse" data-lbl="Use" aria-label="Use: repair, take, get in" title="Use"><svg class="ic" viewBox="0 0 24 24"><path d="M9 11.5V5.2a1.6 1.6 0 0 1 3.2 0V11"/><path d="M12.2 10.5a1.6 1.6 0 0 1 3.2 0v1.3a1.6 1.6 0 0 1 3.2 0V16a6 6 0 0 1-6 6h-1.2a6 6 0 0 1-4.6-2.1l-2.4-3.9a1.7 1.7 0 0 1 2.5-2.3L9 15.6"/></svg></button>
   <button class="tb" id="tJump" data-lbl="Jump" aria-label="Jump" title="Jump"><svg class="ic" viewBox="0 0 24 24"><path d="M12 18.5V5"/><path d="M6 11l6-6 6 6"/><path d="M6.5 21.5h11"/></svg></button>
+  <button class="tb" id="tCam" data-lbl="View" aria-label="Chase view" title="Chase view"><svg class="ic" viewBox="0 0 24 24"><path d="M3 15.5h13l3-4h2v4"/><circle cx="7" cy="16.5" r="2"/><circle cx="16" cy="16.5" r="2"/><path d="M8 11V6h5l2 5"/></svg></button>
   <button class="tb" id="tBrake" data-lbl="Brake" aria-label="Handbrake" title="Handbrake"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.2v5.6M12 16.4h.01"/></svg></button>
   <button class="tb sm" id="tHub" data-lbl="Menu" aria-label="Controls menu" title="Menu"><svg class="ic" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.6"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.6"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.6"/></svg></button>
   <button class="tb sm" id="tObj" data-lbl="Briefing" aria-label="Objectives" title="Objectives"><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="17" rx="2"/><path d="M9 4.5v-1h6v1M8.6 10h6.8M8.6 14h6.8M8.6 18h3.8"/></svg></button>
@@ -8550,20 +8593,57 @@ window.__bootInner = async function () {
         ff.connect(fg);
         fg.connect(this.out);
         sf.start();
-        // engine
+        // engine: a four-cylinder's firing note with a growl at half the speed under it, through a filter that opens with the throttle
         const eo = c.createOscillator();
         eo.type = 'sawtooth';
         eo.frequency.value = 40;
-        const ef = c.createBiquadFilter();
+        const eo2 = c.createOscillator();
+        eo2.type = 'square';
+        eo2.frequency.value = 20;
+        const e2g = c.createGain();
+        e2g.gain.value = 0.5;
+        const ef = (this.engF = c.createBiquadFilter());
         ef.type = 'lowpass';
         ef.frequency.value = 420;
+        ef.Q.value = 2.2;
         const eg = (this.engG = c.createGain());
         eg.gain.value = 0;
         this.engO = eo;
+        this.engO2 = eo2;
         eo.connect(ef);
+        eo2.connect(e2g);
+        e2g.connect(ef);
         ef.connect(eg);
         eg.connect(this.out);
         eo.start();
+        eo2.start();
+        // the tyres: a road rumble that grows with speed, and a squeal when they slide
+        const ts = c.createBufferSource();
+        ts.buffer = nb;
+        ts.loop = true;
+        const tf = c.createBiquadFilter();
+        tf.type = 'bandpass';
+        tf.frequency.value = 320;
+        tf.Q.value = 0.7;
+        const tg = (this.tyreG = c.createGain());
+        tg.gain.value = 0;
+        ts.connect(tf);
+        tf.connect(tg);
+        tg.connect(this.out);
+        ts.start();
+        const ks = c.createBufferSource();
+        ks.buffer = nb;
+        ks.loop = true;
+        const kf = c.createBiquadFilter();
+        kf.type = 'bandpass';
+        kf.frequency.value = 1900;
+        kf.Q.value = 6;
+        const kg = (this.skidG = c.createGain());
+        kg.gain.value = 0;
+        ks.connect(kf);
+        kf.connect(kg);
+        kg.connect(this.out);
+        ks.start();
         // rain bed
         const rs = c.createBufferSource();
         rs.buffer = nb;
@@ -8742,10 +8822,28 @@ window.__bootInner = async function () {
       this.noise({ dur: 4.2, gain: 1.1 * near, type: 'lowpass', f0: 240, f1: 38, atk: 0.12, rev: 1.3, q: 0.6 });
       this.tone({ type: 'sine', f0: 60, f1: 26, dur: 2.6, gain: 0.5 * near, atk: 0.3 });
     },
-    setEngine(level, revs) {
+    setEngine(level, revs, o) {
       if (!this.engG) return;
-      this.engG.gain.value = level * 0.09;
-      this.engO.frequency.value = 38 + revs * 75 + (level > 0.3 ? 6 : 0);
+      const rpm = o && o.rpm ? o.rpm : 800 + revs * 3400,
+        load = o ? o.load || 0 : level,
+        f = Math.max(12, rpm / 30), // the firing frequency of a four-cylinder
+        t = this.c.currentTime;
+      this.engO.frequency.setTargetAtTime(f, t, 0.03);
+      if (this.engO2) this.engO2.frequency.setTargetAtTime(f / 2, t, 0.03);
+      if (this.engF) this.engF.frequency.setTargetAtTime(260 + 1300 * load + rpm * 0.08, t, 0.05);
+      this.engG.gain.setTargetAtTime(level * 0.1, t, 0.05);
+      if (this.tyreG) this.tyreG.gain.setTargetAtTime(o ? (o.road || 0) * 0.07 : 0, t, 0.08);
+      if (this.skidG) this.skidG.gain.setTargetAtTime(o ? (o.skid || 0) * 0.09 : 0, t, 0.05);
+    },
+    shift() {
+      this.noise({ dur: 0.06, gain: 0.12, type: 'bandpass', f0: 900, q: 2 });
+      this.tone({ type: 'square', f0: 120, f1: 80, dur: 0.08, gain: 0.04, lp: 700 });
+    },
+    crank() {
+      // the starter turning it over, then the engine catching
+      for (let i = 0; i < 4; i++) this.tone({ type: 'square', f0: 95, f1: 120, dur: 0.11, gain: 0.06, lp: 700, delay: i * 0.12 });
+      this.noise({ dur: 0.5, gain: 0.07, type: 'lowpass', f0: 600, f1: 300 });
+      this.tone({ type: 'sawtooth', f0: 70, f1: 32, dur: 0.5, gain: 0.12, lp: 500, delay: 0.48 });
     },
     setRain(level) {
       if (this.rainG) this.rainG.gain.value = (P.inCave ? 0.15 : 1) * level * 0.1;
@@ -10715,7 +10813,7 @@ window.__bootInner = async function () {
   };
   // aim assist, fire on release and Relaxed are on by default on a touch screen
   // (fps: 0 is as fast as the screen goes; a phone is held to 60 by default, which saves its battery on a 90 or 120 Hz screen)
-  const SET = { sens: 1, inv: false, aid: true, assist: COARSE, fireUp: COARSE, rescope: true, diff: COARSE ? 'relaxed' : 'standard', fps: COARSE ? 60 : 0 };
+  const SET = { sens: 1, inv: false, aid: true, assist: COARSE, fireUp: COARSE, rescope: true, diff: COARSE ? 'relaxed' : 'standard', fps: COARSE ? 60 : 0, jcam: 'seat' };
   const DIFF = () => DIFFS[SET.diff] || DIFFS.standard;
   try {
     const s = JSON.parse(localStorage.getItem('apexRidgeSet') || '{}');
@@ -10728,6 +10826,7 @@ window.__bootInner = async function () {
       if (s.rescope !== undefined) SET.rescope = !!s.rescope;
       if (typeof s.diff === 'string' && DIFFS[s.diff]) SET.diff = s.diff;
       if ([0, 30, 60].includes(+s.fps) && s.fps !== null && s.fps !== '') SET.fps = +s.fps;
+      if (s.jcam === 'seat' || s.jcam === 'chase') SET.jcam = s.jcam;
     }
   } catch (e) {}
   const assistClass = () => document.body.classList.toggle('assist', !!SET.assist);
@@ -10899,7 +10998,8 @@ window.__bootInner = async function () {
         cycleTrack();
         break;
       case 'KeyC':
-        setStance(P.stance === 1 ? 0 : 1);
+        if (P.inJeep) toggleJeepView();
+        else setStance(P.stance === 1 ? 0 : 1);
         break;
       case 'KeyZ':
         setStance(P.stance === 2 ? 0 : 2);
@@ -11394,6 +11494,7 @@ window.__bootInner = async function () {
         keys.Space = false;
       }
     );
+    btn('tCam', () => toggleJeepView());
     btn('tKit', () => useKit());
     btn('tLight', () => toggleLight());
     btn('tTherm', () => toggleThermal());
@@ -11552,6 +11653,7 @@ window.__bootInner = async function () {
     tLight: { name: 'Light (torch, headlights)', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
     tTherm: { name: 'Thermal sight (optic raised)', def: 'auto', opts: ['auto', 'screen', 'menu', 'hide'] },
     tBrake: { name: 'Handbrake (jeep)', def: 'auto', opts: ['auto'] },
+    tCam: { name: 'Chase view (jeep)', def: 'auto', opts: ['auto'] },
     tMap: { name: 'Map', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tBino: { name: 'Binoculars', def: 'menu', opts: ['menu', 'screen', 'hide'] },
     tTrack: { name: 'Next objective', def: 'menu', opts: ['menu', 'screen', 'hide'] },
@@ -12517,7 +12619,10 @@ window.__bootInner = async function () {
     // a wider view from the driving seat, so the road and the bush either side of it can be seen
     P.jfov += ((P.inJeep ? 1 : 0) - P.jfov) * Math.min(1, rdt * 5);
     if (P.jfov < 0.002) P.jfov = 0;
-    const fov = Math.exp(lerp(Math.log(HIP_FOV + 12 * P.jfov), Math.log(fovBase), e));
+    // and wider still at speed, so you feel it
+    P.jspd = (P.jspd || 0) + ((P.inJeep ? Math.min(1, Math.abs(JEEP.speed) / CONFIG.jeep.maxSpeed) : 0) - (P.jspd || 0)) * Math.min(1, rdt * 2.5);
+    if (P.jspd < 0.002) P.jspd = 0;
+    const fov = Math.exp(lerp(Math.log(HIP_FOV + 12 * P.jfov + 8 * P.jspd * P.jspd), Math.log(fovBase), e));
     if (Math.abs(fov - cam.fov) > 0.001) {
       cam.fov = fov;
       cam.updateProjectionMatrix();
@@ -14765,49 +14870,166 @@ window.__bootInner = async function () {
     yawSeen: 0,
     lookIdle: 0,
     enterT: 0,
-    home: { x: 0, z: 0, heading: 0 }
+    home: { x: 0, z: 0, heading: 0 },
+    gear: 0, // 0 standing, -1 reverse, 1..4
+    rpm: 850,
+    shiftT: 0, // a gear change under way: the power is off for a moment
+    launchT: 0, // pulling away hard: the wheels scrabble
+    drift: 0, // 0..1, how far the handbrake has the back wheels sliding
+    slip: 0, // the angle between where the car points and where it is going
+    vdir: 0, // where it is going
+    exT: 0, // exhaust and dust clocks
+    coughT: 0,
+    brakeK: 0, // brake lamps
+    brakes: [],
+    sway: null, // the spring group the body sits on, and its state (swayS)
+    swayS: null,
+    shell: null,
+    pipe: null,
+    hood: null,
+    glass: null,
+    bars: [],
+    camD: 7.5, // the chase view: how far back, which way, how high
+    camYaw: 0,
+    camY: 0
   };
   const _seatV = new T.Vector3();
+  const GEAR_TOP = [0, 4.6, 8.7, 12.8, 17.6], // the top speed of each forward gear, m/s
+    GEAR_PULL = [1.3, 1.3, 1.1, 0.92, 0.78]; // and how hard it pulls in it (pulling away counts as first)
   function buildJeep() {
+    withRNG(0x1ee7, buildJeepModel); // (its own random stream: the grain in its paint never moves anything else in the seed's world)
+  }
+  function buildJeepModel() {
     const b = new Bld(), // the shell: always drawn
-      cab = new Bld(), // the cab furniture: not drawn from the driver's seat
+      cab = new Bld(), // the cab furniture and the frame over it: not drawn from the driver's seat
       dash = new Bld(), // the dashboard, kept low
       body = 0x6c7a3c,
+      bodyD = 0x56632f,
       dark = 0x2a2d25,
+      black = 0x111214,
       rubber = 0x15161a,
-      steel = 0x9aa0a4;
-    b.box(1.7, 0.5, 3.6, 0, 0.75, 0, body, 0, 0, 0, 0.04); // tub
-    b.box(1.6, 0.1, 1.0, 0, 1.05, -1.15, body, 0, 0, 0, 0.04); // bonnet: low and short, so it does not hide the road
-    b.box(1.5, 0.16, 1.1, 0, 0.98, 1.15, body, 0, 0, 0, 0.04); // rear deck
-    b.box(1.75, 0.12, 0.35, 0, 0.52, -1.9, dark, 0, 0, 0, 0.05); // front bumper
-    b.box(1.75, 0.12, 0.3, 0, 0.52, 1.9, dark, 0, 0, 0, 0.05);
-    // seats
-    for (const sx of [-0.45, 0.45]) {
-      cab.box(0.6, 0.12, 0.6, sx, 1.08, 0.25, dark, 0, 0, 0, 0.03);
-      cab.box(0.6, 0.55, 0.14, sx, 1.4, 0.55, dark, 0, 0, 0.1, 0.03);
+      steel = 0x9aa0a4,
+      chrome = 0xc6cbce;
+    // a tube from p0 to p1. Both ends are kept, so a test can check that each one meets the body or another tube
+    const bars = [],
+      bar = (B, p0, p1, r, col) => {
+        B.between(p0, p1, r, r, col || steel, 8, 0);
+        bars.push([p0, p1]);
+      };
+    // ---- underneath: frame rails, axles and the fuel tank, so it is not hollow seen from low down
+    b.box(1.1, 0.14, 3.5, 0, 0.45, 0.02, dark, 0, 0, 0, 0.03);
+    for (const z of [-1.3, 1.3]) b.cyl(0.07, 0.07, 1.5, 0, 0.4, z, black, 0, 0, Math.PI / 2, 8, 0);
+    b.box(0.7, 0.2, 0.5, -0.1, 0.48, 1.05, black, 0, 0, 0, 0.03);
+    // ---- the tub: an open body with its floor showing, and a lip round the top
+    b.box(1.5, 0.5, 2.62, 0, 0.77, 0.45, body, 0, 0, 0, 0.04);
+    b.box(1.38, 0.02, 2.3, 0, 1.025, 0.47, dark, 0, 0, 0, 0.02);
+    for (const sx of [-0.73, 0.73]) b.box(0.06, 0.05, 2.62, sx, 1.045, 0.45, bodyD, 0, 0, 0, 0.02);
+    b.box(1.5, 0.05, 0.06, 0, 1.045, 1.73, bodyD, 0, 0, 0, 0.02);
+    // ---- bonnet and engine bay, narrower than the wings; the lid a little proud, with its hinge line and catches
+    b.box(1.3, 0.46, 1.14, 0, 0.83, -1.38, body, 0, 0, 0, 0.04);
+    b.box(1.26, 0.05, 1.1, 0, 1.075, -1.37, body, 0, 0, 0, 0.03);
+    b.box(0.04, 0.012, 1.02, 0, 1.104, -1.37, bodyD, 0, 0, 0, 0);
+    for (const sx of [-0.6, 0.6]) b.box(0.05, 0.05, 0.08, sx, 1.03, -1.6, black, 0, 0, 0, 0);
+    b.box(1.5, 0.14, 0.22, 0, 1.05, -0.8, body, 0, 0, 0, 0.03); // the cowl the windscreen stands on
+    // ---- wings over the front wheels (running down to the steps), flared arches over the back ones, mudflaps behind
+    for (const sg of [-1, 1]) {
+      b.box(0.37, 0.05, 1.16, sg * 0.84, 0.93, -1.36, body, 0, 0, 0, 0.03);
+      b.box(0.37, 0.05, 0.42, sg * 0.84, 0.8, -0.63, body, 0, 0, 0.62, 0.03);
+      b.box(0.31, 0.05, 1.02, sg * 0.86, 0.95, 1.3, body, 0, 0, 0, 0.03);
+      b.box(0.05, 0.17, 1.02, sg * 1.0, 0.885, 1.3, bodyD, 0, 0, 0, 0.03);
+      b.box(0.26, 0.04, 1.02, sg * 0.86, 0.6, 0.1, dark, 0, 0, 0, 0.02);
+      b.box(0.3, 0.42, 0.025, sg * 0.86, 0.72, 1.78, black, 0, 0, 0, 0);
+      b.box(0.012, 0.2, 0.66, sg * 0.756, 0.9, -0.22, bodyD, 0, 0, 0, 0); // the door cut-out, a shade darker
     }
-    // windscreen frame and roll bar
-    for (const sx of [-0.78, 0.78]) {
-      cab.cyl(0.03, 0.03, 0.75, sx, 1.65, -0.62, steel, -0.2, 0, 0, 6, 0);
-      cab.cyl(0.035, 0.035, 1.05, sx, 1.8, 0.75, steel, 0, 0, 0, 6, 0);
+    // ---- the face: a slotted grille, round lamps in chrome rims, indicators, a bumper with a winch and tow hooks
+    b.box(0.76, 0.42, 0.03, 0, 0.84, -1.958, bodyD, 0, 0, 0, 0);
+    for (let i = 0; i < 7; i++) b.box(0.055, 0.32, 0.02, -0.3 + i * 0.1, 0.84, -1.975, black, 0, 0, 0, 0);
+    for (const sx of [-0.52, 0.52]) {
+      b.cyl(0.13, 0.13, 0.05, sx, 0.9, -1.96, chrome, Math.PI / 2, 0, 0, 14, 0);
+      b.cyl(0.1, 0.1, 0.05, sx, 0.9, -1.975, 0xfff2c8, Math.PI / 2, 0, 0, 14, 0);
+      b.box(0.11, 0.05, 0.03, sx, 0.71, -1.962, 0xe0952a, 0, 0, 0, 0);
     }
-    cab.cyl(0.03, 0.03, 1.56, 0, 2.0, -0.7, steel, 0, 0, Math.PI / 2, 6, 0);
-    cab.cyl(0.035, 0.035, 1.56, 0, 2.32, 0.75, steel, 0, 0, Math.PI / 2, 6, 0);
-    // dashboard: a low shelf well under the driver's eyes, and the steering column
-    dash.box(1.5, 0.1, 0.3, 0, 1.03, -0.68, dark, 0, 0, 0, 0.03);
-    dash.cyl(0.025, 0.025, 0.3, -0.45, 1.14, -0.38, dark, 0.6, 0, 0, 6, 0);
-    // lights, jerry can, spare wheel
-    for (const sx of [-0.55, 0.55]) b.cyl(0.12, 0.12, 0.08, sx, 0.98, -1.68, 0xfff2c8, Math.PI / 2, 0, 0, 10, 0);
-    b.box(0.3, 0.42, 0.18, 0.55, 1.3, 1.85, 0x9a3b2a, 0, 0, 0, 0.05);
-    b.cyl(0.36, 0.36, 0.22, -0.4, 1.32, 1.92, rubber, Math.PI / 2, 0, 0, 12, 0);
+    b.box(1.82, 0.15, 0.2, 0, 0.56, -2.05, dark, 0, 0, 0, 0.03);
+    for (const sx of [-0.45, 0.45]) b.box(0.1, 0.12, 0.16, sx, 0.56, -1.92, black, 0, 0, 0, 0);
+    b.cyl(0.075, 0.075, 0.5, 0, 0.68, -2.06, black, 0, 0, Math.PI / 2, 8, 0);
+    for (const sx of [-0.62, 0.62]) b.box(0.06, 0.12, 0.08, sx, 0.47, -2.15, steel, 0, 0, 0, 0);
+    // ---- the back: bumper, tail lamps, the spare on its bracket (left), a strapped jerry can (right), and the tailpipe under it all
+    b.box(1.62, 0.13, 0.16, 0, 0.55, 1.86, dark, 0, 0, 0, 0.03);
+    for (const sx of [-0.62, 0.62]) {
+      b.box(0.15, 0.16, 0.02, sx, 0.86, 1.765, black, 0, 0, 0, 0);
+      b.box(0.11, 0.12, 0.02, sx, 0.86, 1.775, 0xb3221c, 0, 0, 0, 0);
+    }
+    b.box(0.14, 0.3, 0.1, -0.25, 1.03, 1.8, dark, 0, 0, 0, 0.02);
+    b.cyl(0.34, 0.34, 0.22, -0.25, 1.2, 1.94, rubber, Math.PI / 2, 0, 0, 16, 0);
+    b.cyl(0.19, 0.19, 0.24, -0.25, 1.2, 1.94, steel, Math.PI / 2, 0, 0, 12, 0.03);
+    b.cyl(0.07, 0.07, 0.26, -0.25, 1.2, 1.94, dark, Math.PI / 2, 0, 0, 8, 0);
+    b.box(0.32, 0.44, 0.17, 0.34, 1.0, 1.84, 0x9a3b2a, 0, 0, 0, 0.05);
+    b.box(0.07, 0.06, 0.05, 0.4, 1.25, 1.84, 0x7a2e20, 0, 0, 0, 0);
+    b.box(0.36, 0.04, 0.19, 0.34, 1.06, 1.84, black, 0, 0, 0, 0);
+    b.cyl(0.045, 0.045, 0.6, 0.5, 0.42, 1.68, black, Math.PI / 2, 0, 0, 8, 0);
+    bar(b, [0.62, 1.035, 1.5], [0.66, 2.55, 1.56], 0.008, black); // a whip aerial
+    // ---- the windscreen: a frame standing on the cowl (the glass goes in it below)
+    const WL0 = [-0.72, 1.12, -0.78],
+      WR0 = [0.72, 1.12, -0.78],
+      WL1 = [-0.72, 1.86, -0.64],
+      WR1 = [0.72, 1.86, -0.64];
+    bar(cab, WL0, WL1, 0.03);
+    bar(cab, WR0, WR1, 0.03);
+    bar(cab, WL1, WR1, 0.03);
+    bar(cab, WL0, WR0, 0.03);
+    // ---- the roll cage: a hoop behind the seats standing on the floor, rails forward to the top of the windscreen, braces back to the corners
+    const RL0 = [-0.66, 1.035, 0.72],
+      RR0 = [0.66, 1.035, 0.72],
+      RL1 = [-0.66, 2.02, 0.72],
+      RR1 = [0.66, 2.02, 0.72],
+      BL = [-0.66, 1.035, 1.58],
+      BR = [0.66, 1.035, 1.58];
+    bar(cab, RL0, RL1, 0.036);
+    bar(cab, RR0, RR1, 0.036);
+    bar(cab, RL1, RR1, 0.036);
+    bar(cab, RL1, WL1, 0.03);
+    bar(cab, RR1, WR1, 0.03);
+    bar(cab, RL1, BL, 0.03);
+    bar(cab, RR1, BR, 0.03);
+    bar(cab, [-0.66, 1.32, 0.72], RR1, 0.026);
+    for (const q of [RL0, RR0, BL, BR]) cab.box(0.12, 0.025, 0.12, q[0], 1.045, q[2], dark, 0, 0, 0, 0); // their foot plates
+    // a mirror on the driver's side, on an arm off the windscreen post
+    cab.between([-0.72, 1.5, -0.72], [-0.86, 1.56, -0.74], 0.012, 0.012, steel, 6, 0);
+    cab.box(0.15, 0.1, 0.03, -0.92, 1.56, -0.74, chrome, 0, 0, 0, 0);
+    // ---- seats, and a bench across the back
+    for (const sx of [-0.42, 0.42]) {
+      cab.box(0.52, 0.12, 0.52, sx, 1.1, 0.25, dark, 0, 0, 0, 0.03);
+      cab.box(0.44, 0.04, 0.42, sx, 1.175, 0.24, 0x3a3d33, 0, 0, 0, 0.03);
+      cab.box(0.52, 0.6, 0.1, sx, 1.44, 0.55, dark, 0, 0, 0.12, 0.03);
+    }
+    cab.box(1.24, 0.12, 0.42, 0, 1.1, 1.25, dark, 0, 0, 0, 0.03);
+    cab.box(1.24, 0.4, 0.08, 0, 1.36, 1.5, dark, 0, 0, 0.1, 0.03);
+    // ---- the dashboard: a low shelf under the windscreen with two dials facing the driver, and the steering column
+    dash.box(1.4, 0.1, 0.24, 0, 1.06, -0.6, dark, 0, 0, 0, 0.03);
+    for (const gx of [-0.6, -0.3]) {
+      dash.cyl(0.042, 0.042, 0.015, gx, 1.07, -0.476, black, Math.PI / 2, 0, 0, 12, 0);
+      dash.cyl(0.032, 0.032, 0.02, gx, 1.07, -0.47, 0x8f8a76, Math.PI / 2, 0, 0, 12, 0);
+    }
+    dash.between([-0.45, 1.1, -0.5], [-0.45, 1.27, -0.24], 0.025, 0.025, dark, 6, 0);
     // The body above is modelled nose-first towards -z, but the game drives along (sin heading, cos heading), which is +z in the group.
     // So the whole body sits in a holder turned half a way round: bonnet, headlights and steering wheel then face the way W drives.
-    const g = new T.Group();
-    const hull = new T.Group();
+    // Between the car and the body is the spring group: the body squats, dives, leans and bounces on it (see poseJeep); the wheels do not.
+    const g = new T.Group(),
+      sway = new T.Group(),
+      hull = new T.Group();
     hull.rotation.y = Math.PI;
-    hull.add(b.mesh());
-    const cabMesh = cab.mesh();
-    hull.add(cabMesh);
+    const shell = b.mesh();
+    hull.add(shell);
+    const cabG = new T.Group(); // (everything that is hidden from the driver's seat)
+    cabG.add(cab.mesh());
+    const glass = new T.Mesh(
+      new T.BoxGeometry(1.4, 0.72, 0.012),
+      new T.MeshStandardMaterial({ color: 0xa9c4cf, roughness: 0.06, metalness: 0.5, transparent: true, opacity: 0.26, depthWrite: false })
+    );
+    glass.position.set(0, 1.49, -0.71);
+    glass.rotation.x = Math.atan2(0.14, 0.74); // leaning back with the frame
+    cabG.add(glass);
+    hull.add(cabG);
     hull.add(dash.mesh());
     // the steering wheel: a thin ring on a tilted column, low in the view, so the road is seen through and over it. It turns with the front wheels.
     {
@@ -14823,18 +15045,20 @@ window.__bootInner = async function () {
       hull.add(tilt);
       JEEP.wheel = wheelMesh;
     }
-    const nose = new T.Object3D(); // the middle of the front bumper
-    nose.position.set(0, 0.98, -1.9);
-    hull.add(nose);
-    const seat = new T.Object3D(); // the driver's eyes: left of centre, a little back, about 1.6 m over the ground
-    seat.position.set(-0.45, 1.62, 0.15);
-    hull.add(seat);
-    g.add(hull);
-    JEEP.cab = cabMesh;
-    JEEP.nose = nose;
-    JEEP.seat = seat;
+    const mark = (x, y, z) => {
+      const o = new T.Object3D();
+      o.position.set(x, y, z);
+      hull.add(o);
+      return o;
+    };
+    const nose = mark(0, 0.98, -1.9), // the middle of the front bumper
+      seat = mark(-0.45, 1.62, 0.15), // the driver's eyes: left of centre, a little back, about 1.6 m over the ground
+      pipe = mark(0.5, 0.42, 2.0), // the end of the tailpipe
+      hood = mark(0, 1.12, -1.35); // the bonnet, where a damaged engine smokes
+    sway.add(hull);
+    g.add(sway);
     // headlights: one broad spot light on the nose (its intensity stays 0 by day, so the shaders are never rebuilt when it comes on),
-    // and a glow on each lens. They follow the car because they are children of it.
+    // and a glow on each lens; and a red glow on each tail lamp for the brakes. They follow the car because they are children of it.
     {
       const beam = new T.SpotLight(0xfff0d2, 0, 95, 0.62, 0.6, 1.15);
       beam.position.set(0, 1.0, 1.75);
@@ -14852,47 +15076,311 @@ window.__bootInner = async function () {
       cx.fillStyle = gr;
       cx.fillRect(0, 0, 64, 64);
       const tex = new T.CanvasTexture(cv);
-      for (const sx of [-0.55, 0.55]) {
-        const s = new T.Sprite(
-          new T.SpriteMaterial({
-            map: tex,
-            blending: T.AdditiveBlending,
-            fog: false,
-            depthWrite: false,
-            transparent: true,
-            opacity: 0
-          })
+      const glow = (x, y, z, size, color, list) => {
+        const sp = new T.Sprite(
+          new T.SpriteMaterial({ map: tex, color, blending: T.AdditiveBlending, fog: false, depthWrite: false, transparent: true, opacity: 0 })
         );
-        s.scale.set(1.5, 1.5, 1);
-        s.position.set(sx, 0.98, 1.78);
-        s.visible = false;
-        g.add(s);
-        JEEP.glows.push(s);
-      }
+        sp.scale.set(size, size, 1);
+        sp.position.set(x, y, z);
+        sp.visible = false;
+        g.add(sp);
+        list.push(sp);
+      };
+      for (const sx of [-0.52, 0.52]) glow(sx, 0.9, 2.0, 1.5, 0xffffff, JEEP.glows);
+      for (const sx of [-0.62, 0.62]) glow(sx, 0.86, -1.8, 0.75, 0xff3a22, JEEP.brakes);
     }
-    const wheels = [];
+    // the wheels: chunky treaded tyres on steel rims with five nuts; one shape shared by all four. Each hangs from its own pivot so it
+    // can follow the ground on its spring (see poseJeep), and the front pair steers.
+    const wb = new Bld();
+    wb.cyl(0.4, 0.4, 0.3, 0, 0, 0, rubber, 0, 0, Math.PI / 2, 16, 0);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * TAU;
+      wb.box(0.32, 0.055, 0.11, 0, Math.cos(a) * 0.385, Math.sin(a) * 0.385, 0x222327, 0, 0, a, 0);
+    }
+    wb.cyl(0.25, 0.25, 0.31, 0, 0, 0, steel, 0, 0, Math.PI / 2, 12, 0.03);
+    wb.cyl(0.1, 0.1, 0.33, 0, 0, 0, dark, 0, 0, Math.PI / 2, 10, 0);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * TAU;
+      wb.cyl(0.022, 0.022, 0.35, 0, Math.cos(a) * 0.15, Math.sin(a) * 0.15, chrome, 0, 0, Math.PI / 2, 6, 0);
+    }
+    const wGeo = wb.geo(),
+      wheels = [];
     for (const [wx, wz] of [
       [-0.85, -1.3],
       [0.85, -1.3],
       [-0.85, 1.3],
       [0.85, 1.3]
     ]) {
-      const wb = new Bld();
-      wb.cyl(0.4, 0.4, 0.3, 0, 0, 0, rubber, 0, 0, Math.PI / 2, 14, 0);
-      wb.cyl(0.2, 0.2, 0.32, 0, 0, 0, steel, 0, 0, Math.PI / 2, 10, 0.05);
       const piv = new T.Group();
       piv.position.set(wx, 0.4, wz);
-      const w = wb.mesh();
+      const w = new T.Mesh(wGeo, vcMat);
+      w.castShadow = w.receiveShadow = true;
       piv.add(w);
       g.add(piv);
-      wheels.push({ piv, w, front: wz > 0 });
+      wheels.push({ piv, w, front: wz > 0, lx: wx, lz: wz });
     }
+    glass.castShadow = false;
     g.traverse(o => {
       o.frustumCulled = false;
     });
-    JEEP.g = g;
-    JEEP.wheels = wheels;
+    Object.assign(JEEP, { g, sway, wheels, shell, glass, cab: cabG, nose, seat, pipe, hood, bars });
     scene.add(g);
+  }
+  /* ---------- exhaust smoke and dust: one cloud of soft round points, drawn in a single call however many there are ----------
+     Live points are kept packed at the front of the arrays; each has a size that grows, a fade in and out, a drift and a lift. */
+  const JFX = (() => {
+    const N = 170,
+      pos = new Float32Array(N * 3),
+      col = new Float32Array(N * 3),
+      sa = new Float32Array(N * 2),
+      vel = new Float32Array(N * 3),
+      age = new Float32Array(N),
+      life = new Float32Array(N),
+      s0 = new Float32Array(N),
+      grow = new Float32Array(N),
+      a0 = new Float32Array(N),
+      rise = new Float32Array(N),
+      drag = new Float32Array(N);
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.BufferAttribute(pos, 3));
+    geo.setAttribute('pcol', new T.BufferAttribute(col, 3));
+    geo.setAttribute('psa', new T.BufferAttribute(sa, 2));
+    geo.setDrawRange(0, 0);
+    const mat = new T.ShaderMaterial({
+      uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, { uHalfH: { value: 300 }, uLight: { value: 1 } }]),
+      vertexShader: [
+        'attribute vec3 pcol;',
+        'attribute vec2 psa;',
+        'uniform float uHalfH;',
+        'varying vec3 vC;',
+        'varying float vA;',
+        '#include <fog_pars_vertex>',
+        'void main() {',
+        '  vC = pcol;',
+        '  vA = psa.y;',
+        '  vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);',
+        '  gl_PointSize = min(300.0, psa.x * projectionMatrix[1][1] * uHalfH / max(0.2, -mvPosition.z));',
+        '  gl_Position = projectionMatrix * mvPosition;',
+        '#include <fog_vertex>',
+        '}'
+      ].join('\n'),
+      fragmentShader: [
+        'uniform float uLight;',
+        'varying vec3 vC;',
+        'varying float vA;',
+        '#include <fog_pars_fragment>',
+        'void main() {',
+        '  vec2 q = gl_PointCoord - 0.5;',
+        '  float d = dot(q, q) * 4.0;',
+        '  if (d > 1.0) discard;',
+        '  float k = 1.0 - d;',
+        '  gl_FragColor = vec4(vC * uLight, vA * k * k);',
+        '#include <fog_fragment>',
+        '}'
+      ].join('\n'),
+      transparent: true,
+      depthWrite: false,
+      fog: true
+    });
+    const pts = new T.Points(geo, mat);
+    pts.frustumCulled = false;
+    pts.renderOrder = 2;
+    scene.add(pts);
+    let n = 0;
+    function emit(x, y, z, vx, vy, vz, size, gr, lf, alpha, r, g, b, up, dr) {
+      if (n >= N) return;
+      const i = n++,
+        i3 = i * 3;
+      pos[i3] = x;
+      pos[i3 + 1] = y;
+      pos[i3 + 2] = z;
+      vel[i3] = vx;
+      vel[i3 + 1] = vy;
+      vel[i3 + 2] = vz;
+      col[i3] = r;
+      col[i3 + 1] = g;
+      col[i3 + 2] = b;
+      age[i] = 0;
+      life[i] = lf;
+      s0[i] = size;
+      grow[i] = gr;
+      a0[i] = alpha;
+      rise[i] = up;
+      drag[i] = dr;
+      sa[i * 2] = size;
+      sa[i * 2 + 1] = 0;
+    }
+    function move(j, i) {
+      for (let k = 0; k < 3; k++) {
+        pos[i * 3 + k] = pos[j * 3 + k];
+        vel[i * 3 + k] = vel[j * 3 + k];
+        col[i * 3 + k] = col[j * 3 + k];
+      }
+      age[i] = age[j];
+      life[i] = life[j];
+      s0[i] = s0[j];
+      grow[i] = grow[j];
+      a0[i] = a0[j];
+      rise[i] = rise[j];
+      drag[i] = drag[j];
+    }
+    const _hs = new T.Vector2();
+    function update(dt) {
+      if (!n) {
+        if (geo.drawRange.count) geo.setDrawRange(0, 0);
+        return;
+      }
+      for (let i = 0; i < n; i++) {
+        age[i] += dt;
+        if (age[i] >= life[i]) {
+          if (i !== --n) move(n, i);
+          i--;
+          continue;
+        }
+        const i3 = i * 3,
+          k = Math.exp(-drag[i] * dt);
+        vel[i3] *= k;
+        vel[i3 + 1] = vel[i3 + 1] * k + rise[i] * dt;
+        vel[i3 + 2] *= k;
+        pos[i3] += vel[i3] * dt;
+        pos[i3 + 1] += vel[i3 + 1] * dt;
+        pos[i3 + 2] += vel[i3 + 2] * dt;
+        const t = age[i] / life[i];
+        sa[i * 2] = s0[i] * (1 + grow[i] * t);
+        sa[i * 2 + 1] = a0[i] * (t < 0.12 ? t / 0.12 : 1 - (t - 0.12) / 0.88);
+      }
+      geo.setDrawRange(0, n);
+      geo.attributes.position.needsUpdate = true;
+      geo.attributes.pcol.needsUpdate = true;
+      geo.attributes.psa.needsUpdate = true;
+      renderer.getDrawingBufferSize(_hs);
+      mat.uniforms.uHalfH.value = _hs.y / 2;
+      mat.uniforms.uLight.value = clamp(1 - 0.72 * ENV.night - 0.3 * ENV.storm, 0.22, 1); // (smoke is lit as the day is)
+    }
+    return {
+      emit,
+      update,
+      clear() {
+        n = 0;
+        geo.setDrawRange(0, 0);
+      },
+      get n() {
+        return n;
+      },
+      pos,
+      pts
+    };
+  })();
+  const _jp = new T.Vector3();
+  /* what the jeep puts into the air: exhaust (a thin grey breath at idle, darker and thicker under load, a black cough as it starts),
+     dust off the back wheels on dry ground (more the faster you go, a lot more in a slide or when the wheels spin, little in the rain),
+     and smoke from the bonnet when the body is badly damaged */
+  function jeepFX(rdt, th) {
+    const J = JEEP;
+    if (!J.g) return;
+    const v = Math.abs(J.speed),
+      fx = Math.sin(J.heading),
+      fz = Math.cos(J.heading),
+      vx = Math.sin(J.vdir) * J.speed,
+      vz = Math.cos(J.vdir) * J.speed;
+    if (J.fuel > 0 && !J.dead && P.inJeep) {
+      J.pipe.getWorldPosition(_jp);
+      const load = Math.max(0, th),
+        cough = J.coughT > 0;
+      if (cough) J.coughT -= rdt;
+      J.exT -= rdt * (cough ? 30 : 3 + load * (5 + 12 * Math.min(1, J.rpm / 4800)) + (J.shiftT > 0 ? 6 : 0));
+      while (J.exT <= 0) {
+        J.exT += 1;
+        const k = cough ? 0.12 : lerp(0.6, 0.3, load * Math.min(1, J.rpm / 3500));
+        JFX.emit(
+          _jp.x + rand(-0.03, 0.03),
+          _jp.y,
+          _jp.z + rand(-0.03, 0.03),
+          -fx * (1.1 + load) + vx * 0.4 + rand(-0.25, 0.25),
+          0.25 + rand(0, 0.25),
+          -fz * (1.1 + load) + vz * 0.4 + rand(-0.25, 0.25),
+          cough ? 0.32 : 0.16 + 0.08 * load,
+          cough ? 3.2 : 3.4,
+          cough ? 2.2 : 1.3 + 0.5 * load,
+          cough ? 0.6 : 0.22 + 0.2 * load,
+          k,
+          k,
+          k * 0.97,
+          0.55,
+          1.6
+        );
+      }
+    }
+    const wet = clamp(ENV.rain || 0, 0, 1),
+      spin = th > 0 && J.grip < 0.6 ? 1 : 0,
+      dust = J.onBridge ? 0 : (Math.max(0, v - 3.5) * 1.6 + J.drift * 28 + spin * 14 + (J.launchT > 0 ? 18 : 0)) * (1 - 0.85 * wet);
+    if (dust > 0.1)
+      for (const w of J.wheels) {
+        if (w.front) continue;
+        w.dustT = (w.dustT || 0) - rdt * dust;
+        if (w.dustT > 0) continue;
+        w.dustT += 1;
+        w.piv.getWorldPosition(_jp);
+        const gy = jeepGroundAt(_jp.x, _jp.z, J.onBridge),
+          tone = rand(0.9, 1.05);
+        JFX.emit(
+          _jp.x + rand(-0.15, 0.15),
+          gy + 0.15,
+          _jp.z + rand(-0.15, 0.15),
+          vx * 0.25 - fx * rand(0.5, 1.5) + rand(-0.6, 0.6),
+          rand(0.4, 1.1),
+          vz * 0.25 - fz * rand(0.5, 1.5) + rand(-0.6, 0.6),
+          0.35 + 0.02 * v,
+          3.2,
+          rand(1.1, 1.7),
+          (0.18 + 0.12 * Math.min(1, v / 14) + 0.15 * J.drift) * (1 - 0.6 * wet),
+          0.66 * tone,
+          0.58 * tone,
+          0.45 * tone,
+          0.12,
+          1.2
+        );
+      }
+    hoodSmoke(rdt);
+  }
+  // a wrecked engine pours black smoke; a badly damaged one leaks a thin grey wisp
+  function hoodSmoke(rdt) {
+    const J = JEEP,
+      bad = J.dead ? 1 : J.hp < 35 ? 0.4 : 0;
+    if (!bad || Math.hypot(J.x - P.x, J.z - P.z) > 220) return;
+    J.smokeT -= rdt * (J.dead ? 9 : 3);
+    if (J.smokeT > 0) return;
+    J.smokeT = 1;
+    J.hood.getWorldPosition(_jp);
+    const k = J.dead ? 0.13 : 0.5;
+    JFX.emit(_jp.x + rand(-0.2, 0.2), _jp.y, _jp.z + rand(-0.2, 0.2), rand(-0.2, 0.2), 0.4, rand(-0.2, 0.2), J.dead ? 0.5 : 0.3, 4, J.dead ? 3.6 : 2.2, J.dead ? 0.5 : 0.25, k, k, k, J.dead ? 1.1 : 0.6, 0.6);
+  }
+  // a burst of dust where the wheels meet something (a rock, a stump, a hard landing)
+  function jeepDustBurst(nn, front) {
+    const J = JEEP;
+    for (const w of J.wheels) {
+      if (front !== undefined && w.front !== front) continue;
+      w.piv.getWorldPosition(_jp);
+      const gy = jeepGroundAt(_jp.x, _jp.z, J.onBridge);
+      for (let i = 0; i < nn; i++)
+        JFX.emit(_jp.x + rand(-0.3, 0.3), gy + 0.1, _jp.z + rand(-0.3, 0.3), rand(-1.2, 1.2), rand(0.6, 1.6), rand(-1.2, 1.2), 0.4, 3, rand(0.9, 1.4), 0.3, 0.64, 0.56, 0.43, 0.1, 1.6);
+    }
+  }
+  /* the chase view: C (or the view key) swaps between the driver's seat and a camera behind and above the car */
+  function jeepViewApply() {
+    const J = JEEP;
+    if (J.cab) J.cab.visible = !P.inJeep || SET.jcam === 'chase';
+    J.camInit = true;
+    J.camY = J.y;
+    J.camD = 6.4;
+  }
+  function toggleJeepView() {
+    if (!P.inJeep || game.state !== STATE.PLAY) return;
+    SET.jcam = SET.jcam === 'chase' ? 'seat' : 'chase';
+    saveSet();
+    jeepViewApply();
+    Aud.click(0, 1.1);
+    toast(SET.jcam === 'chase' ? 'Chase view. ' + (TOUCH.on ? 'The view key' : 'C') + ' puts you back in the seat.' : 'Driver\u2019s seat.');
   }
   function placeJeep() {
     // a clear spot a few metres from the middle of the camp
@@ -14933,8 +15421,18 @@ window.__bootInner = async function () {
       fixT: 0,
       lightK: 0,
       lightsMode: 'auto',
-      onBridge: false
+      onBridge: false,
+      gear: 0,
+      rpm: 850,
+      shiftT: 0,
+      launchT: 0,
+      drift: 0,
+      slip: 0,
+      vdir: JEEP.home.heading,
+      brakeK: 0,
+      swayS: null
     });
+    JFX.clear();
     P.inJeep = false;
     P.fuelCans = 1;
     P.canLeft = 0;
@@ -14977,11 +15475,62 @@ window.__bootInner = async function () {
     J.roll = Math.atan2(hR - hL, 2 * Wd); // positive when the left-hand side (local +x) is the high one
     g.position.set(J.x, J.y, J.z);
     g.rotation.set(J.pitch, J.heading, J.roll, 'YXZ');
+    g.updateMatrix();
+    // each wheel hangs on its own spring: it reaches down to the ground under it (or is pushed up by it), within the travel the springs have
+    const E = g.matrix.elements,
+      upY = Math.max(0.3, E[5]);
     for (const w of J.wheels) {
       if (w.front) w.piv.rotation.y = J.steer;
       w.w.rotation.x += (J.speed / 0.4) * dt;
+      const lx = w.lx,
+        lz = w.lz,
+        wx = E[0] * lx + E[4] * 0.4 + E[8] * lz + E[12],
+        wy = E[1] * lx + E[5] * 0.4 + E[9] * lz + E[13],
+        wz = E[2] * lx + E[6] * 0.4 + E[10] * lz + E[14];
+      w.piv.position.y = 0.4 + clamp((jeepGroundAt(wx, wz, ob) + 0.4 - wy) / upY, -0.24, 0.2);
     }
     if (J.wheel) J.wheel.rotation.z = J.steer * 2.8; // left lock turns the wheel anticlockwise as the driver sees it
+    // the body on its springs: it squats as you pull away, dips its nose under the brakes, leans out of a turn and bounces over bumps
+    if (J.sway && dt > 0) {
+      const S = J.swayS || (J.swayS = { p: 0, pv: 0, r: 0, rv: 0, y: 0, yv: 0, v0: J.speed, h0: J.heading, y0: J.y, vy0: 0, x0: J.x, z0: J.z }),
+        dd = Math.min(dt, 1 / 30);
+      if (Math.abs(J.x - S.x0) + Math.abs(J.z - S.z0) > 4 || dt > 0.25) {
+        // (it was put somewhere new, not driven there)
+        S.v0 = J.speed;
+        S.h0 = J.heading;
+        S.y0 = J.y;
+        S.vy0 = 0;
+      }
+      const acc = (J.speed - S.v0) / dt,
+        yawR = wrapAng(J.heading - S.h0) / dt,
+        vy = (J.y - S.y0) / dt,
+        ay = (vy - S.vy0) / dt;
+      S.v0 = J.speed;
+      S.h0 = J.heading;
+      S.y0 = J.y;
+      S.vy0 = vy;
+      S.x0 = J.x;
+      S.z0 = J.z;
+      const pT = clamp(-acc * 0.006, -0.055, 0.055),
+        rT = clamp(J.speed * yawR * 0.0034, -0.075, 0.075),
+        yT = clamp(-ay * 0.0025, -0.09, 0.06),
+        K = 110,
+        D = 13;
+      S.pv += (K * (pT - S.p) - D * S.pv) * dd;
+      S.p += S.pv * dd;
+      S.rv += (K * (rT - S.r) - D * S.rv) * dd;
+      S.r += S.rv * dd;
+      S.yv += (K * 1.4 * (yT - S.y) - D * S.yv) * dd;
+      S.y += S.yv * dd;
+      J.sway.rotation.set(S.p, 0, S.r);
+      J.sway.position.y = S.y;
+    }
+    // brake lamps: bright under the brakes, a dim red with the headlights
+    for (const sp of J.brakes) {
+      const k = Math.max((J.brakeK || 0) * 0.95, J.lightK * 0.32);
+      sp.visible = k > 0.02;
+      sp.material.opacity = k;
+    }
     g.updateMatrixWorld(true);
   }
   function jeepHit(amount, why) {
@@ -15021,12 +15570,22 @@ window.__bootInner = async function () {
     P.sprint = false;
     P.kvx = P.kvz = 0;
     document.body.classList.add('jeep');
-    if (JEEP.cab) JEEP.cab.visible = false;
+    jeepViewApply();
+    JEEP.gear = 0;
+    JEEP.drift = JEEP.slip = 0;
+    JEEP.vdir = JEEP.heading;
+    if (JEEP.fuel > 0) {
+      JEEP.rpm = 1500;
+      JEEP.coughT = 0.45; // it catches with a cough of black smoke
+      Aud.crank();
+    }
     Aud.setEngine(0.2, 0);
     toast(
       JEEP.fuel < 0.05
         ? 'The tank is empty. Press 4 to pour in a jerry can.'
-        : 'W drive, S brake and reverse, A/D steer, Space handbrake, L headlights, E to get out.'
+        : TOUCH.on
+          ? 'Drive with the stick. The brake key is the handbrake: turn while you hold it to slide. The view key swaps to a chase camera.'
+          : 'W drive, S brake and reverse, A/D steer, Space handbrake (steer to slide), C chase camera, L headlights, E to get out.'
     );
     updateGunModel();
   }
@@ -15054,6 +15613,10 @@ window.__bootInner = async function () {
     }
     P.onBridge = !!J.onBridge;
     J.speed = 0; // the handbrake goes on: it does not roll on through the trees and into a lake
+    J.brakeK = 0;
+    J.drift = J.slip = 0;
+    J.vdir = J.heading;
+    J.gear = 0;
     document.body.classList.remove('jeep');
     if (JEEP.cab) JEEP.cab.visible = true;
     Aud.setEngine(0, 0);
@@ -15075,13 +15638,35 @@ window.__bootInner = async function () {
       gripF = 1 - smooth(JEEP_GRIP[0], JEEP_GRIP[1], grade),
       gripR = 1 - smooth(JEEP_GRIP[0], JEEP_GRIP[1], -grade);
     J.grip = th > 0 ? gripF : th < 0 ? gripR : 1;
+    // the gearbox: four gears up, each pulling less hard than the one below; changing up takes the power off for a moment
+    {
+      const v0 = Math.abs(J.speed),
+        was = J.gear || 0;
+      let gr = J.speed < -0.2 ? -1 : v0 < 0.25 && th <= 0 ? 0 : Math.max(1, was);
+      if (gr >= 1) {
+        while (gr < 4 && v0 > GEAR_TOP[gr] * 0.97) gr++;
+        while (gr > 1 && v0 < GEAR_TOP[gr - 1] * 0.72) gr--;
+      }
+      if (gr > was && was >= 1 && th > 0) {
+        J.shiftT = 0.24;
+        Aud.shift();
+      }
+      J.gear = gr;
+      if (J.shiftT > 0) J.shiftT -= rdt;
+      if (th > 0 && v0 < 1 && !(J.thPrev > 0) && hasFuel) J.launchT = 0.6; // flooring it from a standstill: the back wheels scrabble
+      if (J.launchT > 0) J.launchT -= rdt;
+      J.thPrev = th;
+    }
+    const pull = GEAR_PULL[Math.max(0, J.gear)] * (J.shiftT > 0 ? 0.35 : 1);
     // throttle, brake, reverse
-    if (th > 0 && hasFuel) J.speed += C.accel * th * gripF * rdt;
+    if (th > 0 && hasFuel) J.speed += C.accel * th * gripF * pull * rdt;
     else if (th < 0) {
       if (J.speed > 0.3) J.speed = Math.max(0, J.speed - C.brake * rdt);
       else if (hasFuel) J.speed = Math.max(-C.reverse, J.speed - C.accel * 0.6 * gripR * rdt);
     } else J.speed -= Math.sign(J.speed) * Math.min(Math.abs(J.speed), C.roll * rdt);
-    if (keys.Space) J.speed -= Math.sign(J.speed) * Math.min(Math.abs(J.speed), C.brake * 1.3 * rdt); // handbrake
+    // the handbrake locks the back wheels: held straight it stops you hard; with the wheel turned the tail slides out and you slew round
+    const hb = !!keys.Space;
+    if (hb) J.speed -= Math.sign(J.speed) * Math.min(Math.abs(J.speed), C.brake * 1.3 * (1 - 0.55 * Math.abs(st)) * rdt);
     // gravity along the slope
     J.speed -= G * grade * 0.55 * rdt;
     J.speed = clamp(J.speed, -C.reverse, C.maxSpeed);
@@ -15089,7 +15674,45 @@ window.__bootInner = async function () {
     const lock = 0.6 / (1 + Math.abs(J.speed) / 9);
     J.steer += (st * lock - J.steer) * Math.min(1, rdt * 6);
     const h0 = J.heading;
-    J.heading += ((J.speed * Math.tan(J.steer)) / C.wheelbase) * rdt;
+    {
+      const slideW = hb && Math.abs(J.speed) > 5 && Math.abs(st) > 0.2 ? 1 : 0;
+      J.drift += (slideW - J.drift) * Math.min(1, rdt * (slideW ? 7 : 2.2));
+      if (J.drift < 0.004) J.drift = 0;
+    }
+    J.heading += ((J.speed * Math.tan(J.steer)) / C.wheelbase) * rdt * (1 + 0.9 * J.drift);
+    // which way it is actually going: the way it points, unless it is sliding, when that lags behind and the slide scrubs speed off
+    if (J.drift > 0 || J.slip) {
+      // (sliding, the tyres can only bend the car's path as hard as their grip allows, a few m/s/s across it, so the tail comes round)
+      const low = 4.5 / Math.max(4, Math.abs(J.speed)),
+        follow = J.drift > 0 ? low + (12 - low) * Math.pow(1 - J.drift, 3) : 30;
+      J.vdir += clamp(wrapAng(J.heading - J.vdir), -follow * rdt, follow * rdt);
+      J.slip = wrapAng(J.heading - J.vdir);
+      if (Math.abs(J.slip) > 1.0) {
+        J.vdir = J.heading - Math.sign(J.slip) * 1.0; // never quite broadside
+        J.slip = Math.sign(J.slip) * 1.0;
+      }
+      if (!J.drift && Math.abs(J.slip) < 0.003) J.slip = 0;
+      J.speed *= 1 - Math.min(0.5, Math.abs(Math.sin(J.slip)) * 0.8 * rdt);
+    }
+    if (!J.drift && !J.slip) J.vdir = J.heading;
+    // the revs: up through each gear, down at each change, high when the wheels spin, and a blip when you rev it standing
+    {
+      const v = Math.abs(J.speed),
+        gr = J.gear;
+      let want;
+      if (!hasFuel) want = 0;
+      else if (gr >= 1) {
+        const lo = GEAR_TOP[gr - 1] * 0.62,
+          hi = GEAR_TOP[gr];
+        want = 1000 + 3800 * clamp((v - lo) / (hi - lo), 0, 1);
+      } else if (gr === -1) want = 1100 + 2600 * Math.min(1, v / C.reverse);
+      else want = 850 + 2900 * Math.max(0, th);
+      if (th > 0 && hasFuel && J.grip < 0.6) want = Math.max(want, 4200);
+      if (J.shiftT > 0) want *= 0.8;
+      J.rpm += (want - J.rpm) * Math.min(1, rdt * (want > J.rpm ? 7 : 5));
+    }
+    // brake lamps: the brake, the handbrake, or the throttle against the way you are rolling
+    J.brakeK = (th < 0 && J.speed > 0.3) || (hb && Math.abs(J.speed) > 0.2) || (th > 0 && J.speed < -0.3) ? 1 : 0;
     // the view rides with the car, so turning the wheel turns what you see. Looking around is measured from the car's nose, and eases
     // back to the road once the mouse is still and the car is moving. Facing the way the car drives means yaw = heading + half a turn.
     {
@@ -15113,16 +15736,18 @@ window.__bootInner = async function () {
       n = Math.max(1, Math.ceil(Math.abs(dist) / 0.3));
     let blocked = null,
       bump = 0;
-    const way = dist >= 0 ? 1 : -1; // forward or in reverse
+    const way = dist >= 0 ? 1 : -1, // forward or in reverse
+      ms = Math.sin(J.vdir),
+      mc = Math.cos(J.vdir);
     for (let i = 0; i < n && !blocked; i++) {
-      const nx = J.x + Math.sin(J.heading) * (dist / n),
-        nz = J.z + Math.cos(J.heading) * (dist / n),
+      const nx = J.x + ms * (dist / n),
+        nz = J.z + mc * (dist / n),
         deck = bridgeH(nx, nz),
         onDeck = deck > -1e8 && (heightAt(nx, nz) >= deck - 0.7 || J.onBridge), // a bridge carries the jeep as it carries you
         gh = onDeck ? Math.max(heightAt(nx, nz), deck) : heightAt(nx, nz);
       if (!onDeck && gh < WATER + 0.45) blocked = 'water'; // (a low bridge sits only a few decimetres over the water: the deck is dry, whatever is under it)
       else if (Math.abs(nx) > HALF - 12 || Math.abs(nz) > HALF - 12) blocked = 'edge';
-      else if (!onDeck && jeepClimb(nx, nz, s * way, c * way, false) > JEEP_WALL)
+      else if (!onDeck && jeepClimb(nx, nz, ms * way, mc * way, false) > JEEP_WALL)
         blocked = 'cliff'; // a rock face, judged between the axles (one steep facet of a hillside is not a wall)
       else {
         J.x = nx;
@@ -15145,7 +15770,10 @@ window.__bootInner = async function () {
         if (was <= 0.1 || J.bumpT <= 0) {
           J.bumpT = 0.45;
           P.shake = Math.max(P.shake, Math.min(0.45, 0.12 + bump * 0.5) * Math.min(1, Math.abs(J.speed) / 6));
-          if (Math.abs(J.speed) > 2) Aud.crash(0.18);
+          if (Math.abs(J.speed) > 2) {
+            Aud.crash(0.18);
+            jeepDustBurst(3);
+          }
         }
       }
     }
@@ -15168,6 +15796,7 @@ window.__bootInner = async function () {
           0.5
         );
         J.speed = -J.speed * 0.25;
+        jeepDustBurst(5, true);
       } else J.speed = 0;
     }
     // animals: run into one and both sides feel it
@@ -15227,32 +15856,30 @@ window.__bootInner = async function () {
       J.noiseT = 2.5;
       makeNoise(J.x, J.z, 120, { x: J.x, z: J.z });
     }
-    Aud.setEngine(0.2 + 0.6 * Math.abs(th) * (hasFuel ? 1 : 0), Math.abs(J.speed) / C.maxSpeed);
+    {
+      const v = Math.abs(J.speed);
+      Aud.setEngine(hasFuel ? 0.35 + 0.65 * Math.max(0, th) : 0, J.rpm / 4800, {
+        rpm: J.rpm,
+        load: hasFuel ? Math.max(0, th) : 0,
+        road: Math.min(1, v / 14),
+        skid: clamp(J.drift * Math.min(1, v / 7) + (J.launchT > 0 && th > 0 ? 0.5 : 0) + (th > 0 && J.grip < 0.6 ? 0.6 : 0), 0, 1)
+      });
+    }
     P.x = J.x;
     P.z = J.z;
     P.moving = Math.abs(J.speed) > 0.5;
     P.sprint = false;
     P.stepD = 0;
     poseJeep(rdt);
+    jeepFX(rdt, th);
   }
   function updateJeepIdle(rdt) {
     const J = JEEP;
-    if (J.dead) {
-      J.smokeT -= rdt;
-      if (J.smokeT <= 0 && Math.hypot(J.x - P.x, J.z - P.z) < 220) {
-        J.smokeT = 0.35;
-        puff(
-          new T.Vector3(J.x + Math.sin(J.heading) * 1.1, J.y + 1.3, J.z + Math.cos(J.heading) * 1.1),
-          0x2b2b2b,
-          2,
-          0.6,
-          0.7,
-          2.8,
-          0.35,
-          2.2,
-          0.35
-        );
-      }
+    if (J.g) hoodSmoke(rdt); // a wreck pours smoke, a badly damaged engine leaks a wisp
+    {
+      const S = J.swayS;
+      if (S && Math.abs(J.speed) <= 0.01 && Math.abs(S.p) + Math.abs(S.r) + Math.abs(S.y) + Math.abs(S.pv) + Math.abs(S.rv) + Math.abs(S.yv) > 0.002)
+        poseJeep(rdt); // the body settles on its springs
     }
     if (!P.inJeep && Math.abs(J.speed) > 0.01) {
       J.speed -= Math.sign(J.speed) * Math.min(Math.abs(J.speed), 3 * rdt);
@@ -15490,15 +16117,30 @@ window.__bootInner = async function () {
     }
   }
   function updateJeepHud() {
+    {
+      const mv = P.inJeep && (Math.abs(JEEP.speed) > 1.5 || SET.jcam === 'chase'); // (in the chase view it would sit right over the car)
+      if (mv !== JEEP.moveCls) {
+        JEEP.moveCls = mv;
+        document.body.classList.toggle('jmove', mv);
+      }
+    }
     if (!P.inJeep) return;
     const J = JEEP;
     setText($('jSpd'), String(Math.round(Math.abs(J.speed) * 3.6)));
+    setText($('jGear'), J.gear === -1 ? 'R' : J.gear >= 1 ? String(J.gear) : 'N');
+    {
+      const w = Math.round(clamp(J.rpm / 5000, 0, 1) * 100);
+      if (w !== J.rpmW) {
+        J.rpmW = w;
+        $('jRpm').style.width = w + '%';
+      }
+    }
     $('jFuel').style.width = Math.round(J.fuel * 100) + '%';
     $('jHp').style.width = Math.round((J.hp / CONFIG.jeep.hp) * 100) + '%';
     setText($('jFuelLbl'), 'FUEL' + (cansLeft() > 0.05 ? '  +' + cansText() + ' CAN' : ''));
     $('jeepHud').classList.toggle('low', J.fuel < 0.15);
     const lt = { auto: 'AUTO', on: 'ON', off: 'OFF' }[J.lightsMode] || 'AUTO';
-    const keys4 = TOUCH.on ? 'GEAR: refuel · repair  ·  LIGHTS ' + lt : '4 refuel  ·  5 repair  ·  L lights ' + lt + '  ·  Space brake';
+    const keys4 = TOUCH.on ? 'GEAR: refuel · repair  ·  LIGHTS ' + lt : '4 refuel  ·  5 repair  ·  L lights ' + lt + '  ·  Space handbrake  ·  C view';
     setText(
       $('jHint'),
       J.fixing
@@ -15684,14 +16326,49 @@ window.__bootInner = async function () {
       pitch += P.hitAmp * 0.6 * e * Math.cos(P.hitT * 9) * (P.hitDown ? -1 : 1);
       yaw += P.hitSide * P.hitAmp * 0.25 * e;
     }
-    if (P.inJeep && P.alive) {
+    if (P.inJeep && P.alive && SET.jcam === 'chase') {
+      // the chase view: behind and above the car, swinging out a little in a turn, pulled in when a trunk or the hillside is in the way
       const J = JEEP;
-      // the driver's seat (a marker inside the model): the eye goes where the model's own driver would be
+      J.camYaw = J.camInit ? yaw : J.camYaw + wrapAng(yaw - J.camYaw) * Math.min(1, rdt * 4.5);
+      if (J.camInit) J.camY = J.y;
+      J.camInit = false;
+      J.camY += (J.y - J.camY) * Math.min(1, rdt * 6);
+      const pp = clamp(pitch - 0.2, -1.2, 0.3),
+        cp = Math.cos(pp),
+        dx = -Math.sin(J.camYaw) * cp,
+        dy = Math.sin(pp),
+        dz = -Math.cos(J.camYaw) * cp,
+        tx = J.x,
+        ty = J.camY + 1.45,
+        tz = J.z;
+      let room = 6.4;
+      for (let t = 1.2; t <= 6.4; t += 0.6) {
+        const x = tx - dx * t,
+          y = ty - dy * t,
+          z = tz - dz * t,
+          gh = heightAt(x, z);
+        if (y < gh + 0.35 || trunkAt(x, y, z, gh, 0.35) >= 0) {
+          room = Math.max(2.2, t - 0.6);
+          break;
+        }
+      }
+      J.camD += (room - J.camD) * Math.min(1, rdt * (room < J.camD ? 14 : 2.5));
+      const cx = tx - dx * J.camD,
+        cz = tz - dz * J.camD;
+      eyeY = Math.max(ty - dy * J.camD, heightAt(cx, cz) + 0.45, WATER + 0.3);
+      cam.position.set(cx + sx, eyeY + sy, cz);
+      pitch = pp;
+      yaw = J.camYaw;
+      roll = 0;
+    } else if (P.inJeep && P.alive) {
+      const J = JEEP,
+        S = J.swayS;
+      // the driver's seat (a marker inside the model): the eye goes where the model's own driver would be, swaying with the body
       J.seat.getWorldPosition(_seatV);
       eyeY = _seatV.y + Math.sin(game.time * 9) * 0.004 * Math.min(1, Math.abs(J.speed) / 4);
       cam.position.set(_seatV.x + sx, eyeY + sy, _seatV.z);
-      roll = -J.roll * 0.6; // the left side up tips the view the same way
-      pitch -= J.pitch * 0.4; // nose up (J.pitch is negative uphill) looks up
+      roll = -J.roll * 0.6 - (S ? S.r * 0.6 : 0); // the left side up tips the view the same way
+      pitch -= J.pitch * 0.4 + (S ? S.p * 0.5 : 0); // nose up (J.pitch is negative uphill) looks up
     } else cam.position.set(P.x + sx, eyeY + sy, P.z);
     setUnderwater(eyeY < WATER - 0.05 ? 1 : P.inCave ? 2 : 0);
     cam.rotation.set(pitch, yaw, roll, 'YXZ');
@@ -19203,6 +19880,7 @@ window.__bootInner = async function () {
       else applyCamera(rdt);
       updateDinoLOD();
       updatePuffs(dt);
+      JFX.update(dt);
       animateMotes(dt);
       updateFlags();
       updateNature(rdt);
@@ -26524,6 +27202,300 @@ window.__bootInner = async function () {
         }
       ],
       [
+        'The jeep, rebuilt: a frame that is all joined up, wheels on springs, exhaust and dust, a gearbox, brake lamps, a body that leans and dives, a handbrake slide and a chase view',
+        function () {
+          const P = A.P,
+            J = A.JEEP,
+            keys = A.keys,
+            E = A.ENV,
+            H = A.heightAt;
+          const sec = s => run(Math.round(s * 60));
+          const V = (x, y, z) => new T3.Vector3(x, y, z);
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            A.dinos.forEach(d => {
+              if (!d.dead) {
+                d.x = 9999;
+                d.z = 9999;
+                if (d.sp.fly) {
+                  d.hx = 9999;
+                  d.hz = 9999;
+                }
+              }
+            });
+            P.invuln = 999;
+            for (const k in keys) keys[k] = false;
+          };
+          fresh();
+          const keepView = A.SET.jcam;
+          A.SET.jcam = 'seat';
+          // a long clear lane (nothing knee-high on it, no water, no big climb): from where the jeep is parked, or from somewhere near the camp
+          const home = { x: J.x, z: J.z, h: J.heading };
+          let lane = null;
+          for (let ring = 0; ring <= 3 && lane === null; ring++)
+            for (let k = 0; k < (ring ? 16 : 1) && lane === null; k++) {
+              const sx = ring ? Math.sin((k / 16) * 6.283) * ring * 15 : J.x,
+                sz = ring ? Math.cos((k / 16) * 6.283) * ring * 15 : J.z,
+                g0 = H(sx, sz);
+              if (g0 < A.WATER + 1 || A.trunkAt(sx, g0 + 0.6, sz, g0, 3) >= 0) continue;
+              for (let a = 0; a < 48 && lane === null; a++) {
+                const hh = J.heading + (a / 48) * Math.PI * 2,
+                  s = Math.sin(hh),
+                  c = Math.cos(hh);
+                let okL = true;
+                for (let d = 3; d <= 100 && okL; d += 2) {
+                  const x = sx + s * d,
+                    z = sz + c * d,
+                    g = H(x, z);
+                  if (g < A.WATER + 1 || A.trunkAt(x, g + 0.6, z, g, 3) >= 0 || Math.abs(g - g0) > 12) okL = false;
+                }
+                if (okL) {
+                  lane = hh;
+                  home.x = sx;
+                  home.z = sz;
+                }
+              }
+            }
+          ok(lane !== null, 'found a clear lane to drive along');
+          const start = () => {
+            if (P.inJeep) A.leaveJeep();
+            for (const k in keys) keys[k] = false;
+            J.x = home.x;
+            J.z = home.z;
+            J.heading = lane === null ? home.h : lane;
+            J.speed = 0;
+            J.fuel = 1;
+            J.hp = 100;
+            J.dead = false;
+            J.lift = 0;
+            J.onBridge = false;
+            A.poseJeep();
+            A.JFX.clear();
+            A.enterJeep();
+          };
+
+          // ---- the frame: every tube of the windscreen and the roll cage meets the body or another tube
+          {
+            J.g.updateMatrixWorld(true);
+            const hull = J.shell.parent,
+              rc = new T3.Raycaster(),
+              toW = q => hull.localToWorld(V(q[0], q[1], q[2])),
+              segD = (q, a, b) => {
+                const ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]],
+                  aq = [q[0] - a[0], q[1] - a[1], q[2] - a[2]],
+                  t = Math.max(0, Math.min(1, (aq[0] * ab[0] + aq[1] * ab[1] + aq[2] * ab[2]) / (ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2])));
+                return Math.hypot(aq[0] - ab[0] * t, aq[1] - ab[1] * t, aq[2] - ab[2] * t);
+              },
+              loose = [];
+            J.bars.forEach((bb, i) => {
+              for (const q of bb) {
+                const onBar = J.bars.some((o, j) => j !== i && segD(q, o[0], o[1]) < 0.05);
+                let onBody = false;
+                if (!onBar) {
+                  const from = toW([q[0], q[1] + 0.08, q[2]]);
+                  rc.set(from, toW([q[0], q[1] - 1, q[2]]).sub(from).normalize());
+                  const hit = rc.intersectObject(J.shell, false)[0];
+                  onBody = !!hit && hit.distance < 0.13;
+                }
+                if (!onBar && !onBody) loose.push(q.map(v => v.toFixed(2)).join(','));
+              }
+            });
+            ok(
+              J.bars.length >= 12 && !loose.length,
+              'every tube of the windscreen frame and the roll cage is joined to the body or to another tube (' + J.bars.length + ' tubes' + (loose.length ? '; loose ends at ' + loose.join(' | ') : '') + ')'
+            );
+            ok(J.glass && J.glass.material.transparent && J.cab.children.indexOf(J.glass) >= 0, 'there is glass in the windscreen');
+            ok(J.wheels.every(w => w.w.geometry === J.wheels[0].w.geometry) && J.wheels[0].w.geometry.attributes.position.count > 1000, 'treaded tyres on rims, one shape shared by all four wheels');
+          }
+
+          // ---- the wheels on their springs: each one sits on the ground under it
+          {
+            const rnd = A.mulberry32(9),
+              errs = [],
+              spread = [];
+            for (let i = 0; i < 4000 && errs.length < 60; i++) {
+              const x = (rnd() - 0.5) * 900,
+                z = (rnd() - 0.5) * 900;
+              if (H(x, z) < 1) continue;
+              const sl = Math.hypot(H(x + 2, z) - H(x - 2, z), H(x, z + 2) - H(x, z - 2)) / 4;
+              if (sl < 0.18) continue;
+              J.x = x;
+              J.z = z;
+              J.heading = rnd() * Math.PI * 2;
+              A.poseJeep();
+              let worst = 0;
+              const ys = [];
+              for (const w of J.wheels) {
+                const q = w.piv.getWorldPosition(V(0, 0, 0));
+                worst = Math.max(worst, Math.abs(q.y - 0.4 - H(q.x, q.z)));
+                ys.push(w.piv.position.y);
+              }
+              errs.push(worst);
+              spread.push(Math.max(...ys) - Math.min(...ys));
+            }
+            errs.sort((a, b) => a - b);
+            const med = errs[errs.length >> 1],
+              p90 = errs[Math.floor(errs.length * 0.9)];
+            ok(med < 0.05 && p90 < 0.25, 'each wheel follows the ground under it on its spring (median ' + (med * 100).toFixed(0) + ' cm off, 90th percentile ' + (p90 * 100).toFixed(0) + ' cm)');
+            ok(Math.max(...spread) > 0.06, 'on uneven ground the four wheels sit at their own heights (up to ' + (Math.max(...spread) * 100).toFixed(0) + ' cm apart)');
+          }
+
+          // ---- exhaust, dust and the gearbox
+          if (lane !== null) {
+            start();
+            sec(0.3);
+            const cough = A.JFX.n;
+            sec(1.6);
+            const idle = A.JFX.n;
+            // the newest exhaust is behind the car, at the tailpipe
+            const f = V(Math.sin(J.heading), 0, Math.cos(J.heading)),
+              last = A.JFX.n - 1,
+              ep = V(A.JFX.pos[last * 3] - J.x, 0, A.JFX.pos[last * 3 + 2] - J.z);
+            ok(cough > 8, 'it starts with a cough of smoke (' + cough + ' puffs)');
+            ok(idle > 0 && ep.dot(f) < -1.5, 'ticking over, a thin breath of exhaust comes out of the back (' + idle + ')');
+            const gears = new Set();
+            let rpmMax = 0,
+              rpmMin = 1e9,
+              fxMax = 0;
+            keys.KeyW = true;
+            for (let i = 0; i < 6 * 60; i++) {
+              run(1);
+              if (J.gear > 0) gears.add(J.gear);
+              if (J.gear >= 2) {
+                rpmMax = Math.max(rpmMax, J.rpm);
+                rpmMin = Math.min(rpmMin, J.rpm);
+              }
+              fxMax = Math.max(fxMax, A.JFX.n);
+            }
+            ok([1, 2, 3, 4].every(g => gears.has(g)), 'pulling away it changes up through four gears (' + [...gears].join(', ') + ')');
+            ok(rpmMax > 4000 && rpmMin < 2600, 'the revs climb in each gear and drop at each change (' + rpmMin.toFixed(0) + ' to ' + rpmMax.toFixed(0) + ' rpm)');
+            ok(document.getElementById('jGear').textContent === String(J.gear) && parseFloat(document.getElementById('jRpm').style.width) > 20, 'the gear and the revs show under the speedometer (' + document.getElementById('jGear').textContent + ', ' + document.getElementById('jRpm').style.width + ')');
+            ok(fxMax > idle * 3 && fxMax > 40, 'driving hard: thick exhaust and dust off the back wheels (' + idle + ' -> ' + fxMax + ' puffs)');
+            // the brake lamps
+            ok(J.brakes.every(b => !b.visible), 'by day the tail lamps are dark while you drive');
+            keys.KeyW = false;
+            keys.KeyS = true;
+            run(10);
+            ok(J.brakes.every(b => b.visible && b.material.opacity > 0.5), 'braking lights the brake lamps');
+            keys.KeyS = false;
+            sec(2.5);
+            ok(J.brakes.every(b => !b.visible), 'and they go out when you let go');
+            // the view widens with speed
+            const fovFast = A.cam.fov;
+            keys.KeyS = true;
+            sec(3);
+            keys.KeyS = false;
+            run(3);
+            ok(fovFast > A.cam.fov + 1.5, 'the view widens as you speed up (' + A.cam.fov.toFixed(1) + ' to ' + fovFast.toFixed(1) + ' degrees)');
+          }
+
+          // ---- in the rain there is far less dust
+          if (lane !== null) {
+            const dustAt = rain => {
+              start();
+              A.setWeather(rain ? 'storm' : 'clear', true);
+              keys.KeyW = true;
+              sec(2.2);
+              const n0 = A.JFX.n;
+              keys.KeyW = false;
+              return n0;
+            };
+            const dry = dustAt(false),
+              wet = dustAt(true);
+            A.setWeather('clear', true);
+            ok(wet < dry * 0.8, 'rain lays the dust (' + dry + ' puffs dry, ' + wet + ' wet)');
+          }
+
+          // ---- the body on its springs: it leans out of a turn and dips its nose under the brakes
+          {
+            start();
+            A.leaveJeep();
+            J.swayS = null;
+            J.speed = 9;
+            A.poseJeep(1 / 60);
+            for (let i = 0; i < 30; i++) {
+              J.heading += 1.0 / 60;
+              A.poseJeep(1 / 60);
+            }
+            const lean = J.swayS.r;
+            for (let i = 0; i < 18; i++) {
+              J.speed = Math.max(0, J.speed - 11 / 60);
+              A.poseJeep(1 / 60);
+            }
+            const dip = J.swayS.p,
+              noseY = J.nose.getWorldPosition(V(0, 0, 0)).y;
+            ok(lean > 0.015, 'turning left at speed the body leans out, to the right (' + lean.toFixed(3) + ' rad)');
+            ok(dip > 0.015, 'braking hard the nose dips (' + dip.toFixed(3) + ' rad)');
+            J.speed = 0;
+            for (let i = 0; i < 120; i++) A.poseJeep(1 / 60);
+            ok(Math.abs(J.swayS.p) < 0.004 && Math.abs(J.swayS.r) < 0.004 && J.nose.getWorldPosition(V(0, 0, 0)).y > noseY, 'and when it stops it settles back level');
+          }
+
+          // ---- the handbrake: steer and it slides; without it the car goes where it points
+          if (lane !== null) {
+            const trial = hb => {
+              start();
+              keys.KeyW = true;
+              sec(2.2);
+              keys.KeyA = true;
+              if (hb) keys.Space = true;
+              let slip = 0,
+                drift = 0;
+              for (let i = 0; i < 30; i++) {
+                run(1);
+                slip = Math.max(slip, Math.abs(J.slip));
+                drift = Math.max(drift, J.drift);
+              }
+              keys.Space = false;
+              keys.KeyA = false;
+              keys.KeyW = false;
+              sec(1.5);
+              return { slip, drift, after: Math.abs(J.slip) };
+            };
+            const slide = trial(true),
+              grip = trial(false);
+            ok(slide.drift > 0.8 && slide.slip > 0.25, 'handbrake and steer at speed: the tail slides out (' + slide.slip.toFixed(2) + ' rad of slide)');
+            ok(slide.after < 0.01, 'let go and it straightens up and grips again');
+            ok(grip.slip === 0 && grip.drift === 0, 'steering without the handbrake it goes where it points');
+          }
+
+          // ---- the chase view
+          if (lane !== null) {
+            start();
+            sec(0.5);
+            ok(!J.cab.visible, 'from the seat the frame is out of the way');
+            A.toggleJeepView();
+            keys.KeyW = true;
+            sec(1.5);
+            const cp = A.cam.position,
+              f = V(Math.sin(J.heading), 0, Math.cos(J.heading)),
+              back = V(cp.x - J.x, 0, cp.z - J.z);
+            ok(A.SET.jcam === 'chase' && J.cab.visible && back.dot(f) < -3 && cp.y > J.y + 1.2, 'C gives a chase view: behind and above the car, the whole jeep in sight (' + (-back.dot(f)).toFixed(1) + ' m back, ' + (cp.y - J.y).toFixed(1) + ' m up)');
+            ok(cp.y > H(cp.x, cp.z) + 0.4, 'the camera stays out of the ground');
+            keys.KeyW = false;
+            A.leaveJeep();
+            ok(J.cab.visible, 'out of the jeep, the whole car is drawn');
+            A.enterJeep();
+            run(2);
+            ok(A.SET.jcam === 'chase' && J.cab.visible, 'and the jeep remembers the view you drive in');
+            A.toggleJeepView();
+            run(3);
+            const seat = J.seat.getWorldPosition(V(0, 0, 0));
+            ok(A.SET.jcam === 'seat' && !J.cab.visible && A.cam.position.distanceTo(seat) < 0.2, 'C again: back in the driver\u2019s seat');
+            ok(!!document.getElementById('tCam') && /Chase view/.test(document.getElementById('tCam').getAttribute('aria-label')), 'on a touch screen a view key does the same');
+          }
+          if (P.inJeep) A.leaveJeep();
+          A.SET.jcam = keepView || 'seat';
+          for (const k in keys) keys[k] = false;
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
         'Graphics: tiers, simplified distance shapes, terrain tiles, shadows and the frame-rate controller',
         function () {
           const P = A.P,
@@ -27449,6 +28421,10 @@ window.__bootInner = async function () {
     bridgeH,
     SPECS,
     spawn,
+    JFX,
+    jeepFX,
+    toggleJeepView,
+    GEAR_TOP,
     SPIT,
     spitAt,
     updateSpit,
