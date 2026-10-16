@@ -442,6 +442,20 @@ body.touch #safeTag {
   pointer-events: none;
   opacity: 0;
 }
+#venom {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(ellipse 22% 16% at 36% 44%, rgba(132, 178, 38, 0.95), rgba(132, 178, 38, 0) 100%),
+    radial-gradient(ellipse 18% 24% at 61% 57%, rgba(112, 160, 30, 0.92), rgba(112, 160, 30, 0) 100%),
+    radial-gradient(ellipse 15% 11% at 52% 30%, rgba(150, 196, 52, 0.9), rgba(150, 196, 52, 0) 100%),
+    radial-gradient(ellipse 13% 17% at 25% 66%, rgba(120, 168, 34, 0.85), rgba(120, 168, 34, 0) 100%),
+    radial-gradient(ellipse 17% 12% at 75% 33%, rgba(120, 168, 34, 0.85), rgba(120, 168, 34, 0) 100%),
+    radial-gradient(ellipse at center, rgba(70, 100, 20, 0.45) 0%, rgba(26, 40, 8, 0.85) 100%);
+}
 #wound svg {
   width: 100%;
   height: 100%;
@@ -2767,6 +2781,7 @@ button#btn2:hover {
 <canvas id="gl"></canvas>
 <canvas id="ov"></canvas>
 <div id="hurt"></div>
+<div id="venom"></div>
 <div id="wound"><svg viewBox="0 0 100 100" preserveAspectRatio="none"><g class="claw"><path d="M20 8Q46 46 70 92L67 93Q42 48 18 9Z"/><path d="M32 5Q57 44 81 88L78 89Q53 46 30 6Z"/><path d="M45 4Q68 40 90 80L87 82Q64 43 43 5Z"/></g><g class="bite"><path d="M18 15.6L21.4 15.6L19.7 23.6ZM26 13.2L29.4 13.2L27.7 21.1ZM34 11.4L37.4 11.4L35.7 19.4ZM42 10.3L45.4 10.3L43.7 18.4ZM50 10.0L53.4 10.0L51.7 18.0ZM58 10.3L61.4 10.3L59.7 18.4ZM66 11.4L69.4 11.4L67.7 19.4ZM74 13.2L77.4 13.2L75.7 21.1ZM82 15.6L85.4 15.6L83.7 23.6ZM18 84.4L21.4 84.4L19.7 76.4ZM26 86.8L29.4 86.8L27.7 78.8ZM34 88.6L37.4 88.6L35.7 80.6ZM42 89.7L45.4 89.7L43.7 81.7ZM50 90.0L53.4 90.0L51.7 82.0ZM58 89.7L61.4 89.7L59.7 81.7ZM66 88.6L69.4 88.6L67.7 80.6ZM74 86.8L77.4 86.8L75.7 78.8ZM82 84.4L85.4 84.4L83.7 76.4Z"/></g><g class="talon"><path d="M36 0L39 0L44 28L42 29Z"/><path d="M48 0L51 0L52 32L50 32Z"/><path d="M60 0L63 0L59 28L57 28Z"/></g></svg></div>
 <div id="flash"></div>
 <div id="bloodWrap"></div>
@@ -5760,7 +5775,8 @@ window.__bootInner = async function () {
       cd: 0.9,
       rad: 0.55,
       stride: 1.6,
-      bound: 5
+      bound: 5,
+      prey: ['para', 'galli']
     },
     rex: {
       key: 'rex',
@@ -5793,7 +5809,11 @@ window.__bootInner = async function () {
       cd: 2.3,
       rad: 1.5,
       stride: 3.8,
-      bound: 12
+      bound: 12,
+      big: true,
+      heavy: true,
+      knock: 1.3,
+      prey: ['para', 'trike', 'stego', 'galli', 'pachy']
     },
     ptera: {
       key: 'ptera',
@@ -5945,7 +5965,234 @@ window.__bootInner = async function () {
       rad: 1.4,
       stride: 2.4,
       bound: 8,
-      fights: true
+      fights: true,
+      knock: 1.15
+    },
+    // a sail-backed river hunter with a crocodile's snout: the one predator that swims, so near its lake the water is no refuge
+    spino: {
+      key: 'spino',
+      name: 'Spinosaurus',
+      pred: true,
+      big: true,
+      heavy: true,
+      swim: true,
+      hp: 520,
+      color: 0x55604a,
+      belly: 0xa7a58a,
+      dark: 0x2c3326,
+      eye: 0xffc400,
+      stripe: true,
+      sail: 0xb04a2a,
+      bodyR: [0.95, 1.1, 2.6],
+      legLen: 2.2,
+      legR: 0.32,
+      legs: 2,
+      legX: 0.72,
+      legZ: 0.15,
+      neck: { len: 1.65, r: 0.46, a: 1.12 },
+      head: { s: [0.3, 0.36, 1.6] },
+      tail: { len: 5.4, r: 0.55, a: 0.08 },
+      jaw: true,
+      teeth: 3,
+      arms: 'long',
+      walk: 1.9,
+      stalk: 5,
+      run: 8,
+      swimSpeed: 6.5,
+      turn: 2.2,
+      detect: 140,
+      melee: 5.2,
+      dmg: 38,
+      cd: 2.2,
+      rad: 1.4,
+      stride: 3.4,
+      bound: 12,
+      knock: 1.3,
+      prey: ['para', 'galli', 'pachy'],
+      score: 1200,
+      ammo: 8
+    },
+    // a slim crested hunter that spits venom before it bites; pairs in the forest
+    dilo: {
+      key: 'dilo',
+      name: 'Dilophosaurus',
+      pred: true,
+      hp: 150,
+      color: 0x56693a,
+      belly: 0xcfc58e,
+      dark: 0x2c3a1c,
+      eye: 0xffd000,
+      stripe: true,
+      crests: 0xc0412a,
+      ruff: [0xe2b224, 0xb8321e],
+      bodyR: [0.38, 0.48, 1.0],
+      legLen: 1.15,
+      legR: 0.11,
+      legs: 2,
+      legX: 0.32,
+      legZ: 0,
+      neck: { len: 0.9, r: 0.15, a: 0.92 },
+      head: { s: [0.16, 0.2, 0.46] },
+      tail: { len: 2.1, r: 0.2, a: 0.12 },
+      jaw: true,
+      walk: 2.2,
+      stalk: 4.6,
+      run: 9.5,
+      turn: 6,
+      detect: 95,
+      melee: 2.6,
+      dmg: 12,
+      cd: 1.1,
+      rad: 0.55,
+      stride: 1.7,
+      bound: 5,
+      // spits from min to max metres, every cd seconds or so, after rearing back for wind seconds; blinds for `blind` seconds
+      spit: { min: 5, max: 15, cd: 5.5, wind: 0.6, dmg: 6, v: 17, blind: 5 },
+      prey: ['galli'],
+      score: 350,
+      ammo: 3
+    },
+    // a horned sprinter of the open plains: it charges in a straight line and turns badly
+    carno: {
+      key: 'carno',
+      name: 'Carnotaurus',
+      pred: true,
+      charger: true,
+      hp: 300,
+      color: 0x7b3e28,
+      belly: 0xc9a07a,
+      dark: 0x3a1b10,
+      eye: 0xffa000,
+      stripe: true,
+      bodyR: [0.62, 0.78, 1.65],
+      legLen: 2.0,
+      legR: 0.22,
+      legs: 2,
+      legX: 0.55,
+      legZ: 0.05,
+      neck: { len: 0.95, r: 0.36, a: 0.86 },
+      head: { s: [0.4, 0.46, 0.78] },
+      tail: { len: 3.3, r: 0.4, a: 0.08 },
+      jaw: true,
+      teeth: 2,
+      arms: 'stub',
+      brows: true,
+      studs: true,
+      walk: 2.3,
+      stalk: 6,
+      run: 12.5,
+      turn: 1.5,
+      detect: 135,
+      melee: 3.6,
+      dmg: 28,
+      cd: 1.6,
+      rad: 0.95,
+      stride: 3.0,
+      bound: 9,
+      knock: 1.25,
+      prey: ['para', 'galli', 'pachy'],
+      score: 700,
+      ammo: 5
+    },
+    // a low, wide tank with a club on its tail. Rounds glance off its armour; hurt it and it swings its rear round and clubs you
+    ankylo: {
+      key: 'ankylo',
+      name: 'Ankylosaurus',
+      pred: false,
+      hp: 520,
+      color: 0x6c6448,
+      belly: 0xa89e7c,
+      dark: 0x38321f,
+      eye: 0x111111,
+      bodyR: [1.25, 0.72, 1.85],
+      legLen: 0.85,
+      legR: 0.28,
+      legs: 4,
+      legX: 0.85,
+      neck: { len: 0.45, r: 0.42, a: 1.25 },
+      head: { s: [0.42, 0.32, 0.55] },
+      tail: { len: 3.0, r: 0.34, a: 0.02 },
+      armor: 0.35,
+      club: true,
+      walk: 1.0,
+      run: 4.4,
+      turn: 1.7,
+      dmg: 32,
+      melee: 4.6,
+      cd: 1.9,
+      rad: 1.6,
+      stride: 1.6,
+      bound: 8,
+      fights: true,
+      knock: 1.35,
+      fine: 450
+    },
+    // a dome-headed grazer that holds its ground: walk into its space and it warns you, then butts
+    pachy: {
+      key: 'pachy',
+      name: 'Pachycephalosaurus',
+      pred: false,
+      hp: 220,
+      color: 0x82694a,
+      belly: 0xc9b690,
+      dark: 0x45331e,
+      eye: 0x111111,
+      stripe: true,
+      bodyR: [0.52, 0.6, 1.1],
+      legLen: 1.35,
+      legR: 0.15,
+      legs: 2,
+      legX: 0.36,
+      legZ: 0,
+      neck: { len: 0.7, r: 0.22, a: 0.85 },
+      head: { s: [0.26, 0.3, 0.42] },
+      tail: { len: 2.0, r: 0.28, a: 0.12 },
+      arms: 'stub',
+      dome: true,
+      walk: 1.6,
+      run: 8.5,
+      turn: 3.2,
+      dmg: 22,
+      melee: 2.6,
+      cd: 1.4,
+      rad: 0.75,
+      stride: 1.8,
+      bound: 6,
+      fights: true,
+      territorial: 12,
+      knock: 1.3,
+      fine: 300
+    },
+    // a beaked, long-legged runner in flocks on open ground: the fastest thing in the reserve, and it bolts when it sees you
+    galli: {
+      key: 'galli',
+      name: 'Gallimimus',
+      pred: false,
+      hp: 90,
+      color: 0x9a8865,
+      belly: 0xddd2b0,
+      dark: 0x5a4a34,
+      eye: 0x111111,
+      stripe: true,
+      bodyR: [0.3, 0.38, 0.72],
+      legLen: 1.3,
+      legR: 0.07,
+      legs: 2,
+      legX: 0.24,
+      legZ: 0,
+      neck: { len: 1.05, r: 0.09, a: 0.42 },
+      head: { s: [0.1, 0.11, 0.22] },
+      tail: { len: 1.7, r: 0.15, a: 0.12 },
+      beak: true,
+      arms: 'thin',
+      walk: 1.9,
+      run: 13.5,
+      turn: 4.5,
+      rad: 0.5,
+      stride: 2.2,
+      bound: 5,
+      shy: 40,
+      fine: 200
     }
   };
   const G_SPH = new T.SphereGeometry(1, 12, 9),
@@ -5984,6 +6231,21 @@ window.__bootInner = async function () {
     M(G_SPH, skin, rx, ry, rz, 0, hipY, 0, rig);
     M(G_SPH, belly, rx * 0.93, ry * 0.68, rz * 0.92, 0, hipY - ry * 0.3, 0, rig);
     if (sp.stripe) M(G_SPH, dark, rx * 0.42, ry * 0.22, rz * 0.78, 0, hipY + ry * 0.8, 0, rig);
+    if (sp.sail) {
+      // a spinosaur's sail: a tall fin of skin held up by long spines, highest over the hips
+      const sm = new T.MeshStandardMaterial({ color: sp.sail, roughness: 0.85, flatShading: true });
+      parts.mats.push(sm);
+      const sh = ry * 1.95,
+        sl = rz * 0.84,
+        sy = hipY + ry * 0.55,
+        sz = -rz * 0.05;
+      M(G_SPH, sm, 0.05, sh, sl, 0, sy, sz, rig);
+      for (let i = 0; i < 5; i++) {
+        const t = (i / 4) * 1.6 - 0.8,
+          top = sh * Math.sqrt(1 - t * t) - 0.06;
+        M(G_CYL, dark, 0.065, top, 0.065, 0, sy + top / 2, sz + t * sl, rig);
+      }
+    }
     // neck + head
     const nk = sp.neck,
       hs = sp.head.s;
@@ -6042,6 +6304,50 @@ window.__bootInner = async function () {
       nh.rotation.x = Math.PI / 2 - 0.45;
       M(G_SPH, bone, hs[0] * 0.5, hs[1] * 0.45, hs[2] * 0.4, 0, -hs[1] * 0.3, hs[2] * 1.05, head);
     }
+    if (sp.teeth) {
+      // teeth along the snout, in pairs
+      for (let i = 0; i < sp.teeth; i++)
+        for (const s of [-1, 1])
+          M(G_CONE, bone, hs[0] * 0.15, hs[1] * 0.42, hs[0] * 0.15, s * hs[0] * 0.56, -hs[1] * 0.32, hs[2] * (0.5 + i * 0.34), head).rotation.x =
+            Math.PI;
+    }
+    if (sp.crests) {
+      // two thin crests along the top of the skull
+      const cm = new T.MeshStandardMaterial({ color: sp.crests, roughness: 0.75, flatShading: true });
+      parts.mats.push(cm);
+      for (const s of [-1, 1]) M(G_SPH, cm, 0.03, hs[1] * 1.0, hs[2] * 0.62, s * hs[0] * 0.3, hs[1] * 0.85, hs[2] * 0.5, head);
+    }
+    if (sp.ruff) {
+      // the neck frill: folded flat against the neck, spread wide when it means to spit (see animateDino)
+      const r0 = new T.MeshStandardMaterial({ color: sp.ruff[0], roughness: 0.8, flatShading: true, side: T.DoubleSide }),
+        r1 = new T.MeshStandardMaterial({ color: sp.ruff[1], roughness: 0.8, flatShading: true, side: T.DoubleSide });
+      parts.mats.push(r0, r1);
+      const ruff = new T.Group();
+      ruff.position.set(0, hs[1] * 0.15, hs[2] * 0.05);
+      head.add(ruff);
+      M(G_CYL, r1, hs[1] * 2.5, 0.02, hs[1] * 2.2, 0, 0, -0.03, ruff).rotation.x = Math.PI / 2;
+      M(G_CYL, r0, hs[1] * 1.95, 0.02, hs[1] * 1.7, 0, 0, 0, ruff).rotation.x = Math.PI / 2;
+      ruff.scale.set(0.15, 0.15, 1);
+      parts.ruff = ruff;
+    }
+    if (sp.brows) {
+      // a bull's horns over the eyes
+      for (const s of [-1, 1]) {
+        const h = M(G_CONE, dark, 0.1, 0.55, 0.1, s * hs[0] * 0.62, hs[1] * 0.85, hs[2] * 0.3, head);
+        h.rotation.set(-0.1, 0, -s * 0.95);
+      }
+    }
+    if (sp.dome) {
+      // the thick domed skull, ringed with knobs
+      const dm = new T.MeshStandardMaterial({ color: 0xbfa77c, roughness: 0.6, flatShading: true });
+      parts.mats.push(dm);
+      M(G_SPH, dm, hs[0] * 1.08, hs[1] * 0.9, hs[2] * 0.72, 0, hs[1] * 0.62, hs[2] * 0.32, head);
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 4 - 0.5) * 2.4;
+        parts.fine.push(M(G_SPH, dark, 0.05, 0.05, 0.05, Math.sin(a) * hs[0], hs[1] * 0.45, hs[2] * 0.32 - Math.cos(a) * hs[2] * 0.62, head));
+      }
+    }
+    if (sp.beak) M(G_CONE, belly, hs[0] * 0.62, hs[2] * 1.15, hs[1] * 0.42, 0, -hs[1] * 0.18, hs[2] * 1.32, head).rotation.x = Math.PI / 2;
     // tail (yaw group so it can sway about vertical)
     const tailYaw = new T.Group();
     tailYaw.position.set(0, hipY + ry * 0.1, -rz * 0.82);
@@ -6078,6 +6384,20 @@ window.__bootInner = async function () {
           k.rotation.z = -s * 1.15;
         }
     }
+    if (sp.armor) {
+      // an ankylosaur's armour: rows of bony knobs over the back and spikes along each flank
+      for (let i = 0; i < 3; i++)
+        for (const s of [-1, 0, 1])
+          parts.fine.push(
+            M(G_SPH, dark, rx * 0.16, ry * 0.2, rz * 0.13, s * rx * 0.48, hipY + ry * (s ? 0.82 : 0.96), rz * (0.48 - i * 0.48), rig)
+          );
+      for (let i = 0; i < 4; i++)
+        for (const s of [-1, 1]) M(G_CONE, bone, 0.12, 0.62, 0.12, s * rx * 0.97, hipY + ry * 0.05, rz * (0.62 - i * 0.4), rig).rotation.z = -s * 1.4;
+    }
+    if (sp.club) M(G_SPH, dark, sp.tail.r * 1.55, sp.tail.r * 0.95, sp.tail.r * 1.2, 0, sp.tail.len * 0.95, 0, tail); // the club at the tail's end
+    if (sp.studs)
+      for (let i = 0; i < 3; i++)
+        for (const s of [-1, 1]) parts.fine.push(M(G_SPH, dark, 0.08, 0.07, 0.1, s * rx * 0.33, hipY + ry * 0.92, rz * (0.5 - i * 0.42), rig));
     // legs
     const lx = sp.legX;
     const lp =
@@ -6102,12 +6422,14 @@ window.__bootInner = async function () {
       parts.legs.push(lg);
     });
     if (sp.arms) {
+      // a tyrannosaur's little arms; a spinosaur's long clawed ones, a carnotaur's stubs, a gallimimus's thin hands
+      const [ar, al] = sp.arms === 'long' ? [0.13, 1.2] : sp.arms === 'stub' ? [0.06, 0.32] : sp.arms === 'thin' ? [0.045, 0.55] : [0.09, 0.75];
       for (const s of [-1, 1]) {
         const a = new T.Group();
         a.position.set(s * rx * 0.72, hipY - ry * 0.15, rz * 0.62);
         a.rotation.x = -0.7;
         rig.add(a);
-        parts.fine.push(M(G_LEG, skin, 0.09, 0.75, 0.09, 0, -0.37, 0, a));
+        parts.fine.push(M(G_LEG, skin, ar, al, ar, 0, -al * 0.493, 0, a));
       }
     }
     // hit volumes
@@ -6116,6 +6438,7 @@ window.__bootInner = async function () {
     const br = Math.max(rx, ry) * 1.02;
     parts.spheres.push({ o: marker(rig, 0, hipY, rz * 0.38), r: br, zone: 'body' });
     parts.spheres.push({ o: marker(rig, 0, hipY, -rz * 0.38), r: br, zone: 'body' });
+    if (sp.sail) parts.spheres.push({ o: marker(rig, 0, hipY + ry * 1.55, 0), r: ry * 0.8, zone: 'body' }); // the sail can be hit (in a lake it is all that shows)
     parts.neck = neck;
     parts.head = head;
     // the parts too small to see once the animal is far off (eyes, teeth, horns, spikes, feet): they are switched off by distance, see updateDinoLOD
@@ -6231,6 +6554,82 @@ window.__bootInner = async function () {
     return (FARGEO[sp.key] = geo);
   }
   const dinos = [];
+  // venom in flight (see diloTactics): a few globs at most, one shared shape and colour
+  const SPIT = [],
+    SPIT_G = 9.8,
+    SPIT_GEO = new T.SphereGeometry(0.11, 8, 6),
+    SPIT_MAT = new T.MeshBasicMaterial({ color: 0x9fd33a });
+  function spitAt(d) {
+    const S = d.sp.spit,
+      h = d.wp[0],
+      // at your face, a little off, and with no lead: a sidestep beats it
+      ex = cam.position.x + rand(-0.3, 0.3),
+      ey = cam.position.y - 0.05 + rand(-0.15, 0.2),
+      ez = cam.position.z + rand(-0.3, 0.3),
+      dx = ex - h.x,
+      dz = ez - h.z,
+      t = Math.max(0.15, Math.hypot(dx, dz) / S.v),
+      m = new T.Mesh(SPIT_GEO, SPIT_MAT);
+    m.position.set(h.x, h.y, h.z);
+    m.scale.set(1, 1, 1.8);
+    scene.add(m);
+    SPIT.push({ x: h.x, y: h.y, z: h.z, vx: dx / t, vy: (ey - h.y) / t + 0.5 * SPIT_G * t, vz: dz / t, t: 0, m, src: d });
+    d.spitK = 0.25;
+    Aud.spit(d);
+  }
+  const _sv = new T.Vector3();
+  function updateSpit(dt) {
+    for (let i = SPIT.length - 1; i >= 0; i--) {
+      const s = SPIT[i],
+        x0 = s.x,
+        y0 = s.y,
+        z0 = s.z;
+      s.t += dt;
+      s.vy -= SPIT_G * dt;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      s.z += s.vz * dt;
+      s.m.position.set(s.x, s.y, s.z);
+      s.m.lookAt(_sv.set(s.x + s.vx, s.y + s.vy, s.z + s.vz));
+      // the closest it came to your face during this step
+      const ex = cam.position.x,
+        ey = cam.position.y - 0.05,
+        ez = cam.position.z,
+        sx = s.x - x0,
+        sy = s.y - y0,
+        sz = s.z - z0,
+        u = clamp(((ex - x0) * sx + (ey - y0) * sy + (ez - z0) * sz) / (sx * sx + sy * sy + sz * sz || 1e-9), 0, 1),
+        cx = x0 + sx * u - ex,
+        cy = y0 + sy * u - ey,
+        cz = z0 + sz * u - ez,
+        gy = Math.max(heightAt(s.x, s.z), WATER);
+      let gone = false;
+      if (cx * cx + cy * cy + cz * cz < 0.25 && game.state === STATE.PLAY && P.alive && !P.inJeep) {
+        venomHit(s.src);
+        gone = true;
+      } else if (s.y < gy || s.t > 3 || (P.inJeep && Math.hypot(s.x - JEEP.x, s.z - JEEP.z) < 1.7 && s.y < JEEP.y + 2.2)) {
+        // it splashes on the ground, or on the windscreen
+        puff(new T.Vector3(s.x, Math.max(s.y, gy + 0.05), s.z), 0x8fbf3a, 4, 1.2, 0.18, 0.6, -2, 1.5, 0.7);
+        if (Math.hypot(s.x - P.x, s.z - P.z) < 30) Aud.splat({ x: s.x, y: s.y, z: s.z });
+        gone = true;
+      }
+      if (gone) {
+        scene.remove(s.m);
+        SPIT.splice(i, 1);
+      }
+    }
+  }
+  function clearSpit() {
+    for (const s of SPIT) scene.remove(s.m);
+    SPIT.length = 0;
+  }
+  function venomHit(src) {
+    if (P.inJeep || P.safe || !P.alive) return;
+    P.venomT = src.sp.spit.blind; // it blinds you whatever else is going on
+    Aud.splat();
+    journalNote(src.type, 'hunt');
+    damagePlayer(src.sp.spit.dmg, src, 'spit');
+  }
   function spawn(type, x, z, pack, opt) {
     const sp = SPECS[type],
       b = sp.fly ? buildFlyer(sp) : buildDino(sp);
@@ -6470,8 +6869,68 @@ window.__bootInner = async function () {
       const c = findOpenSpot(80, 640, true, 85);
       for (let i = 0; i < 5; i++) spawn('ptero', c[0] + rand(-12, 12), c[1] + rand(-12, 12), 400 + k, { homeR: 60 });
     }
+    // the newer arrivals are drawn from their own stream, so every tree, place and animal the seed made before is where it was
+    withRNG((SEED_NUM ^ 0x7e57ab1e) >>> 0, () => {
+      const homes = [];
+      for (let k = 0; k < 2; k++) {
+        let c = findShore(220, 640);
+        for (let n = 0; n < 10 && homes.some(q => Math.hypot(q[0] - c[0], q[1] - c[1]) < 320); n++) c = findShore(220, 640);
+        homes.push(c);
+        spawn('spino', c[0], c[1], 20000 + k, { homeR: 110 });
+      }
+      for (let k = 0; k < 3; k++) {
+        const c = findForest(180, 620);
+        packAt('dilo', 2, c[0], c[1], 20100 + k, { homeR: 160 }, 5);
+      }
+      for (let k = 0; k < 2; k++) {
+        const c = findSpot(240, 620, true);
+        spawn('carno', c[0], c[1], 20200 + k, { homeR: 230 });
+      }
+      for (let k = 0; k < 2; k++) {
+        const c = findSpot(150, 620, true);
+        packAt('ankylo', 2, c[0], c[1], 20300 + k, { homeR: 45 }, 8);
+      }
+      for (let k = 0; k < 2; k++) {
+        const c = findSpot(150, 620, false);
+        packAt('pachy', 3, c[0], c[1], 20400 + k, { homeR: 50 }, 7);
+      }
+      for (let k = 0; k < 2; k++) {
+        const c = findSpot(140, 640, true);
+        packAt('galli', 6, c[0], c[1], 20500 + k, { homeR: 70 }, 10);
+      }
+    });
+  }
+  /* a spinosaur's home: a lake shore (not the sea round the island), with water deep enough to swim in close by */
+  function findShore(minD, maxD) {
+    for (let n = 0; n < 500; n++) {
+      const a = rand(0, TAU),
+        r = rand(minD, maxD),
+        x = Math.sin(a) * r,
+        z = Math.cos(a) * r;
+      if (Math.abs(x) > EDGE - 60 || Math.abs(z) > EDGE - 60) continue;
+      const hh = heightAt(x, z);
+      if (hh < WATER + 0.6 || hh > WATER + 4) continue;
+      let wet = false;
+      for (let k = 0; k < 8 && !wet; k++) {
+        const b = (k / 8) * TAU;
+        if (heightAt(x + Math.sin(b) * 24, z + Math.cos(b) * 24) < WATER - 2.6) wet = true;
+      }
+      if (!wet) continue;
+      if (POI.towers.some(t => Math.hypot(t.x - x, t.z - z) < 70) || POI.nests.some(t => Math.hypot(t.x - x, t.z - z) < 110)) continue;
+      return [x, z];
+    }
+    return findSpot(minD, maxD, true);
+  }
+  function findForest(minD, maxD) {
+    let c = null;
+    for (let n = 0; n < 40; n++) {
+      c = findSpot(minD, maxD, false);
+      if (forestDens(c[0], c[1]) > 0.5) return c;
+    }
+    return c;
   }
   function clearDinos() {
+    clearSpit();
     for (const d of dinos) {
       scene.remove(d.g);
       d.parts.mats.forEach(m => m.dispose());
@@ -6502,7 +6961,7 @@ window.__bootInner = async function () {
         const x = d.x + sx * look * f,
           z = d.z + cz * look * f,
           gh = heightAt(x, z);
-        if (gh < WATER + 0.3 || Math.abs(x) > HALF - 10 || Math.abs(z) > HALF - 10) return false;
+        if ((gh < WATER + 0.3 && !d.sp.swim) || Math.abs(x) > HALF - 10 || Math.abs(z) > HALF - 10) return false;
         if (trunkAt(x, gh + 1, z, gh, r) >= 0) return false;
       }
       return true;
@@ -6564,11 +7023,12 @@ window.__bootInner = async function () {
     const diff = wrapAng(d.wantHead + (forced || d.avoid || 0) - d.heading),
       turn = sp.turn * (d.speed < 1 ? 0.6 : 1) * (d.stagger > 0 ? 0.5 : 1);
     d.heading += clamp(diff, -turn * dt, turn * dt);
-    const tgt = d.wantSpeed * (d.stagger > 0 ? 0.45 : 1);
+    let tgt = d.wantSpeed * (d.stagger > 0 ? 0.45 : 1);
+    if (sp.swim && heightAt(d.x, d.z) < WATER - 1) tgt = Math.min(tgt, sp.swimSpeed); // swimming is slower than running
     d.speed += clamp(tgt - d.speed, -14 * dt, 9 * dt);
     const nx = d.x + Math.sin(d.heading) * d.speed * dt,
       nz = d.z + Math.cos(d.heading) * d.speed * dt;
-    if (heightAt(nx, nz) < WATER + 0.15 || Math.abs(nx) > HALF - 8 || Math.abs(nz) > HALF - 8) {
+    if ((!sp.swim && heightAt(nx, nz) < WATER + 0.15) || Math.abs(nx) > HALF - 8 || Math.abs(nz) > HALF - 8) {
       d.speed = 0;
       if (!d.avoid) d.avoid = RG() < 0.5 ? 1.2 : -1.2; // turned back by the water: swing away from it
     } else {
@@ -6618,12 +7078,14 @@ window.__bootInner = async function () {
         d.z = q.z + (sz / sd) * rr;
       }
     }
-    d.y = heightAt(d.x, d.z);
+    // (a swimmer in deep water floats with its back out: its feet are a little under the surface, not on the lake bed)
+    const ground = sp.swim ? (x, z) => Math.max(heightAt(x, z), WATER - d.parts.hipY * 0.8) : heightAt;
+    d.y = ground(d.x, d.z);
     d.g.position.set(d.x, d.y, d.z);
     d.g.rotation.y = d.heading;
     const f = sp.stride,
-      hF = heightAt(d.x + Math.sin(d.heading) * f, d.z + Math.cos(d.heading) * f),
-      hB = heightAt(d.x - Math.sin(d.heading) * f, d.z - Math.cos(d.heading) * f);
+      hF = ground(d.x + Math.sin(d.heading) * f, d.z + Math.cos(d.heading) * f),
+      hB = ground(d.x - Math.sin(d.heading) * f, d.z - Math.cos(d.heading) * f);
     d.g.rotation.x = -Math.atan2(hF - hB, 2 * f) * 0.85;
   }
   function pickWander(d, r) {
@@ -6645,14 +7107,30 @@ window.__bootInner = async function () {
     d.cdT -= dt;
     d.stagger -= dt;
     if (d.charge > 0 && P.safe) d.charge = 0;
+    if (sp.territorial && territorial(d, dt)) return;
+    if (sp.shy) shyCheck(d);
     if (d.charge > 0) {
       d.charge -= dt;
       d.grazing = false;
       const dx = P.x - d.x,
         dz = P.z - d.z,
-        dist = Math.hypot(dx, dz);
+        dist = Math.hypot(dx, dz),
+        away = Math.atan2(-dx, -dz),
+        rear = Math.abs(wrapAng(d.heading - away)); // how far its tail is from pointing at you
       d.wantHead = Math.atan2(dx, dz);
-      if (dist < sp.melee * 0.85) {
+      if (sp.club) {
+        // it does not butt: close in, it swings its rear round to you and clubs you with its tail
+        if (dist < sp.melee * 1.2) {
+          d.wantHead = away + (d.clubSide || 1) * 0.35;
+          d.wantSpeed = 0.3;
+          if (rear < 1.1 && d.cdT <= 0 && d.attackT <= 0 && P.alive && game.state === STATE.PLAY) {
+            d.cdT = sp.cd;
+            d.attackT = 0.001;
+            d.dealt = false;
+            d.clubSide = -(d.clubSide || 1); // the next swing comes from the other side
+          }
+        } else d.wantSpeed = sp.run;
+      } else if (dist < sp.melee * 0.85) {
         d.wantSpeed = 0.5;
         if (d.cdT <= 0 && P.alive && game.state === STATE.PLAY) {
           d.cdT = sp.cd;
@@ -6664,7 +7142,7 @@ window.__bootInner = async function () {
         d.attackT += dt;
         if (!d.dealt && d.attackT > 0.3) {
           d.dealt = true;
-          if (dist < sp.melee * 1.5) damagePlayer(sp.dmg, d);
+          if (sp.club ? dist < sp.melee * 1.25 && rear < 1.6 : dist < sp.melee * 1.5) damagePlayer(sp.dmg, d);
         }
         if (d.attackT > 0.7) d.attackT = 0;
       }
@@ -6703,6 +7181,61 @@ window.__bootInner = async function () {
     }
     d.wantHead = Math.atan2(dx, dz);
     d.wantSpeed = sp.walk;
+  }
+  /* A pachycephalosaur holds its ground: walk into its space and it lowers its dome, stamps and snorts; stay, and it charges. Back off
+     while it warns you and it lets you go. It does not bother with a jeep, and a crouch lets you closer. */
+  function territorial(d, dt) {
+    const sp = d.sp;
+    if (d.warnCd > 0) d.warnCd -= dt;
+    if (d.charge > 0 || d.fleeT > 0 || d.hatchling || d.asleep) {
+      d.warnT = 0;
+      return false;
+    }
+    const dist = Math.hypot(P.x - d.x, P.z - d.z),
+      near = P.alive && !P.safe && !P.inJeep && game.state === STATE.PLAY && dist < sp.territorial * (P.stance ? 0.75 : 1);
+    if (d.warnT > 0) {
+      d.warnT -= dt;
+      d.grazing = false;
+      d.grazeT = 0;
+      d.wantSpeed = 0;
+      d.wantHead = Math.atan2(P.x - d.x, P.z - d.z);
+      if (d.warnT <= 0) {
+        d.warnT = 0;
+        d.warnCd = rand(9, 14);
+        if (near) {
+          d.charge = rand(4, 6);
+          d.cdT = 0;
+          Aud.roar(d.type, d);
+          journalNote(d.type, 'hunt'); // "walk into its space and it charges": its behaviour entry
+        }
+      }
+      return true;
+    }
+    if (near && !(d.warnCd > 0)) {
+      d.warnT = 1.5;
+      d.hasT = false;
+      d.grazeT = 0;
+      Aud.roar(d.type, d);
+    }
+    return false;
+  }
+  /* Gallimimus keep their distance: come into sight of a flock and the whole flock bolts, faster than anything else in the reserve. Low
+     and still you can get closer; a jeep or a sprint they notice from further off. */
+  function shyCheck(d) {
+    if (d.fleeT > 0 || !P.alive || d.hatchling || d.asleep || game.state !== STATE.PLAY) return;
+    const dist = Math.hypot(P.x - d.x, P.z - d.z),
+      r = d.sp.shy * clamp(STEALTH.vis, 0.3, 1.2) * (P.moving ? (P.sprint ? 1.4 : 1) : 0.6) * (P.inJeep ? 1.5 : 1);
+    if (dist > r) return;
+    for (const o of dinos)
+      if (o.type === d.type && o.pack === d.pack && !o.dead && !o.asleep && Math.hypot(o.x - d.x, o.z - d.z) < 90) {
+        o.fleeT = rand(6, 9);
+        o.fleeX = P.x;
+        o.fleeZ = P.z;
+        o.hasT = false;
+        o.grazeT = 0;
+      }
+    Aud.roar(d.type, d);
+    journalNote(d.type, 'hunt');
   }
   /* How a hunt ends. A hunting predator follows you while it can still make you out (trackRange) and tires of a chase it cannot win (patience).
      Hurting it, or being bitten, keeps the hunt on. When it gives up it walks to roughly where it last had you, looks around, and goes home. */
@@ -6813,9 +7346,93 @@ window.__bootInner = async function () {
       } else d.circT = rand(0.6, 1.4);
     }
   }
+  /* A dilophosaurus spits before it bites. At 5 to 15 m, if it can see your face, it stops, spreads its frill, rears back and hisses, then
+     spits a glob of venom. Venom in the eyes blinds you for a few seconds and stings. The glob flies true but does not lead you: step aside
+     when the frill opens. While you are blinded it comes in to bite, and springs back after each bite. */
+  function diloTactics(d, dt, dist, live) {
+    const sp = d.sp,
+      S = sp.spit;
+    if (d.spitCd > 0) d.spitCd -= dt;
+    if (d.backT > 0) {
+      d.backT -= dt;
+      d.wantSpeed = -3;
+      return;
+    }
+    if (d.spitT > 0) {
+      d.spitT -= dt;
+      d.wantSpeed = 0;
+      if (d.spitT <= 0) {
+        d.spitT = 0;
+        if (live && P.alive) spitAt(d);
+      }
+      return;
+    }
+    if (live && P.alive && !P.inJeep && !P.safe && dist > S.min && dist < S.max && !(d.spitCd > 0) && !(P.venomT > 0)) {
+      const h = d.wp[0];
+      if (!blocked(h, cam.position.x, cam.position.y, cam.position.z)) {
+        d.spitT = S.wind;
+        d.spitCd = S.cd * rand(0.8, 1.3);
+        Aud.hiss(d);
+        return;
+      }
+    }
+    d.wantSpeed = dist < sp.melee * 0.8 ? 0.4 : dist < 45 ? sp.run : sp.stalk;
+  }
+  /* A carnotaurus charges. From under 40 m, once it is lined up, it lowers its head, stamps and bellows, then runs flat out at where you
+     stood and on past it. It turns badly: a step aside at the last moment and it thunders by, and it needs a few seconds to skid round. */
+  function carnoTactics(d, dt, dx, dz, dist, live) {
+    const sp = d.sp;
+    if (d.rush === 3) {
+      d.rushT -= dt;
+      d.wantSpeed = 0.5;
+      d.wantHead = d.heading + (d.circDir || 1) * 0.6; // skidding round
+      if (d.rushT <= 0) {
+        d.rush = 0;
+        d.circT = rand(0.8, 1.6);
+      }
+      return;
+    }
+    if (d.rush === 2) {
+      d.rushT -= dt;
+      const tx = d.chX - d.x,
+        tz = d.chZ - d.z;
+      d.wantHead = Math.atan2(tx, tz); // committed: it runs at where it aimed, not at where you are now
+      d.wantSpeed = sp.run;
+      if (d.rushT <= 0 || tx * Math.sin(d.heading) + tz * Math.cos(d.heading) < 0 || tx * tx + tz * tz < 4) {
+        d.rush = 3;
+        d.rushT = rand(1.0, 1.5);
+      }
+      return;
+    }
+    if (d.rush === 1) {
+      d.windT -= dt;
+      d.wantSpeed = 0;
+      if (d.windT <= 0) {
+        // it aims at where you are now, and well beyond, and goes
+        const k = 14 / Math.max(1, dist);
+        d.chX = P.x + dx * k;
+        d.chZ = P.z + dz * k;
+        d.rush = 2;
+        d.rushT = 3.4;
+        journalNote(d.type, 'hunt');
+      }
+      return;
+    }
+    if (d.circT > 0) d.circT -= dt;
+    // it closes in at a lope, turning to face you, and charges once it is lined up
+    d.wantSpeed = dist > 90 ? sp.stalk : dist > 40 ? sp.run * 0.7 : sp.walk;
+    const facing = Math.abs(wrapAng(Math.atan2(dx, dz) - d.heading)) < 0.35;
+    if (live && P.alive && dist < 40 && dist > 6 && facing && !(d.circT > 0)) {
+      d.rush = 1;
+      d.windT = 0.75;
+      d.roarT = 0.8;
+      Aud.roar(d.type, d);
+    }
+  }
   function aiPred(d, dt, live) {
     const sp = d.sp;
     d.cdT -= dt;
+    if (d.spitK > 0) d.spitK -= dt;
     d.stagger -= dt;
     d.roarT -= dt;
     d.callT -= dt;
@@ -6870,12 +7487,14 @@ window.__bootInner = async function () {
       d.grazing = false;
       d.wantHead = Math.atan2(dx, dz);
       if (d.type === 'raptor') raptorTactics(d, dt, dx, dz, dist, live);
+      else if (sp.spit) diloTactics(d, dt, dist, live);
+      else if (sp.charger) carnoTactics(d, dt, dx, dz, dist, live);
       else {
         d.wantSpeed = dist < sp.melee * 0.8 ? 0.4 : dist < 70 ? sp.run : sp.stalk;
-        if (d.type === 'rex' && dist > 30 && d.nextRoar <= 0) {
+        if (sp.big && dist > 30 && d.nextRoar <= 0) {
           d.nextRoar = rand(8, 14);
           d.roarT = 1.6;
-          Aud.roar('rex', d);
+          Aud.roar(d.type, d);
           P.shake = Math.max(P.shake, 0.35);
         }
         d.nextRoar -= dt;
@@ -6884,7 +7503,7 @@ window.__bootInner = async function () {
         d.callT = rand(2.2, 4.2);
         Aud.call(d);
       } // you hear them coming long before you see them
-      if (dist < sp.melee * 0.95 && d.cdT <= 0 && d.attackT <= 0 && d.backT <= 0) {
+      if (dist < sp.melee * 0.95 && d.cdT <= 0 && d.attackT <= 0 && d.backT <= 0 && !(d.spitT > 0)) {
         d.attackT = 0.001;
         d.dealt = false;
         d.cdT = sp.cd;
@@ -6903,6 +7522,10 @@ window.__bootInner = async function () {
             d.rush = 0;
             d.backT = 0.8;
             d.circT = rand(2.2, 3.8);
+          } else if (sp.spit) d.backT = 0.7; // a spitter snaps and springs back
+          else if (sp.charger) {
+            d.rush = 3; // the charge carries it on past you
+            d.rushT = 1.1;
           }
         }
         if (d.attackT > ATK.end) d.attackT = 0;
@@ -6934,7 +7557,7 @@ window.__bootInner = async function () {
             r = rand(20, d.homeR),
             x = d.homeX + Math.sin(a) * r,
             z = d.homeZ + Math.cos(a) * r;
-          if (Math.abs(x) < HALF - 40 && Math.abs(z) < HALF - 40 && heightAt(x, z) > WATER + 1.2) {
+          if (Math.abs(x) < HALF - 40 && Math.abs(z) < HALF - 40 && (sp.swim || heightAt(x, z) > WATER + 1.2)) {
             d.tx = x;
             d.tz = z;
             d.hasT = true;
@@ -6976,7 +7599,7 @@ window.__bootInner = async function () {
       f = sp.bodyR[2] * 0.6,
       fx = Math.sin(d.heading) * f,
       fz = Math.cos(d.heading) * f;
-    const g = Math.max(heightAt(hx, hz), heightAt(hx + fx, hz + fz), heightAt(hx - fx, hz - fz)),
+    const g = Math.max(heightAt(hx, hz), heightAt(hx + fx, hz + fz), heightAt(hx - fx, hz - fz), sp.swim ? WATER - ry * 0.9 : -1e9), // (a swimmer's carcass floats)
       low = hip * c - Math.sqrt(rx * rx * s * s + ry * ry * c * c); // the lowest point of the rolled body, above the feet line
     return clamp(g - d.y + 0.03 - low, 0, rx + ry + 1);
   }
@@ -7032,12 +7655,12 @@ window.__bootInner = async function () {
           nz = d.z + Math.cos(d.slideH) * v * dt;
         d.slideV *= Math.exp(-4.2 * dt);
         if (Math.abs(d.slideV) < 0.05) d.slideV = 0;
-        if (heightAt(nx, nz) > WATER + 0.15 && Math.abs(nx) < HALF - 8 && Math.abs(nz) < HALF - 8) {
+        if ((sp.swim || heightAt(nx, nz) > WATER + 0.15) && Math.abs(nx) < HALF - 8 && Math.abs(nz) < HALF - 8) {
           d.x = nx;
           d.z = nz;
           pushOut(d, sp.rad);
         } else d.slideV = 0;
-        d.y = heightAt(d.x, d.z);
+        d.y = sp.swim ? Math.max(heightAt(d.x, d.z), WATER - d.parts.hipY * 0.8) : heightAt(d.x, d.z);
         d.g.position.set(d.x, d.y, d.z);
       }
     } else {
@@ -7063,6 +7686,10 @@ window.__bootInner = async function () {
       P_.jaw.rotation.x = lerp(P_.jaw.rotation.x, open, Math.min(1, dt * 12));
     }
     P_.tail.rotation.y = lerp(P_.tail.rotation.y, tw * Math.sin(t * 3.3) * 0.32, Math.min(1, dt * 6));
+    if (P_.ruff) {
+      const k = 0.15 + (P_.ruff.scale.x - 0.15) * Math.exp(-dt * 3); // the frill folds away
+      P_.ruff.scale.set(k, k, 1);
+    }
     P_.legs.forEach((l, i) => {
       const side = i % 2 ? 1 : -1;
       let target = side * 0.6 * buckle * (1 - fallK * 0.5);
@@ -7106,6 +7733,11 @@ window.__bootInner = async function () {
       wind = smooth(0, 0.22, atk) * (1 - smooth(0.22, 0.3, atk));
       snap = smooth(0.22, 0.34, atk) * (1 - smooth(0.4, 0.7, atk));
     }
+    let clubSw = 0;
+    if (sp.club && atk > 0) {
+      clubSw = (d.clubSide || 1) * (1.5 * snap - 1.1 * wind); // the tail is drawn back to one side, then whips across
+      wind = snap = 0;
+    }
     d.atkSnap = snap;
     // ---- legs, body sway
     P_.legs.forEach(l => {
@@ -7123,36 +7755,47 @@ window.__bootInner = async function () {
     P_.rig.rotation.set(
       snap * 0.2 - wind * 0.1 + Math.sin(d.phase * 2) * 0.015 * gait,
       0,
-      Math.sin(d.phase) * (sp.key === 'rex' ? 0.05 : 0.03) * gait
+      Math.sin(d.phase) * (sp.big ? 0.05 : 0.03) * gait
     );
     P_.tail.rotation.y =
-      Math.sin(d.t * 1.7 + d.weave) * 0.14 + clamp(wrapAng(d.wantHead - d.heading), -0.6, 0.6) * -0.4;
+      Math.sin(d.t * 1.7 + d.weave) * 0.14 + clamp(wrapAng(d.wantHead - d.heading), -0.6, 0.6) * -0.4 + clubSw;
     let nT = sp.neck.a;
     if (d.grazing) nT = sp.neck.a + 1.25;
     else if (d.state === 'hunt') {
       nT = sp.neck.a - 0.2 - cr * 0.12;
       if (d.roarT > 0) nT = sp.neck.a - 0.55;
     }
+    if (sp.charger && d.rush) nT = sp.neck.a + (d.rush === 1 ? 0.35 + 0.08 * Math.sin(d.t * 14) : d.rush === 2 ? 0.22 : 0); // head down to charge
+    if (sp.dome && (d.charge > 0 || d.warnT > 0)) nT = sp.neck.a + (d.warnT > 0 ? 0.35 + 0.3 * Math.sin(d.t * 11) : 0.8); // the dome lowered
+    if (d.spitT > 0) nT = sp.neck.a - 0.6; // rearing back to spit
+    else if (d.spitK > 0) nT = sp.neck.a + 0.5; // and the head whips forward
     if (atk > 0) nT = sp.neck.a - 0.55 * wind + 0.7 * snap; // head up and back, then down and forward
-    P_.neck.rotation.x = lerp(P_.neck.rotation.x, nT, Math.min(1, dt * (atk > 0 ? 16 : 4)));
+    P_.neck.rotation.x = lerp(P_.neck.rotation.x, nT, Math.min(1, dt * (atk > 0 || d.spitK > 0 ? 16 : 4)));
     {
       // once it connects, a tyrannosaur shakes its head and a horned animal tosses its own
       const post = atk > 0 ? atk - (sp.pred ? ATK.hit : 0.34) : -1,
-        sh = post > 0 && post < 0.3 && (sp.key === 'rex' || sp.fights) ? (1 - post / 0.3) * Math.sin(post * 40) * 0.32 : 0;
+        sh = post > 0 && post < 0.3 && (sp.big || (sp.fights && !sp.club)) ? (1 - post / 0.3) * Math.sin(post * 40) * 0.32 : 0;
       if (sh || P_.neck.rotation.y) P_.neck.rotation.y = sh;
     }
     if (P_.jaw) {
       let open = 0;
       if (d.roarT > 0) open = 0.6;
+      if (d.spitT > 0 || d.spitK > 0) open = 0.75;
       if (atk > 0 && sp.pred) open = 0.85 * smooth(0, ATK.hit * 0.8, atk) * (1 - smooth(ATK.hit * 0.92, ATK.hit + 0.04, atk));
       P_.jaw.rotation.x = lerp(P_.jaw.rotation.x, open, Math.min(1, dt * (atk > 0 ? 24 : 12)));
+    }
+    if (P_.ruff) {
+      // the frill spreads when it hunts, and wide as it spits
+      const want = d.spitT > 0 || d.spitK > 0 ? 1.1 : d.state === 'hunt' || d.roarT > 0 ? 0.95 : 0.15,
+        k = P_.ruff.scale.x + (want - P_.ruff.scale.x) * Math.min(1, dt * (want > P_.ruff.scale.x ? 9 : 3));
+      P_.ruff.scale.set(k, k, 1);
     }
     if (d.flash > 0) {
       d.flash = Math.max(0, d.flash - dt * 3);
       d.parts.mats.forEach(m => m.emissive.setRGB(d.flash * 0.5, d.flash * 0.02, 0));
     }
     // heavy footfalls
-    if (sp.key === 'rex') {
+    if (sp.heavy && !d.inWater) {
       const k = Math.floor(d.phase / Math.PI);
       if (k !== d.stepK) {
         d.stepK = k;
@@ -7171,7 +7814,7 @@ window.__bootInner = async function () {
     const sp = d.sp;
     d.phase += ((dt * d.speed) / sp.stride) * Math.PI;
     if (d.flash > 0) d.flash = Math.max(0, d.flash - dt * 3);
-    if (sp.key === 'rex') {
+    if (sp.heavy && !d.inWater) {
       const k = Math.floor(d.phase / Math.PI);
       if (k !== d.stepK) {
         d.stepK = k;
@@ -7445,6 +8088,7 @@ window.__bootInner = async function () {
     else aiHerb(d, dt);
     postAI(d, dt);
     moveDino(d, dt);
+    if (d.sp.swim) swimFx(d, dt, dist);
     if (d.lod >= 2 && d.far) animateFar(d, dt);
     else animateDino(d, dt);
     leaveTrack(d, dt, dist);
@@ -7457,6 +8101,17 @@ window.__bootInner = async function () {
         bleedDrip(d);
       }
     } // wounded animals bleed as they go
+  }
+  /* a swimmer in the water throws up spray as it goes (and you hear it coming) */
+  function swimFx(d, dt, dist) {
+    d.inWater = WATER - heightAt(d.x, d.z) > 0.3;
+    if (!d.inWater || d.speed < 1 || dist > 150) return;
+    d.splashT = (d.splashT || 0) - dt;
+    if (d.splashT > 0) return;
+    d.splashT = 0.4;
+    const f = d.sp.bodyR[2];
+    puff(new T.Vector3(d.x + Math.sin(d.heading) * f, WATER + 0.25, d.z + Math.cos(d.heading) * f), 0xdde6e8, 5, 1.8, 0.45, 0.7, -1.5, 2.2, 0.45);
+    if (dist < 90) Aud.splash({ x: d.x, y: WATER, z: d.z });
   }
   /* things that change how an animal moves after its decision is made: a storm keeps herds close, a wound slows an animal, a dart makes it groggy */
   function postAI(d, dt) {
@@ -7650,6 +8305,10 @@ window.__bootInner = async function () {
     return (boneGeoCache[sp.key] = b.geo());
   }
   function makeBones(d) {
+    if (heightAt(d.x, d.z) < WATER - 0.5) {
+      d.noBones = true; // a carcass in deep water goes to the bottom when the flesh has gone: nothing is left floating on the lake
+      return null;
+    }
     const m = new T.Mesh(boneGeo(d.sp), vcMat);
     m.castShadow = false;
     m.receiveShadow = true;
@@ -7677,7 +8336,7 @@ window.__bootInner = async function () {
     const k = d.decay,
       rot = smooth(4, 15, t),
       sink = smooth(total - 9, total, t);
-    if (sink > 0.05 && !d.bones) d.bones = makeBones(d);
+    if (sink > 0.05 && !d.bones && !d.noBones) d.bones = makeBones(d);
     if (d.bones) {
       const tb = t - total,
         bt = CONFIG.wildlife.bonesSeconds,
@@ -8129,7 +8788,7 @@ window.__bootInner = async function () {
     },
     snarl(d) {
       const p = { x: d.x, y: d.y + (d.parts ? d.parts.hipY : 1), z: d.z },
-        big = d.type === 'rex';
+        big = !!(d.sp && d.sp.big);
       this.noise({ dur: big ? 0.45 : 0.28, gain: big ? 0.7 : 0.45, type: 'bandpass', f0: big ? 380 : 1100, f1: big ? 160 : 520, q: 1.4, pos: p });
       this.tone({ type: 'sawtooth', f0: big ? 90 : 240, f1: big ? 60 : 160, dur: big ? 0.4 : 0.25, gain: big ? 0.35 : 0.18, lp: big ? 400 : 1200, pos: p });
     },
@@ -8137,6 +8796,19 @@ window.__bootInner = async function () {
       const p = { x: d.x, y: d.y + (d.parts ? d.parts.hipY : 1), z: d.z };
       this.noise({ dur: 0.07, gain: 0.8, type: 'highpass', f0: 1400, pos: p, atk: 0.002 });
       this.tone({ type: 'square', f0: 180, f1: 70, dur: 0.06, gain: 0.25, pos: p });
+    },
+    hiss(d) {
+      // a dilophosaur rearing back to spit
+      const p = { x: d.x, y: d.y + (d.parts ? d.parts.hipY : 1), z: d.z };
+      this.noise({ dur: 0.55, gain: 0.32, type: 'highpass', f0: 3000, pos: p, atk: 0.04 });
+      this.tone({ type: 'triangle', f0: 900, f1: 520, dur: 0.4, gain: 0.08, lp: 3000, vib: 70, vd: 90, pos: p });
+    },
+    spit(d) {
+      const p = { x: d.x, y: d.y + (d.parts ? d.parts.hipY : 1), z: d.z };
+      this.noise({ dur: 0.12, gain: 0.4, type: 'bandpass', f0: 1600, q: 1.5, pos: p, atk: 0.005 });
+    },
+    splat(pos) {
+      this.noise({ dur: 0.2, gain: pos ? 0.3 : 0.45, type: 'bandpass', f0: 900, f1: 380, q: 1.2, pos: pos || undefined, atk: 0.005 });
     },
     thud(d, k) {
       const p = { x: d.x, y: d.y, z: d.z };
@@ -8180,6 +8852,31 @@ window.__bootInner = async function () {
           pos: p,
           atk: 0.08
         });
+      } else if (type === 'spino') {
+        // a deep, wet rumble that ends in a hiss
+        this.tone({ type: 'sawtooth', f0: 64, f1: 48, dur: 1.7, gain: 0.5, lp: 380, vib: 14, vd: 9, pos: p, atk: 0.15 });
+        this.noise({ dur: 1.5, gain: 0.32, type: 'bandpass', f0: 240, f1: 110, q: 1.1, pos: p, atk: 0.2, rev: 0.5 });
+        this.noise({ dur: 0.7, gain: 0.18, type: 'highpass', f0: 2400, pos: p, delay: 1.2, atk: 0.1 });
+      } else if (type === 'dilo') {
+        // a rattling hiss and a hooting whistle
+        this.noise({ dur: 0.8, gain: 0.22, type: 'highpass', f0: 2600, pos: p, atk: 0.05 });
+        this.tone({ type: 'triangle', f0: 620, f1: 880, dur: 0.6, gain: 0.16, lp: 2400, vib: 55, vd: 70, pos: p, delay: 0.15 });
+      } else if (type === 'carno') {
+        // a short bellow
+        this.tone({ type: 'sawtooth', f0: 120, f1: 72, dur: 1.0, gain: 0.42, lp: 640, vib: 22, vd: 12, pos: p, atk: 0.06 });
+        this.noise({ dur: 0.8, gain: 0.25, type: 'bandpass', f0: 420, f1: 200, q: 1.3, pos: p, atk: 0.08 });
+      } else if (type === 'pachy') {
+        // a nasal honk, twice
+        this.tone({ type: 'square', f0: 240, f1: 190, dur: 0.45, gain: 0.14, lp: 1100, vib: 8, vd: 6, pos: p, atk: 0.03 });
+        this.tone({ type: 'square', f0: 250, f1: 200, dur: 0.35, gain: 0.12, lp: 1100, pos: p, delay: 0.5, atk: 0.03 });
+      } else if (type === 'galli') {
+        // a flock's alarm: quick squawks
+        for (let i = 0; i < 3; i++)
+          this.tone({ type: 'sawtooth', f0: 700 + i * 60, f1: 1150, dur: 0.12, gain: 0.12, lp: 2800, pos: p, delay: i * 0.13, atk: 0.01 });
+      } else if (type === 'ankylo') {
+        // a low grunt through the armour
+        this.tone({ type: 'sawtooth', f0: 72, f1: 56, dur: 0.9, gain: 0.3, lp: 300, vib: 6, vd: 5, pos: p, atk: 0.1 });
+        this.noise({ dur: 0.6, gain: 0.15, type: 'lowpass', f0: 260, f1: 120, pos: p });
       } else {
         this.tone({ type: 'sawtooth', f0: 95, f1: 68, dur: 1.1, gain: 0.35, lp: 420, vib: 9, vd: 6, pos: p, atk: 0.1 });
       }
@@ -8203,7 +8900,7 @@ window.__bootInner = async function () {
     },
     growl(d) {
       const p = { x: d.x, y: d.y + 1.2, z: d.z },
-        rx = d.type === 'rex';
+        rx = !!(d.sp && d.sp.big);
       this.tone({
         type: 'sawtooth',
         f0: rx ? 64 : 130,
@@ -9660,7 +10357,8 @@ window.__bootInner = async function () {
       base = b.melee ? W.dmg : W.dmg === undefined ? CONFIG.combat.baseDamage : W.dmg,
       floor = W.rangeFloor === undefined ? CONFIG.combat.rangeFloor : W.rangeFloor,
       e = b.melee ? 1 : clamp((0.5 * W.mass * speed * speed) / (0.5 * W.mass * W.v0 * W.v0), 0, 1.1),
-      dmg = base * ZONE_MULT[zone] * (floor + (1 - floor) * e); // a hit is a hit; distance takes a little off it (a lot, for the pistol)
+      armour = d.sp.armor && zone !== 'head' ? d.sp.armor : 1, // an ankylosaur's back and flanks turn most of a blow; its head does not
+      dmg = base * ZONE_MULT[zone] * (floor + (1 - floor) * e) * armour; // a hit is a hit; distance takes a little off it (a lot, for the pistol)
     const range = Math.round(Math.hypot(hp.x - b.dist0.x, hp.y - b.dist0.y, hp.z - b.dist0.z));
     game.stats.hits++;
     if (zone === 'head') game.stats.heads++;
@@ -9680,6 +10378,10 @@ window.__bootInner = async function () {
     hm.className = 'on' + (zone === 'head' ? ' head' : '');
     d.hits = (d.hits || 0) + 1;
     journalNote(d.type, 'hit');
+    if (armour < 1 && !d.armourSaid && d.hp > 0) {
+      d.armourSaid = true;
+      feed('It glanced off the armour. Aim for the head.', '');
+    }
     if (d.hp <= 0) {
       killDino(d, zone, range, b);
       return;
@@ -9713,8 +10415,9 @@ window.__bootInner = async function () {
       if (d.sp.fights) {
         d.charge = 14;
         d.fleeT = 0;
-        Aud.roar('trike', d);
-      } else Aud.roar('para', d);
+        d.warnT = 0;
+        Aud.roar(d.sp.club || d.sp.dome ? d.type : 'trike', d);
+      } else Aud.roar(d.type === 'galli' ? 'galli' : 'para', d);
       d.stagger = 0.8;
     }
     makeNoise(d.x, d.z, 90, { x: P.x, z: P.z });
@@ -9765,10 +10468,10 @@ window.__bootInner = async function () {
       feed('A hatchling was killed: -200', 'bad');
       toast('That was a hatchling. Nobody will thank you for it.');
     } else if (sp.pred) {
-      const base = d.type === 'rex' ? (d.alpha ? 0 : 1500) : d.type === 'ptera' ? 350 : 300;
+      const base = d.type === 'rex' ? (d.alpha ? 0 : 1500) : sp.score || (d.type === 'ptera' ? 350 : 300);
       const pts = base + (head ? 150 : 0) + Math.floor(range / 10) * 5;
       game.score += pts;
-      if (d.type === 'rex') st.rex++;
+      if (d.type === 'rex' || d.type === 'spino') st.rex++;
       else if (d.type === 'ptera') st.fly = (st.fly || 0) + 1;
       else st.rap++;
       if (range > st.longest) st.longest = range;
@@ -9776,7 +10479,7 @@ window.__bootInner = async function () {
         `${sp.name}${d.alpha ? ' (alpha)' : ''} down: ${head ? 'headshot, ' : ''}${range} m  +${pts}`,
         head ? 'head' : ''
       );
-      P.reserve = Math.min(CONFIG.weapon.maxReserve, P.reserve + (d.type === 'rex' ? 10 : 3));
+      P.reserve = Math.min(CONFIG.weapon.maxReserve, P.reserve + (d.type === 'rex' ? 10 : sp.ammo || 3));
       updateAmmoHud();
       if (d.alpha) {
         OBJ.alpha = true;
@@ -9804,7 +10507,7 @@ window.__bootInner = async function () {
   }
   // what hurt you, kept for the death sheet: when, by what, and what you were doing
   const LIFE = { hits: [], last: null };
-  function damagePlayer(amount, src) {
+  function damagePlayer(amount, src, kind) {
     if (!P.alive || game.state !== STATE.PLAY || P.invuln > 0 || P.safe) return;
     if (SET.assist) amount *= 0.7; // aim assist: a bite does 30 per cent less
     amount *= DIFF().dmg;
@@ -9828,25 +10531,30 @@ window.__bootInner = async function () {
       torch: !!P.torch,
       shotAgo: game.time - P.lastShot,
       empty: P.weapon === 'rifle' ? P.rounds <= 0 : P.weapon === 'deagle' ? P.pRounds <= 0 : false,
-      kits: P.kits
+      kits: P.kits,
+      spit: kind === 'spit'
     };
     P.shake = Math.max(P.shake, 0.9);
     Aud.grunt();
     P.kickP += 0.04;
     P.pulse = 1;
     if (amount >= 20) P.optOn = false;
-    // a bite or a charge throws you clear and buys about a second of grace, so one hit is never the start of a death spiral
-    const dx = P.x - src.x,
-      dz = P.z - src.z,
-      dd = Math.hypot(dx, dz) || 1,
-      big = src.type === 'rex' ? 1.3 : src.type === 'trike' ? 1.15 : 1;
-    P.kvx = (dx / dd) * CONFIG.player.knockback * big;
-    P.kvz = (dz / dd) * CONFIG.player.knockback * big;
-    P.invuln = src.type === 'rex' ? CONFIG.player.graceSecondsRex : CONFIG.player.graceSeconds;
-    P.stun = CONFIG.player.stunSeconds;
-    P.actP = 0;
-    src.stagger = Math.max(src.stagger || 0, 0.9);
-    src.cdT = Math.max(src.cdT || 0, src.sp.cd + 0.8);
+    const spit = kind === 'spit', // venom stings and blinds (see venomHit) but throws nobody anywhere
+      bigS = !!(src.sp && src.sp.big);
+    if (!spit) {
+      // a bite or a charge throws you clear and buys about a second of grace, so one hit is never the start of a death spiral
+      const dx = P.x - src.x,
+        dz = P.z - src.z,
+        dd = Math.hypot(dx, dz) || 1,
+        big = (src.sp && src.sp.knock) || 1;
+      P.kvx = (dx / dd) * CONFIG.player.knockback * big;
+      P.kvz = (dz / dd) * CONFIG.player.knockback * big;
+      P.invuln = bigS ? CONFIG.player.graceSecondsRex : CONFIG.player.graceSeconds;
+      P.stun = CONFIG.player.stunSeconds;
+      P.actP = 0;
+      src.stagger = Math.max(src.stagger || 0, 0.9);
+      src.cdT = Math.max(src.cdT || 0, src.sp.cd + 0.8);
+    }
     const hurt = $('hurt');
     hurt.style.transition = 'none';
     hurt.style.opacity = '1';
@@ -9871,12 +10579,13 @@ window.__bootInner = async function () {
       hd.style.transition = 'opacity 1.1s';
       hd.style.opacity = '0';
     });
-    {
+    if (!spit) {
       // the jolt: the view snaps back and away from the side the blow came from, then settles (see applyCamera); a pounce knocks you down
-      const fly = !!(src.sp && src.sp.fly);
+      const fly = !!(src.sp && src.sp.fly),
+        blunt = !!(src.sp && (src.sp.club || src.sp.dome)); // a club or a dome leaves a bruise, not a gash
       P.hitT = 0;
       P.hitSide = ang >= 0 ? 1 : -1;
-      P.hitAmp = clamp(amount / 55, 0.07, 0.2) * (src.type === 'rex' ? 1.35 : 1);
+      P.hitAmp = clamp(amount / 55, 0.07, 0.2) * (bigS || blunt ? 1.35 : 1);
       P.hitDown = fly;
       if (src.type === 'raptor') P.landDip = Math.max(P.landDip, 0.75);
       // and the wound on the screen
@@ -9884,7 +10593,7 @@ window.__bootInner = async function () {
       if (w) {
         w.className = '';
         void w.offsetWidth;
-        w.className = (fly ? 'talon' : src.type === 'rex' ? 'bite' : 'claw') + (ang < 0 ? ' flip' : '') + ' on';
+        if (!blunt) w.className = (fly ? 'talon' : bigS || src.type === 'carno' ? 'bite' : 'claw') + (ang < 0 ? ' flip' : '') + ' on';
       }
     }
     if (P.hp <= 0) {
@@ -11866,6 +12575,15 @@ window.__bootInner = async function () {
     P.prone = P.stance === 2;
     P.invuln = Math.max(0, P.invuln - rdt);
     P.stun = Math.max(0, P.stun - rdt);
+    {
+      // venom in the eyes: green and blotted out for a few seconds, clearing as you blink it away
+      P.venomT = P.alive ? Math.max(0, (P.venomT || 0) - rdt) : 0;
+      const vo = Math.min(1, P.venomT / 2.2);
+      if (vo !== P.venomO) {
+        P.venomO = vo;
+        $('venom').style.opacity = vo.toFixed(3);
+      }
+    }
     P.sprint =
       P.moving &&
       !P.inJeep && // (a stick pushed to its rim while driving is not a sprint: it drained stamina and doubled how far predators notice you)
@@ -12787,7 +13505,7 @@ window.__bootInner = async function () {
     trkDirty = true;
   }
   function leaveTrack(d, dt, dist) {
-    if (d.sp.fly || d.speed < 1.2 || dist > 180) return;
+    if (d.sp.fly || d.speed < 1.2 || dist > 180 || d.inWater) return;
     d.stepAcc = (d.stepAcc || 0) + d.speed * dt;
     if (d.stepAcc > d.sp.stride * 1.8) {
       d.stepAcc = 0;
@@ -13059,7 +13777,7 @@ window.__bootInner = async function () {
    ===================================================================== */
   const ECO = { huntChance: 0.55 };
   function biteBeast(pred, o) {
-    const dmg = pred.sp.dmg * (pred.type === 'rex' ? 3.2 : 1.5);
+    const dmg = pred.sp.dmg * (pred.sp.big ? 3.2 : 1.5);
     o.hp -= dmg;
     o.flash = 1;
     o.fleeT = rand(8, 12);
@@ -13070,7 +13788,7 @@ window.__bootInner = async function () {
     o.stagger = 0.4;
     if (Math.hypot(o.x - P.x, o.z - P.z) < 260) {
       puff(new T.Vector3(o.x, o.y + o.parts.hipY * 1.4, o.z), 0x8e2a22, 6, 2.6, 0.3, 0.8, -2, 2, 0.6);
-      Aud.roar(o.type === 'trike' ? 'trike' : 'para', o);
+      Aud.roar(o.type === 'trike' ? 'trike' : o.type === 'galli' || o.type === 'pachy' || o.type === 'ankylo' ? o.type : 'para', o);
     }
     if (o.hp <= 0) {
       o.dead = true;
@@ -13111,7 +13829,7 @@ window.__bootInner = async function () {
         d.hasT = false;
         d.grazing = lu.type === 'bait' && dl < 7; // head down: it is eating
         d.wantSpeed = dl > 9 ? sp.stalk * 0.9 : dl > 5 ? 0.7 : 0;
-        if (lu.type === 'bait' && dl < 7) lu.eaten += dt * (d.type === 'rex' ? 2 : 1);
+        if (lu.type === 'bait' && dl < 7) lu.eaten += dt * (sp.big ? 2 : 1);
         d.lured = 1.5;
         return true;
       }
@@ -13122,11 +13840,10 @@ window.__bootInner = async function () {
         if (d.preyCool <= 0) {
           d.preyCool = rand(14, 30);
           let best = null,
-            bd = d.type === 'rex' ? 170 : 110;
+            bd = sp.big ? 170 : 110;
           for (const o of dinos) {
             if (o.dead || o.sp.pred || o.sp.fly || o.asleep || o.hatchling) continue;
-            if (d.type === 'raptor' && o.type !== 'para') continue;
-            if (d.type === 'rex' && o.type === 'apato') continue;
+            if (sp.prey && sp.prey.indexOf(o.type) < 0) continue; // each hunter has the animals it can bring down
             const dd = Math.hypot(o.x - d.x, o.z - d.z);
             if (dd < bd) {
               bd = dd;
@@ -13317,7 +14034,7 @@ window.__bootInner = async function () {
    TRANQUILIZER: darts do no damage. Each species needs a few; the sedative takes a few seconds to work (it is angry
    until then), then the animal sleeps for about a minute. A sleeping guard does not wake when you take its eggs.
    ===================================================================== */
-  const SED_HITS = { raptor: 2, para: 2, trike: 3, stego: 3, rex: 4, apato: 5 };
+  const SED_HITS = { raptor: 2, para: 2, trike: 3, stego: 3, rex: 4, apato: 5, spino: 4, dilo: 2, carno: 3, ankylo: 4, pachy: 2, galli: 1 };
   function sedateHit(d, zone, b, hp) {
     game.stats.hits++;
     d.flash = 0.6;
@@ -13513,7 +14230,7 @@ window.__bootInner = async function () {
    anatomy, tracks teach its sign, seeing what it does teaches its behaviour, and sedating it teaches how to handle it.
    It is remembered between operations. Lore from the ruins and statues goes in too, and so do your photos.
    ===================================================================== */
-  const JORDER = ['raptor', 'rex', 'para', 'trike', 'ptera', 'ptero', 'stego', 'apato'];
+  const JORDER = ['raptor', 'rex', 'para', 'trike', 'ptera', 'ptero', 'stego', 'apato', 'spino', 'dilo', 'carno', 'ankylo', 'pachy', 'galli'];
   const JSLOTS = [
     ['id', 'Identification'],
     ['body', 'Anatomy'],
@@ -13584,6 +14301,42 @@ window.__bootInner = async function () {
       sign: 'Prints the size of tables, spaced several metres apart.',
       behav: 'It drifts between water and browse, slowly, and the herd moves as one.',
       care: 'Five darts, and no good reason to use them.'
+    },
+    spino: {
+      id: 'Spinosaurus. A sail-backed hunter longer than a tyrannosaur, with a crocodile\u2019s snout. It keeps to the lakes.',
+      sign: 'Big three-toed prints along a shore that walk straight into the water. Where they end, watch the lake, not the bank.',
+      behav: 'The one hunter that swims: near its lake the water is no refuge. In the water only its sail and back show, coming at you.',
+      care: 'Four darts, and the sedative needs a few seconds. Do it on dry land.'
+    },
+    dilo: {
+      id: 'Dilophosaurus. A slim hunter with twin red crests and a frill folded round its neck. They hunt in pairs, in the forest.',
+      sign: 'Small, narrow three-toed prints in pairs among the trees.',
+      behav: 'When the frill opens it is about to spit. The venom blinds you for a few seconds: step aside as it rears back. Then it comes in to bite.',
+      care: 'Two darts. Asleep, the frill folds away.'
+    },
+    carno: {
+      id: 'Carnotaurus. A red, horned hunter built for speed in the open. It hunts alone.',
+      sign: 'Long strides of deep three-toed prints in straight lines across open ground.',
+      behav: 'It lowers its head, stamps and bellows, then charges in a straight line. It turns badly: step aside at the last moment and it runs past.',
+      care: 'Three darts.'
+    },
+    ankylo: {
+      id: 'Ankylosaurus. A low, wide tank of bony armour with a club on its tail. Protected.',
+      sign: 'Wide, splayed prints, with the drag of a heavy tail between them.',
+      behav: 'It never runs far. Hurt it and it swings its rear round and clubs you. Nothing in the reserve hunts it.',
+      care: 'Four darts.'
+    },
+    pachy: {
+      id: 'Pachycephalosaurus. A dome-headed grazer in small herds. Protected.',
+      sign: 'Small three-toed prints close together, often on high ground.',
+      behav: 'It holds its ground: walk into its space and it lowers its dome, stamps and snorts. Back off then, or it charges.',
+      care: 'Two darts.'
+    },
+    galli: {
+      id: 'Gallimimus. Long legs, a beak and a flock: an ostrich of a dinosaur, out on open ground. Protected.',
+      sign: 'Light, narrow prints with long gaps between them: they are nearly always running.',
+      behav: 'The whole flock bolts the moment one sees you, faster than anything else in the reserve. Raptors try for them anyway.',
+      care: 'One dart, if you can get close enough.'
     }
   };
   const SLOT_LABEL = { id: 'identified', body: 'anatomy', sign: 'tracks', behav: 'behaviour', care: 'handling' };
@@ -13649,6 +14402,8 @@ window.__bootInner = async function () {
     const sp = SPECS[type],
       per = CONFIG.combat.baseDamage * 0.94;
     if (type === 'ptero') return 'Fragile: one hit of any kind.';
+    if (sp.armor)
+      return `Armoured: a round to the back or flanks does only a third of the harm. About ${Math.ceil(sp.hp / (per * CONFIG.combat.head))} to the head, which is soft.`;
     return `Takes about ${Math.ceil(sp.hp / per)} body hits at range, or ${Math.ceil(sp.hp / (per * CONFIG.combat.head))} to the head. Wounded animals bleed, and slow down.`;
   }
   let jTab = 'species';
@@ -13721,7 +14476,7 @@ window.__bootInner = async function () {
       if (d.dead) continue;
       const jr = JRN.sp[d.type];
       const needId = !(jr && jr.id),
-        needWatch = d.type === 'apato' && !(jr && jr.behav); // nothing hunts it: its behaviour is learned by watching it for a while
+        needWatch = (d.type === 'apato' || d.type === 'ankylo') && !(jr && jr.behav); // nothing hunts it: its behaviour is learned by watching it for a while
       if (!needId && !needWatch) continue;
       const vx = d.x - cam.position.x,
         vy = d.y + 1.2 - cam.position.y,
@@ -14313,17 +15068,21 @@ window.__bootInner = async function () {
     const th = clamp((keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + (TOUCH.on ? TOUCH.mz : 0), -1, 1),
       st = clamp((keys.KeyA ? 1 : 0) - (keys.KeyD ? 1 : 0) - (TOUCH.on ? TOUCH.mx : 0), -1, 1);
     const hasFuel = J.fuel > 0;
+    const s = Math.sin(J.heading),
+      c = Math.cos(J.heading),
+      grade = (jeepGroundAt(J.x + s * 2, J.z + c * 2, J.onBridge) - jeepGroundAt(J.x - s * 2, J.z - c * 2, J.onBridge)) / 4,
+      // the wheels lose their grip on a hill that is too steep: driving up it, the engine pushes less and less (going down, the brakes still hold)
+      gripF = 1 - smooth(JEEP_GRIP[0], JEEP_GRIP[1], grade),
+      gripR = 1 - smooth(JEEP_GRIP[0], JEEP_GRIP[1], -grade);
+    J.grip = th > 0 ? gripF : th < 0 ? gripR : 1;
     // throttle, brake, reverse
-    if (th > 0 && hasFuel) J.speed += C.accel * th * rdt;
+    if (th > 0 && hasFuel) J.speed += C.accel * th * gripF * rdt;
     else if (th < 0) {
       if (J.speed > 0.3) J.speed = Math.max(0, J.speed - C.brake * rdt);
-      else if (hasFuel) J.speed = Math.max(-C.reverse, J.speed - C.accel * 0.6 * rdt);
+      else if (hasFuel) J.speed = Math.max(-C.reverse, J.speed - C.accel * 0.6 * gripR * rdt);
     } else J.speed -= Math.sign(J.speed) * Math.min(Math.abs(J.speed), C.roll * rdt);
     if (keys.Space) J.speed -= Math.sign(J.speed) * Math.min(Math.abs(J.speed), C.brake * 1.3 * rdt); // handbrake
     // gravity along the slope
-    const s = Math.sin(J.heading),
-      c = Math.cos(J.heading),
-      grade = (jeepGroundAt(J.x + s * 2, J.z + c * 2, J.onBridge) - jeepGroundAt(J.x - s * 2, J.z - c * 2, J.onBridge)) / 4;
     J.speed -= G * grade * 0.55 * rdt;
     J.speed = clamp(J.speed, -C.reverse, C.maxSpeed);
     // steering: full lock at a crawl, less at speed; the car turns about its wheelbase
@@ -14354,21 +15113,17 @@ window.__bootInner = async function () {
       n = Math.max(1, Math.ceil(Math.abs(dist) / 0.3));
     let blocked = null,
       bump = 0;
+    const way = dist >= 0 ? 1 : -1; // forward or in reverse
     for (let i = 0; i < n && !blocked; i++) {
       const nx = J.x + Math.sin(J.heading) * (dist / n),
         nz = J.z + Math.cos(J.heading) * (dist / n),
         deck = bridgeH(nx, nz),
         onDeck = deck > -1e8 && (heightAt(nx, nz) >= deck - 0.7 || J.onBridge), // a bridge carries the jeep as it carries you
-        gh = onDeck ? Math.max(heightAt(nx, nz), deck) : heightAt(nx, nz),
-        g0 = jeepGroundAt(J.x, J.z, J.onBridge);
+        gh = onDeck ? Math.max(heightAt(nx, nz), deck) : heightAt(nx, nz);
       if (!onDeck && gh < WATER + 0.45) blocked = 'water'; // (a low bridge sits only a few decimetres over the water: the deck is dry, whatever is under it)
       else if (Math.abs(nx) > HALF - 12 || Math.abs(nz) > HALF - 12) blocked = 'edge';
-      else if (
-        !onDeck &&
-        gh - g0 > 0.06 &&
-        Math.hypot(heightAt(nx + 1, nz) - heightAt(nx - 1, nz), heightAt(nx, nz + 1) - heightAt(nx, nz - 1)) / 2 > 0.95
-      )
-        blocked = 'cliff';
+      else if (!onDeck && jeepClimb(nx, nz, s * way, c * way, false) > JEEP_WALL)
+        blocked = 'cliff'; // a rock face, judged between the axles (one steep facet of a hillside is not a wall)
       else {
         J.x = nx;
         J.z = nz;
@@ -14511,6 +15266,14 @@ window.__bootInner = async function () {
    body instead of stopping it: jeepPush returns how high the tallest one under the car is, and the body rides up by that much. Everything else
    (trunks, boulders, logs, walls) still pushes the car back. */
   const JEEP_CLIMB = 0.75;
+  // how steep the jeep can drive: the engine's grip fades from GRIP[0] to nothing at GRIP[1] (rise per metre under the car), and ground
+  // steeper than JEEP_WALL between its axles is a rock face that stops it outright
+  const JEEP_GRIP = [0.6, 1.1],
+    JEEP_WALL = 1.2;
+  // the rise per metre between the axles of a car standing at x, z and facing (or reversing) along sx, sz
+  function jeepClimb(x, z, sx, sz, onBr) {
+    return (jeepGroundAt(x + sx * 1.6, z + sz * 1.6, onBr) - jeepGroundAt(x - sx * 1.6, z - sz * 1.6, onBr)) / 3.2;
+  }
   function jeepPush(o, rad) {
     let lift = 0;
     const ix = Math.floor(o.x / CELL),
@@ -17533,6 +18296,11 @@ window.__bootInner = async function () {
       else if (L.type === 'raptor') tip = 'Raptors circle in packs. Put your back to a tree or rock and take the nearest first; the pistol is quickest up close.';
       else if (L.fly) tip = 'A pteranodon stoops on anyone in the open and strikes once. Go prone in tall grass, or keep moving.';
       else if (L.type === 'trike') tip = 'A triceratops charge cannot turn: step aside at the last moment. Lure guards off or sedate them before taking an egg.';
+      else if (L.type === 'spino') tip = 'A spinosaurus swims: near its lake the water will not save you. Get onto high ground, into the jeep, or put trees between you.';
+      else if (L.type === 'dilo') tip = 'A dilophosaurus spits before it bites. When its frill opens, step sideways; then shoot it while it comes in.';
+      else if (L.type === 'carno') tip = 'A carnotaurus charges in a straight line and turns badly. Step aside at the last moment and shoot it as it skids round.';
+      else if (L.type === 'ankylo') tip = 'Hurt an ankylosaurus and it clubs whatever is behind it. Keep clear of its tail, and aim for the head: rounds glance off its back.';
+      else if (L.type === 'pachy') tip = 'A pachycephalosaurus warns before it charges: when it lowers its dome and stamps, back away.';
       else if (!L.pred) tip = 'Protected animals only fight back when hurt. Check the crosshair before you fire.';
       if (L.shotAgo < 10 && L.pred) tip += ' You had just fired: shots carry 320 m.';
       else if (L.torch) tip += ' Your torch showed where you were.';
@@ -17569,7 +18337,7 @@ window.__bootInner = async function () {
       $('stamp').textContent = 'Sector 7';
       $('mSub').textContent = 'Cretaceous reserve. The watch network is down. Clear morning, light wind.';
       b.innerHTML = `<p>Ranger, the reserve is yours to roam. Three watch towers have fallen and the beasts have moved in. Restore the towers, steal three eggs from guarded nests for the incubator, and bring down the alpha tyrannosaur.</p>
-    <p>Restored towers keep a supply crate and become your respawn points. Hammering is loud. Nests are guarded: raptors, a tyrannosaur, a triceratops herd. Pteranodons stoop on anyone they notice, so watch the sky. Hadrosaurs, triceratops, stegosaurs, apatosaurs and pterodactyls in the wild are protected: dropping one costs points. Lakes are open to you (swim, and dive with C), and ground predators will not follow you in. Open the map with M. Your rifle is a .338 Lapua Magnum zeroed at 100 m: range the target, dial the turret, read the flags, and fire at the bottom of an exhale.</p>${controlsHtml()}${sv ? `<div class="fine" style="margin:0 0 8px"><b>Saved operation:</b> ${saveInfo(sv)}.</div>` : ''}${bestLine}`;
+    <p>Restored towers keep a supply crate and become your respawn points. Hammering is loud. Nests are guarded: raptors, a tyrannosaur, a triceratops herd. Pteranodons stoop on anyone they notice, so watch the sky. Dilophosaurs spit venom that blinds, a carnotaurus charges in straight lines, and a spinosaurus hunts the lake shores. Hadrosaurs, triceratops, stegosaurs, apatosaurs, ankylosaurs, pachycephalosaurs, gallimimus and pterodactyls in the wild are protected: dropping one costs points. Lakes are open to you (swim, and dive with C), and ground predators will not follow you in, except a spinosaurus. Open the map with M. Your rifle is a .338 Lapua Magnum zeroed at 100 m: range the target, dial the turret, read the flags, and fire at the bottom of an exhale.</p>${controlsHtml()}${sv ? `<div class="fine" style="margin:0 0 8px"><b>Saved operation:</b> ${saveInfo(sv)}.</div>` : ''}${bestLine}`;
       btn.textContent = sv ? 'Continue' : 'Deploy';
       if (sv) $('btn2').style.display = 'inline-block';
     } else if (kind === 'pause') {
@@ -17590,7 +18358,7 @@ window.__bootInner = async function () {
       <div><strong>${game.score}</strong>Score</div><div><strong>${s.longest} m</strong>Longest kill</div>
       <div><strong>${acc}%</strong>Accuracy (${s.hits}/${s.shots})</div><div><strong>${s.heads}</strong>Headshots</div>
       <div><strong>${OBJ.towers}/3</strong>Towers restored</div><div><strong>${OBJ.eggs}/3</strong>Eggs delivered</div>
-      <div><strong>${s.rap} + ${s.rex}</strong>Raptors + tyrannosaurs</div><div><strong>${s.herb}</strong>Protected animals killed</div>
+      <div><strong>${s.rap} + ${s.rex}</strong>Hunters + giants</div><div><strong>${s.herb}</strong>Protected animals killed</div>
       <div><strong>${Math.floor(s.t / 60)}:${String(Math.floor(s.t % 60)).padStart(2, '0')}</strong>Time on station</div></div>${win ? '' : deathTip()}${bestLine}`;
       btn.textContent = win ? 'Keep exploring' : 'Respawn';
       if (win) {
@@ -18414,6 +19182,7 @@ window.__bootInner = async function () {
       updateThermal(rdt);
       updateDinos(dt, st === STATE.PLAY);
       stepBullets(dt);
+      updateSpit(dt);
       updateDelayed(dt);
       updateBlood(dt);
       updateWorld(dt);
@@ -20499,12 +21268,16 @@ window.__bootInner = async function () {
           // proportions to build bones from, so ~17 s after a kill the update threw on every frame and the game showed its error screen.)
           fresh();
           {
-            const types = ['raptor', 'para', 'trike', 'rex', 'stego', 'apato', 'ptera', 'ptero'],
-              vs = types.map((t, i) => {
+            // (every species, laid out on dry ground: a carcass in deep water leaves no bones floating on the lake)
+            const types = A.JORDER.slice(),
+              dry = [];
+            for (let zz = 330; dry.length < types.length && zz < 700; zz += 22)
+              for (let xx = 300; dry.length < types.length && xx < 520; xx += 22) if (A.heightAt(xx, zz) > A.WATER + 1) dry.push([xx, zz]);
+            const vs = types.map((t, i) => {
                 const d = find(t);
                 d.guard = null;
-                d.x = 300 + i * 22;
-                d.z = 330;
+                d.x = dry[i][0];
+                d.z = dry[i][1];
                 d.y = A.heightAt(d.x, d.z);
                 d.g.position.set(d.x, d.y, d.z);
                 kill(d, 'head');
@@ -20512,7 +21285,7 @@ window.__bootInner = async function () {
               });
             ok(
               vs.every(d => d.dead),
-              'all eight kinds can be killed: ' + types.join(', ')
+              'all ' + types.length + ' kinds can be killed: ' + types.join(', ')
             );
             let err = null;
             try {
@@ -20520,7 +21293,7 @@ window.__bootInner = async function () {
             } catch (e) {
               err = e;
             }
-            ok(!err, 'the game keeps running while all eight rot' + (err ? ': ' + err.message : ''));
+            ok(!err, 'the game keeps running while all ' + types.length + ' rot' + (err ? ': ' + err.message : ''));
             const noBones = vs.filter(
               d => !(d.bones && d.bones.parent && d.bones.material.opacity > 0.5 && !d.g.parent)
             );
@@ -20548,12 +21321,13 @@ window.__bootInner = async function () {
               'every skeleton is a real shape: ' + sizes.map(z => z.t + ' ' + z.r.toFixed(1) + ' m').join(', ')
             );
             {
-              const pt = A.boneGeo(vs[6].sp),
-                pd = A.boneGeo(vs[7].sp);
+              const vPt = vs[types.indexOf('ptera')],
+                pt = A.boneGeo(vPt.sp),
+                pd = A.boneGeo(vs[types.indexOf('ptero')].sp);
               pt.computeBoundingSphere();
               pd.computeBoundingSphere();
               ok(
-                pt.boundingSphere.radius > pd.boundingSphere.radius * 1.8 && pt.boundingSphere.radius < vs[6].sp.span,
+                pt.boundingSphere.radius > pd.boundingSphere.radius * 1.8 && pt.boundingSphere.radius < vPt.sp.span,
                 'a pteranodon leaves a wing-span of bones, a pterodactyl a smaller one (' +
                   pt.boundingSphere.radius.toFixed(2) +
                   ' m, ' +
@@ -20990,7 +21764,7 @@ window.__bootInner = async function () {
           ok(A.game.score - sc0 === 150, 'the fifth completes the entry: +150');
           A.journalNote('raptor', 'sedated');
           ok(A.game.score - sc0 === 150, 'it pays once');
-          for (const t of ['rex', 'para', 'trike', 'ptera', 'ptero', 'stego', 'apato']) A.journalNote(t, 'tag');
+          for (const t of A.JORDER) if (t !== 'raptor') A.journalNote(t, 'tag'); // (every species in the journal, the new ones too)
           ok(A.game.score - sc0 === 450, 'identifying every species earns the naturalist bonus (+300)');
           A.openJournal();
           ok(A.game.state === 'journal', 'J opens the journal');
@@ -21428,7 +22202,7 @@ window.__bootInner = async function () {
                 const x = J.x + s * d,
                   z = J.z + c * d,
                   g = A.heightAt(x, z);
-                if (g < A.WATER + 1 || A.trunkAt(x, g + 1, z, g, 3) >= 0 || g - A.heightAt(J.x, J.z) > 12) okL = false;
+                if (g < A.WATER + 1 || A.trunkAt(x, g + 0.6, z, g, 3) >= 0 || g - A.heightAt(J.x, J.z) > 12) okL = false; // (knee-high rocks stop a jeep too)
               }
               if (okL) lane = hh;
             }
@@ -25226,6 +26000,530 @@ window.__bootInner = async function () {
         }
       ],
       [
+        'New species and the jeep on the mountains: a swimming spinosaurus, a spitting dilophosaurus, a charging carnotaurus, an armoured ankylosaurus, a territorial pachycephalosaurus, skittish gallimimus, and no invisible walls',
+        function () {
+          const P = A.P,
+            E = A.ENV,
+            keys = A.keys,
+            SET = A.SET,
+            J = A.JEEP,
+            H = A.heightAt;
+          const sec = s => run(Math.round(s * 60));
+          let seedR = 12345;
+          const rnd = () => (seedR = (seedR * 16807) % 2147483647) / 2147483647;
+          const away = () => {
+            A.dinos.forEach(d => {
+              if (!d.dead) {
+                d.x = 9999;
+                d.z = 9999;
+                if (d.sp.fly) {
+                  d.hx = 9999;
+                  d.hz = 9999;
+                } else d.state = d.sp.pred ? 'patrol' : 'wander';
+                d.awareness = 0;
+                d.hasT = false;
+                d.calmT = 0;
+                d.invT = 0;
+                d.charge = 0;
+                d.fleeT = 0;
+                d.rush = 0;
+                d.spitT = 0;
+                d.warnT = 0;
+                d.attackT = 0;
+                d.angryT = 0;
+              }
+            });
+            A.SPIT.forEach(q => (q.t = 99));
+          };
+          const fresh = () => {
+            A.startGame();
+            run(5);
+            E.frozen = true;
+            A.setWeather('clear', true);
+            A.setTimeOfDay(12);
+            P.hp = 100;
+            P.invuln = 999;
+            P.optOn = false;
+            P.optAmt = 0;
+            P.alive = true;
+            P.venomT = 0;
+            A.setStance(0);
+            A.setWeapon('rifle');
+            away();
+            run(2);
+            for (const k in keys) keys[k] = false;
+          };
+          const keepDiff = SET.diff;
+          SET.diff = 'standard';
+          const put = (d, x, z, h) => {
+            d.x = x;
+            d.z = z;
+            d.heading = h || 0;
+            d.wantHead = d.heading;
+            d.y = H(x, z);
+            d.g.position.set(x, d.y, z);
+            d.g.rotation.set(0, d.heading, 0);
+            d.speed = 0;
+            d.hp = d.maxHp;
+            d.dead = false;
+            d.deadT = 0;
+            d.asleep = false;
+            d.lied = false;
+            d.homeX = x;
+            d.homeZ = z;
+          };
+          const face = (d, x, z) => Math.atan2(x - d.x, z - d.z);
+          const hunt = d => {
+            d.state = 'hunt';
+            d.awareness = 1.5;
+            d.calmT = 0;
+            d.angryT = 60;
+            d.patience = 99;
+            d.huntT = 0.1;
+            d.lose = 0;
+            d.cdT = 0;
+          };
+          const one = (type, f) => A.dinos.find(d => d.type === type && !d.dead && !d.hatchling && !d.alpha && (!f || f(d)));
+          const shot = (vx, vz) => ({ w: A.WEAPONS.rifle, v: new T3.Vector3(vx, 0, vz), dist0: new T3.Vector3() });
+          // open, level ground with nothing standing on it for `len` metres round, away from the safehouses
+          const openSpot = len => {
+            for (let r = 60; r < 600; r += 20)
+              for (let a = 0; a < 6.28; a += 0.3) {
+                const x = Math.sin(a) * r,
+                  z = Math.cos(a) * r,
+                  h = H(x, z);
+                if (h < A.WATER + 2 || h > 34) continue;
+                if (A.SAFE.some(q => Math.hypot(q.x - x, q.z - z) < len + 30)) continue;
+                let good = true;
+                for (let i = 0; i < A.TX.length && good; i++) if (Math.abs(A.TX[i] - x) < len && Math.abs(A.TZ[i] - z) < len) good = false;
+                for (let dx = -len; dx <= len && good; dx += 4)
+                  for (let dz = -len; dz <= len && good; dz += 4) {
+                    const g = H(x + dx, z + dz);
+                    if (Math.abs(g - h) > len * 0.12 + 0.5 || g < A.WATER + 1) good = false;
+                  }
+                if (good) return { x, z, h };
+              }
+            return null;
+          };
+          fresh();
+          const O = openSpot(24);
+          ok(!!O, 'found open ground to stage the animals on' + (O ? ' (' + O.x.toFixed(0) + ', ' + O.z.toFixed(0) + ')' : ''));
+
+          // ---- the roster
+          {
+            const want = { spino: 2, dilo: 6, carno: 2, ankylo: 4, pachy: 6, galli: 12 },
+              old = { para: 20, trike: 13, raptor: 15, rex: 2, stego: 6, apato: 4, ptera: 4, ptero: 10 };
+            for (const t in want) {
+              const n = A.dinos.filter(d => d.type === t && !d.dead && !d.hatchling).length;
+              ok(n === want[t], A.SPECS[t].name + ': ' + n + ' in the reserve');
+            }
+            ok(
+              Object.keys(old).every(t => A.dinos.filter(d => d.type === t && !d.hatchling).length === old[t]),
+              'and the older species are all still there, as many as before (' + Object.keys(old).map(t => t + ' ' + A.dinos.filter(d => d.type === t && !d.hatchling).length).join(', ') + ')'
+            );
+            ok(
+              A.JORDER.length === 14 && Object.keys(want).every(t => A.JORDER.indexOf(t) >= 0 && A.JTXT[t] && A.JTXT[t].id && A.JTXT[t].sign && A.JTXT[t].behav && A.JTXT[t].care && A.SED_HITS[t] > 0),
+              'each has a field-journal entry and a sedative dose (' + A.JORDER.length + ' species)'
+            );
+            ok(['spino', 'dilo', 'carno'].every(t => A.SPECS[t].pred) && ['ankylo', 'pachy', 'galli'].every(t => !A.SPECS[t].pred && A.SPECS[t].fine > 0), 'three new hunters, and three protected plant-eaters with fines');
+            const sp = A.dinos.filter(d => d.type === 'spino');
+            ok(
+              sp.every(d => {
+                for (let a = 0; a < 6.28; a += 0.2) for (let t = 4; t <= 30; t += 2) if (H(d.homeX + Math.sin(a) * t, d.homeZ + Math.cos(a) * t) < A.WATER - 2.6) return true;
+                return false;
+              }),
+              'every spinosaurus lives on a shore with water deep enough to swim in'
+            );
+            ok(A.dinos.filter(d => d.type === 'galli').every(d => A.dinos.filter(o => o.pack === d.pack && o.type === 'galli').length === 6), 'gallimimus go about in flocks of six');
+            ok(A.SPECS.rex.prey.indexOf('apato') < 0 && A.SPECS.rex.prey.indexOf('ankylo') < 0 && A.SPECS.raptor.prey.indexOf('galli') >= 0, 'nothing hunts an ankylosaurus (or an apatosaurus); raptors try for gallimimus');
+            if (A.QP.dinoFar) ok(Object.keys(want).every(t => { const d = one(t); return d && d.far && d.far.geometry.attributes.position.count > 100; }), 'each has its far silhouette on the touch set');
+            let quiet = true;
+            try {
+              for (const t of Object.keys(want)) A.Aud.roar(t, one(t));
+              const d = one('dilo');
+              A.Aud.hiss(d);
+              A.Aud.spit(d);
+              A.Aud.splat();
+            } catch (e) {
+              quiet = false;
+            }
+            ok(quiet, 'each has a voice');
+          }
+
+          // ---- a spinosaurus follows you into a lake; a tyrannosaur stops at the shore
+          fresh();
+          {
+            // deep water off the shore where a spinosaurus lives
+            let sh = null,
+              deep = null;
+            for (const d0 of A.dinos.filter(d => d.type === 'spino'))
+              for (let a = 0; a < 6.28 && !deep; a += 0.15)
+                for (let t = 18; t <= 44 && !deep; t += 2) {
+                  const x = d0.homeX + Math.sin(a) * t,
+                    z = d0.homeZ + Math.cos(a) * t;
+                  if (H(x, z) < A.WATER - 3) {
+                    deep = { x, z };
+                    sh = [d0.homeX, d0.homeZ];
+                  }
+                }
+            ok(!!deep, 'found deep water off a spinosaurus shore');
+            if (deep) {
+              const res = {};
+              for (const type of ['spino', 'rex']) {
+                away();
+                P.x = deep.x;
+                P.z = deep.z;
+                P.invuln = 999;
+                run(30);
+                const d = one(type);
+                put(d, sh[0], sh[1], face({ x: sh[0], z: sh[1] }, deep.x, deep.z));
+                hunt(d);
+                let minD = 1e9,
+                  wet = false,
+                  deepN = 0,
+                  floatN = 0;
+                for (let i = 0; i < 14 * 60; i++) {
+                  P.x = deep.x;
+                  P.z = deep.z;
+                  run(1);
+                  const dd = Math.hypot(d.x - P.x, d.z - P.z);
+                  if (dd < minD) minD = dd;
+                  if (H(d.x, d.z) < A.WATER - 1) wet = true;
+                  if (H(d.x, d.z) < A.WATER - d.parts.hipY * 0.8 - 0.1) {
+                    // water deeper than it stands: it must be swimming, not walking on the bottom
+                    deepN++;
+                    if (Math.abs(d.y - (A.WATER - d.parts.hipY * 0.8)) < 0.05) floatN++;
+                  }
+                }
+                res[type] = { minD, wet, deepN, floatN };
+                put(d, 9999, 9999, 0);
+              }
+              ok(res.spino.wet && res.spino.minD < A.SPECS.spino.melee * 1.4, 'a spinosaurus swims out after you (' + res.spino.minD.toFixed(1) + ' m)');
+              ok(
+                res.spino.floatN === res.spino.deepN,
+                res.spino.deepN
+                  ? 'in deep water it floats with its back out, not walking along the bottom (' + res.spino.deepN + ' frames out of its depth)'
+                  : '(it caught you in water it could wade: no swimming needed)'
+              );
+              ok(!res.rex.wet && res.rex.minD > A.SPECS.rex.melee, 'a tyrannosaur still stops at the water (' + res.rex.minD.toFixed(1) + ' m)');
+              // shot out in the lake, it floats on its side, and leaves no bones bobbing on the water
+              away();
+              const d = one('spino');
+              put(d, deep.x, deep.z, 0);
+              d.y = A.WATER - d.parts.hipY * 0.8;
+              d.g.position.y = d.y;
+              d.hp = 1;
+              A.hitDino(d, 'body', shot(0, -800), { x: d.x, y: d.y + 1, z: d.z });
+              sec(4);
+              d.g.updateMatrixWorld(true);
+              let top = -1e9;
+              const v = new T3.Vector3();
+              for (const q of d.parts.spheres) if (q.zone === 'body') top = Math.max(top, v.setFromMatrixPosition(q.o.matrixWorld).y + q.r);
+              ok(d.dead && top > A.WATER + 0.3 && d.g.position.y > A.WATER - 3, 'shot out in the lake, it floats on its side (' + (top - A.WATER).toFixed(1) + ' m of it above the water)');
+              sec(27);
+              ok(!d.bones && d.noBones, 'and when the flesh has gone, no bones are left floating');
+            }
+          }
+
+          // ---- a dilophosaurus spits; it blinds a ranger who stands still and misses one who steps aside
+          if (O) {
+            const trial = sidestep => {
+              fresh();
+              P.x = O.x;
+              P.z = O.z;
+              P.invuln = 0;
+              P.hp = 100;
+              run(20);
+              const d = one('dilo');
+              put(d, O.x + 10, O.z, 0);
+              d.heading = d.wantHead = face(d, O.x, O.z);
+              hunt(d);
+              d.spitCd = 0;
+              d.cdT = 9;
+              let spat = false,
+                frill = 0,
+                hit = false,
+                wind = false;
+              for (let i = 0; i < 5 * 60; i++) {
+                if (d.spitT > 0) wind = true;
+                if (d.spitT > 0 && d.spitT < 0.1) frill = Math.max(frill, d.parts.ruff.scale.x);
+                if (sidestep && wind) P.z += 4.5 / 60; // a quick side step once it rears back
+                d.cdT = 9; // (no bite: this is about the spit)
+                run(1);
+                if (A.SPIT.length) spat = true;
+                if (P.venomT > 0) hit = true;
+                if (spat && !A.SPIT.length) break;
+              }
+              const r = { spat, hit, frill, hp: P.hp, venom: P.venomT, spitLast: !!(A.LIFE.last && A.LIFE.last.spit), wind };
+              put(d, 9999, 9999, 0);
+              return r;
+            };
+            const still = trial(false);
+            ok(still.wind && still.spat, 'from 10 m it rears back and spits');
+            ok(still.frill > 0.8, 'its frill is spread when it spits (' + still.frill.toFixed(2) + ')');
+            ok(still.hit && still.venom > 3, 'standing still, the venom catches you in the eyes (' + still.venom.toFixed(1) + ' s of it)');
+            ok(still.hp < 100 && still.hp > 85 && still.spitLast, 'and it stings, but only a little (' + still.hp.toFixed(0) + ' hp)');
+            ok(A.JRN.sp.dilo && A.JRN.sp.dilo.behav, 'the journal learns what it does');
+            sec(4);
+            const vo = +document.getElementById('venom').style.opacity;
+            sec(3);
+            ok(P.venomT === 0 && +document.getElementById('venom').style.opacity === 0 && vo > 0, 'the blindness wears off after a few seconds (' + vo.toFixed(2) + ' then clear)');
+            const side = trial(true);
+            ok(side.spat && !side.hit && side.hp === 100, 'a step aside as it rears back, and the glob goes past');
+          }
+
+          // ---- a carnotaurus charges in a straight line: stand there and it hits you, step aside and it runs past
+          if (O) {
+            const trial = sidestep => {
+              fresh();
+              P.x = O.x;
+              P.z = O.z;
+              P.invuln = 0;
+              P.hp = 100;
+              run(20);
+              const d = one('carno');
+              put(d, O.x - 22, O.z - 3, 0);
+              d.heading = d.wantHead = face(d, O.x, O.z);
+              hunt(d);
+              let wound = false,
+                charged = false,
+                passed = false,
+                stepT = 0;
+              for (let i = 0; i < 8 * 60; i++) {
+                if (d.rush === 1) wound = true;
+                if (d.rush === 2) charged = true;
+                if (sidestep && charged && stepT < 0.9) {
+                  stepT += 1 / 60;
+                  P.z += 5 / 60;
+                }
+                run(1);
+                if (d.rush === 3 && charged) {
+                  passed = true;
+                  break;
+                }
+                if (P.hp < 100) break;
+              }
+              const r = { wound, charged, passed, hp: P.hp, beyond: d.x - O.x };
+              put(d, 9999, 9999, 0);
+              return r;
+            };
+            const still = trial(false);
+            ok(still.wound && still.charged, 'it lowers its head and stamps, then charges');
+            ok(still.hp < 100, 'stand in its way and it hits you (' + still.hp.toFixed(0) + ' hp)');
+            const side = trial(true);
+            ok(side.passed && side.hp === 100 && side.beyond > 0, 'step aside and it thunders past and has to skid round (' + side.beyond.toFixed(1) + ' m beyond you)');
+          }
+
+          // ---- an ankylosaurus: rounds glance off its armour; hurt, it swings round and clubs you with its tail
+          if (O) {
+            fresh();
+            const k = one('ankylo'),
+              r = one('raptor', d => !d.guard);
+            put(k, O.x + 12, O.z, 0);
+            put(r, O.x - 12, O.z, 0);
+            const dmg = (d, zone) => {
+              d.hp = d.maxHp;
+              const h0 = d.hp;
+              A.hitDino(d, zone, shot(0, -800), { x: d.x, y: d.y + 1, z: d.z });
+              const v = h0 - d.hp;
+              d.hp = d.maxHp;
+              d.charge = 0;
+              d.fleeT = 0;
+              return v;
+            };
+            const kb = dmg(k, 'body'),
+              kh = dmg(k, 'head'),
+              rb = dmg(r, 'body');
+            ok(kb < rb * 0.45, 'a body shot does a third of the harm it does a raptor (' + kb.toFixed(0) + ' against ' + rb.toFixed(0) + ')');
+            ok(kh > rb * 1.6, 'a head shot is not armoured (' + kh.toFixed(0) + ')');
+            put(r, 9999, 9999, 0);
+            // you stand in front of it; it is angry
+            P.x = O.x;
+            P.z = O.z;
+            P.invuln = 0;
+            P.hp = 100;
+            put(k, O.x + 3.6, O.z, face({ x: O.x + 3.6, z: O.z }, O.x, O.z));
+            const h0 = k.heading;
+            k.charge = 10;
+            k.cdT = 0;
+            let turned = 0;
+            for (let i = 0; i < 6 * 60 && P.hp === 100; i++) {
+              P.x = O.x;
+              P.z = O.z;
+              run(1);
+              turned = Math.max(turned, Math.abs(Math.atan2(Math.sin(k.heading - h0), Math.cos(k.heading - h0))));
+            }
+            ok(P.hp < 100, 'angry, it clubs a ranger standing at its head (' + P.hp.toFixed(0) + ' hp)');
+            ok(turned > 1.5, 'after swinging its rear round to you (it turned ' + turned.toFixed(1) + ' rad)');
+            put(k, 9999, 9999, 0);
+          }
+
+          // ---- a pachycephalosaurus warns you off its ground, then charges; back away and it lets you go
+          if (O) {
+            const trial = backOff => {
+              fresh();
+              P.x = O.x;
+              P.z = O.z;
+              P.invuln = 999;
+              const d = one('pachy');
+              put(d, O.x + 8, O.z, 0);
+              d.warnCd = 0;
+              sec(0.5);
+              const warned = d.warnT > 0 && !(d.charge > 0);
+              if (backOff) P.x = O.x - 22;
+              sec(1.8);
+              const r = { warned, charged: d.charge > 0 };
+              put(d, 9999, 9999, 0);
+              return r;
+            };
+            const a = trial(false),
+              b = trial(true);
+            ok(a.warned, 'walk into its space and it warns you first');
+            ok(a.charged, 'stay, and it charges');
+            ok(b.warned && !b.charged, 'back off while it warns you, and it lets you go');
+          }
+
+          // ---- gallimimus: the whole flock bolts when one sees you; low and still at a distance you can watch them
+          if (O) {
+            const trial = (dist, crouch) => {
+              fresh();
+              const first = one('galli'),
+                flock = A.dinos.filter(d => d.type === 'galli' && d.pack === first.pack);
+              flock.forEach((d, i) => put(d, O.x + dist + (i % 3) * 3, O.z + Math.floor(i / 3) * 4 - 2, 0));
+              P.x = O.x;
+              P.z = O.z;
+              A.setStance(crouch ? 1 : 0);
+              const x0 = flock.map(d => d.x);
+              sec(3);
+              const r = { all: flock.every(d => d.fleeT > 0 || Math.abs(d.x - x0[flock.indexOf(d)]) > 6), any: flock.some(d => d.fleeT > 0), ran: Math.max(...flock.map((d, i) => Math.hypot(d.x - x0[i], d.z - O.z))) };
+              flock.forEach(d => put(d, 9999, 9999, 0));
+              A.setStance(0);
+              return r;
+            };
+            const near = trial(13, false),
+              far = trial(26, true);
+            ok(near.all, 'come within sight of a flock and every one of them bolts');
+            ok(!far.any, 'crouched and still, further off, you can watch them');
+          }
+
+          // ---- kills: a hunter pays, a protected animal costs
+          {
+            fresh();
+            const s0 = A.game.score,
+              d = one('spino');
+            put(d, 20, 20, 0);
+            d.hp = 1;
+            A.hitDino(d, 'body', shot(0, -800), { x: d.x, y: d.y + 1, z: d.z });
+            const s1 = A.game.score,
+              g = one('galli');
+            put(g, 26, 22, 0);
+            g.hp = 1;
+            A.hitDino(g, 'body', shot(0, -800), { x: g.x, y: g.y + 1, z: g.z });
+            ok(s1 - s0 >= 1200 && s1 - s0 < 1400 && A.game.score === s1 - A.SPECS.galli.fine, 'a spinosaurus pays ' + (s1 - s0) + '; a gallimimus costs ' + (s1 - A.game.score));
+          }
+
+          // ---- the jeep: one steep facet of a hillside is not a wall; a rock face still is; a hill too steep stalls it
+          fresh();
+          {
+            const grad = (x, z) => Math.hypot(H(x + 1, z) - H(x - 1, z), H(x, z + 1) - H(x, z - 1)) / 2;
+            const clearLine = (x, z, s, c, a, b) => {
+              for (let t = a; t <= b; t += 0.5) {
+                const px = x + s * t,
+                  pz = z + c * t,
+                  g = H(px, pz);
+                if (g < A.WATER + 1 || A.trunkAt(px, g + 1, pz, g, 2.2) >= 0) return false;
+              }
+              return true;
+            };
+            const drive = (x, z, hh, v0, secs) => {
+              J.x = x;
+              J.z = z;
+              J.heading = hh;
+              J.speed = v0;
+              J.hp = 100;
+              J.dead = false;
+              J.fuel = 1;
+              J.lift = 0;
+              J.onBridge = false;
+              if (!P.inJeep) A.enterJeep();
+              A.poseJeep();
+              keys.KeyW = true;
+              let vMin = 1e9,
+                vMax = 0,
+                far = 0;
+              const s = Math.sin(hh),
+                c = Math.cos(hh);
+              for (let i = 0; i < secs * 60; i++) {
+                run(1);
+                vMin = Math.min(vMin, J.speed);
+                vMax = Math.max(vMax, J.speed);
+                far = Math.max(far, (J.x - x) * s + (J.z - z) * c);
+              }
+              keys.KeyW = false;
+              return { vMin, vMax, far, hp: J.hp };
+            };
+            let facet = null,
+              face = null,
+              steep = null,
+              tries = 0;
+            for (const m of A.MOUNTS)
+              for (let i = 0; i < 5000 && (!facet || !face || !steep); i++) {
+                const a = rnd() * 6.283,
+                  rr = Math.sqrt(rnd()) * m.r * 0.85,
+                  x = m.x + Math.cos(a) * rr,
+                  z = m.z + Math.sin(a) * rr;
+                if (H(x, z) < A.WATER + 2) continue;
+                tries++;
+                const g1 = grad(x, z);
+                for (let k = 0; k < 24; k++) {
+                  const hh = (k / 24) * 6.283,
+                    s = Math.sin(hh),
+                    c = Math.cos(hh);
+                  if (!facet && g1 > 0.97 && (H(x + s * 0.3, z + c * 0.3) - H(x - s * 0.3, z - c * 0.3)) / 0.6 > 0.25) {
+                    let gentle = true;
+                    for (let t = -9; t <= 9 && gentle; t += 0.5) if (Math.abs(A.jeepClimb(x + s * t, z + c * t, s, c, false)) > 0.5) gentle = false;
+                    if (gentle && clearLine(x, z, s, c, -9, 9)) facet = { x, z, hh };
+                  }
+                  if (!face && A.jeepClimb(x, z, s, c, false) > 1.35) {
+                    let lead = true;
+                    for (let t = -10; t <= -3 && lead; t += 0.5) if (Math.abs(A.jeepClimb(x + s * t, z + c * t, s, c, false)) > 0.45) lead = false;
+                    if (lead && clearLine(x, z, s, c, -10, 2)) face = { x, z, hh };
+                  }
+                  if (!steep) {
+                    let all = true;
+                    for (let t = 0; t <= 10 && all; t += 0.5) {
+                      const cl = A.jeepClimb(x + s * t, z + c * t, s, c, false);
+                      if (cl < 0.95 || cl > 1.15) all = false;
+                    }
+                    if (all && clearLine(x, z, s, c, -16, 12)) steep = { x, z, hh };
+                  }
+                }
+              }
+            if (facet) {
+              const s = Math.sin(facet.hh),
+                c = Math.cos(facet.hh);
+              const r = drive(facet.x - s * 8, facet.z - c * 8, facet.hh, 10, 1.6);
+              ok(r.far > 11 && r.vMin > 3 && r.hp === 100, 'over a hillside facet steeper than the old limit it drives straight on (' + r.far.toFixed(1) + ' m, never under ' + r.vMin.toFixed(1) + ' m/s)');
+            } else ok(true, '(no lone steep facet on a gentle slope found on this seed)');
+            if (face) {
+              const s = Math.sin(face.hh),
+                c = Math.cos(face.hh);
+              const r = drive(face.x - s * 7, face.z - c * 7, face.hh, 9, 3);
+              ok(r.far < 8.5, 'a rock face still stops it (' + r.far.toFixed(1) + ' m of 7 to the face)');
+            } else ok(true, '(no rock face found on the mountains of this seed)');
+            if (steep) {
+              const r = drive(steep.x, steep.z, steep.hh, 0, 3);
+              ok(r.vMax < 2.5 && r.far < 3 && r.hp === 100, 'a hill too steep for it: the wheels spin, it stalls and rolls back, no crash (' + r.far.toFixed(1) + ' m, top ' + r.vMax.toFixed(1) + ' m/s)');
+            } else ok(true, '(no long hill that steep found on this seed)');
+            ok(tries > 0 && (facet || face || steep), 'searched the mountains (' + tries + ' spots: ' + [facet && 'facet', face && 'face', steep && 'steep hill'].filter(Boolean).join(', ') + ')');
+            if (P.inJeep) A.leaveJeep();
+          }
+          SET.diff = keepDiff;
+          fresh();
+          P.invuln = 0;
+        }
+      ],
+      [
         'Graphics: tiers, simplified distance shapes, terrain tiles, shadows and the frame-rate controller',
         function () {
           const P = A.P,
@@ -26149,6 +27447,19 @@ window.__bootInner = async function () {
     inExtra,
     updateSafe,
     bridgeH,
+    SPECS,
+    spawn,
+    SPIT,
+    spitAt,
+    updateSpit,
+    venomHit,
+    findShore,
+    JORDER,
+    JTXT,
+    SED_HITS,
+    jeepClimb,
+    JEEP_GRIP,
+    JEEP_WALL,
     get CLIFF() {
       return CLIFF;
     },
